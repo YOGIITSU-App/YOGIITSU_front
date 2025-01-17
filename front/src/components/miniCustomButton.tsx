@@ -5,7 +5,6 @@ import {colors} from '../constants';
 interface miniCustomButtonProps {
   label: string;
   inValid?: boolean;
-  onPress: () => void;
 }
 
 function miniCustomButton({label, inValid = false}: miniCustomButtonProps) {

@@ -5,7 +5,6 @@ import {colors} from '../constants';
 interface miniCustomButton_WProps {
   label: string;
   inValid?: boolean;
-  onPress: () => void;
 }
 
 function miniCustomButton_W({label, inValid = false}: miniCustomButton_WProps) {
@@ -43,7 +42,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.BLUE_500,
   },
   text: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
   },
   filledText: {
