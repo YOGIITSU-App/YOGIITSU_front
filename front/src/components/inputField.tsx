@@ -1,19 +1,20 @@
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   Dimensions,
   StyleSheet,
   View,
   TextInputProps,
-  Text,
+  TextInput,
   Pressable,
 } from 'react-native';
-import {TextInput} from 'react-native-gesture-handler';
+
 import {colors} from '../constants/colors';
 
 interface inputFieldProps extends TextInputProps {
   disabled?: boolean;
   error?: string;
   touched?: boolean;
+  inValid?: boolean;
 }
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -24,6 +25,7 @@ function inputField({
   disabled = false,
   error,
   touched,
+  inValid = false,
   ...props
 }: inputFieldProps) {
   const innerRef = useRef<TextInput | null>(null);
@@ -31,6 +33,7 @@ function inputField({
   const handlePressInput = () => {
     innerRef.current?.focus();
   };
+
   return (
     <Pressable onPress={handlePressInput}>
       <View style={[styles.container, disabled && styles.disabled]}>
@@ -58,17 +61,14 @@ const styles = StyleSheet.create({
     width: deviceWidth * 0.8,
   },
   input: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.BLACK,
     padding: 0,
+    fontWeight: '700',
   },
   disabled: {
-    backgroundColor: colors.GRAY_200,
+    backgroundColor: colors.GRAY_300,
     color: colors.GRAY_700,
-  },
-  inputError: {
-    borderWidth: 1,
-    borderColor: colors.RED_300,
   },
 });
 

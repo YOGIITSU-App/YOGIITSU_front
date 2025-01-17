@@ -2,7 +2,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import {StyleSheet} from 'react-native';
 import AuthHomeScreen from '../../screens/auth/AuthHomeScreen';
-import {authNavigations} from '../../constants';
+import {authNavigations, colors} from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import FindIdScreen from '../../screens/auth/FindIdScreen';
 import FindPwScreen from '../../screens/auth/FindPwScreen';
@@ -39,17 +39,53 @@ function AuthStackNavigator() {
       <Stack.Screen
         name={authNavigations.FINDID}
         component={FindIdScreen}
-        options={{headerTitle: '아이디찾기'}}
+        options={{
+          headerTitle: '아이디찾기',
+          headerTitleAlign: 'center', // 상단 제목 중앙 정렬
+          headerTitleStyle: {
+            fontSize: 17,
+            fontWeight: '700',
+            color: colors.BLACK_500,
+          },
+          headerStyle: {
+            borderBottomWidth: 1,
+            borderBottomColor: colors.GRAY_200,
+          },
+        }}
       />
       <Stack.Screen
         name={authNavigations.FINDPW}
         component={FindPwScreen}
-        options={{headerTitle: '비밀번호찾기'}}
+        options={{
+          headerTitle: '비밀번호찾기',
+          headerTitleAlign: 'center', // 상단 제목 중앙 정렬
+          headerTitleStyle: {
+            fontSize: 17,
+            fontWeight: '700',
+            color: colors.BLACK_500,
+          },
+          headerStyle: {
+            borderBottomWidth: 1,
+            borderBottomColor: colors.GRAY_200,
+          },
+        }}
       />
       <Stack.Screen
         name={authNavigations.SIGNUP}
         component={SignupScreen}
-        options={{headerTitle: '회원가입'}}
+        options={{
+          headerTitle: '회원가입',
+          headerTitleAlign: 'center', // 상단 제목 중앙 정렬
+          headerTitleStyle: {
+            fontSize: 17,
+            fontWeight: '700',
+            color: colors.BLACK_500,
+          },
+          headerStyle: {
+            borderBottomWidth: 1,
+            borderBottomColor: colors.GRAY_200,
+          },
+        }}
       />
     </Stack.Navigator>
   );

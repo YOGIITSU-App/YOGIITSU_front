@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     width: deviceWidth * 0.8,
   },
   inValid: {
-    backgroundColor: colors.GRAY_400,
+    backgroundColor: colors.GRAY_700,
   },
   filled: {
     backgroundColor: colors.BLUE_700,
