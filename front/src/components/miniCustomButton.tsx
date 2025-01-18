@@ -1,11 +1,15 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text} from 'react-native';
+import {Dimensions, Pressable, StyleSheet, Text} from 'react-native';
 import {colors} from '../constants';
 
 interface miniCustomButtonProps {
   label: string;
   inValid?: boolean;
 }
+
+const deviceWidth = Dimensions.get('screen').width;
+
+const deviceHeight = Dimensions.get('screen').height;
 
 function miniCustomButton({label, inValid = false}: miniCustomButtonProps) {
   return (
@@ -23,8 +27,8 @@ function miniCustomButton({label, inValid = false}: miniCustomButtonProps) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 80,
-    height: 50,
+    width: deviceWidth * 0.202,
+    height: deviceHeight * 0.06,
     backgroundColor: colors.GRAY_300,
     borderRadius: 5,
     alignItems: 'center',

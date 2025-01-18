@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     flexDirection: 'row',
-    width: deviceWidth * 0.8,
+    width: deviceWidth * 0.84,
+    height: deviceHeight * 0.06,
   },
   inValid: {
     backgroundColor: colors.GRAY_700,
@@ -70,14 +71,14 @@ const styles = StyleSheet.create({
   },
   large: {
     width: '100%',
-    paddingVertical: deviceHeight > 700 ? 15 : 10,
+    // paddingVertical: deviceHeight > 700 ? 15 : 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   medium: {
     width: '50%',
-    paddingVertical: deviceHeight > 700 ? 12 : 8,
+    // paddingVertical: deviceHeight > 700 ? 12 : 8,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

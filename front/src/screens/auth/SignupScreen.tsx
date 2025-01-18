@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {
+  Dimensions,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -16,19 +17,27 @@ import {
   validatePw,
   validateEmail,
   validateCodeMessage,
+  validatePwConfirm,
 } from '../../utils';
 import InputField from '../../components/inputField';
 import MiniCustomButton from '../../components/miniCustomButton';
 import MiniCustomButton_W from '../../components/miniCustomButton_W';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import MiniInputField from '../../components/miniInputField';
+import CustomText from '../../components/CustomText';
 
-function SignupScreen({inValid = false}) {
+const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
+
+function SignupScreen() {
   const signup = useForm({
     initialValue: {
       id: '',
       password: '',
       username: '',
       email: '',
+      passwordConfirm: '',
+      codemessage: 0,
     },
     validate: validateSignup,
   });
@@ -54,13 +63,6 @@ function SignupScreen({inValid = false}) {
     validate: validateId,
   });
 
-  const pwcheak = useForm({
-    initialValue: {
-      password: '',
-    },
-    validate: validatePw,
-  });
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior="padding">
@@ -75,22 +77,20 @@ function SignupScreen({inValid = false}) {
             <Text>가입을 위한 기본 정보를 작성해 주세요</Text>
           </View>
           <View style={styles.infoContainer}>
-            <View style={styles.nameContainer}>
+            <View style={styles.bigInputfield}>
               <InputField
                 placeholder="이름"
                 inputMode="text"
+                focused={signup.focused.username} // focused
                 {...signup.getTextInputProps('username')}
               />
             </View>
-            <View style={styles.smallInputContainer}>
-              <TextInput
-                style={styles.smallInput}
+            <View style={styles.smallContainer}>
+              <MiniInputField
                 placeholder="이메일"
-                placeholderTextColor={colors.GRAY_500}
                 inputMode="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                autoCorrect={false}
+                focused={emailcheak.focused.email}
+                {...signup.getTextInputProps('email')}
                 {...emailcheak.getTextInputProps('email')}
               />
               <MiniCustomButton
@@ -98,15 +98,12 @@ function SignupScreen({inValid = false}) {
                 inValid={!emailcheak.isFormValid}
               />
             </View>
-            <View style={styles.smallInputContainer}>
-              <TextInput
-                style={styles.smallInput}
+            <View style={styles.smallContainer}>
+              <MiniInputField
                 placeholder="인증번호"
-                placeholderTextColor={colors.GRAY_500}
-                inputMode="numeric"
-                autoCapitalize="none"
-                spellCheck={false}
-                autoCorrect={false}
+                inputMode="text"
+                focused={codemessagecheck.focused.codemessage}
+                {...signup.getTextInputProps('codemessage')}
                 {...codemessagecheck.getTextInputProps('codemessage')}
                 onChangeText={text => {
                   // 6자리 이상 입력을 제한
@@ -123,33 +120,40 @@ function SignupScreen({inValid = false}) {
               />
             </View>
             <Text style={styles.emailText}>*아이디 찾기에 사용됩니다.</Text>
-
-            <View style={styles.smallInputContainer}>
-              <TextInput
-                style={styles.smallInput}
+            <View style={styles.smallContainer}>
+              <MiniInputField
                 placeholder="아이디"
-                placeholderTextColor={colors.GRAY_500}
                 inputMode="text"
-                autoCapitalize="none"
-                spellCheck={false}
-                autoCorrect={false}
+                focused={idcheak.focused.id}
+                {...signup.getTextInputProps('id')}
                 {...idcheak.getTextInputProps('id')}
               />
               <MiniCustomButton label="확인" inValid={!idcheak.isFormValid} />
             </View>
-
-            <View style={styles.smallInputContainer}>
-              <TextInput
-                style={styles.smallInput}
+            <View style={styles.pwBigInputfield}>
+              <InputField
                 placeholder="비밀번호"
-                placeholderTextColor={colors.GRAY_500}
                 inputMode="text"
-                autoCapitalize="none"
-                spellCheck={false}
-                autoCorrect={false}
-                {...pwcheak.getTextInputProps('password')}
+                secureTextEntry
+                // focused={signup.focused.password}
+                {...signup.getTextInputProps('password')}
               />
-              <MiniCustomButton label="확인" inValid={!pwcheak.isFormValid} />
+              <InputField
+                placeholder="비밀번호 확인"
+                inputMode="text"
+                secureTextEntry
+                touched={signup.touched.passwordConfirm}
+                error={signup.errors.passwordConfirm}
+                // focused={signup.focused.passwordConfirm}
+                {...signup.getTextInputProps('passwordConfirm')}
+              />
+            </View>
+            <View style={styles.errorMessageContainer}>
+              <CustomText
+                text="위의 비밀번호와 일치하지 않습니다."
+                touched={signup.touched.passwordConfirm}
+                error={signup.errors.passwordConfirm}
+              />
             </View>
           </View>
         </ScrollView>
@@ -164,10 +168,9 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
   },
   guideContainer: {
-    flex: 1,
     // alignItems: 'flex-end',
     marginTop: 15,
-    marginLeft: 25,
+    marginLeft: deviceWidth * 0.08,
     gap: 3,
     marginBottom: '5%',
   },
@@ -180,50 +183,51 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   infoContainer: {
-    flex: 3, // 입력 필드 영역 확장
     justifyContent: 'flex-start', // 위쪽 정렬
     paddingTop: 20, // 위쪽 여백 조정
-    paddingHorizontal: 20, // 좌우 여백 조정
+    paddingHorizontal: 20, // 상하 여백 조정
     alignItems: 'center',
+    marginBottom: 100,
   },
-  nameContainer: {
-    marginBottom: '10%', // 이름 입력 필드와 이메일 입력 필드 간격
+  bigInputfield: {
+    marginBottom: '15%', // 이름 입력 필드와 이메일 입력 필드 간격
   },
-  smallInputContainer: {
-    width: '90%',
+  smallContainer: {
+    width: deviceWidth * 0.84,
     flexDirection: 'row',
     justifyContent: 'space-between', // 이메일 입력칸과 버튼의 간격 유지
     alignItems: 'center',
     marginBottom: 15, // 이메일 입력 필드와 다음 요소 간격,
+    gap: deviceWidth * 0.025,
   },
-  smallInput: {
-    flex: 1, // 입력 필드가 버튼보다 넓게 차지하도록 설정
-    height: 50,
-    borderRadius: 10,
+  smallInputContainer: {
+    borderRadius: 5,
     backgroundColor: colors.GRAY_100,
-    paddingHorizontal: 10,
-    marginRight: 10, // 버튼과의 간격
+    padding: deviceHeight > 700 ? 14 : 10,
+    width: deviceWidth * 0.605,
+    height: deviceHeight * 0.06,
+  },
+  smallInputText: {
     fontSize: 14,
+    color: colors.BLACK,
+    padding: 0,
     fontWeight: '700',
   },
   emailText: {
     alignSelf: 'flex-end',
-    marginRight: 20,
+    marginRight: deviceWidth * 0.03,
     fontSize: 12,
     color: colors.GRAY_500,
     marginBottom: '20%',
   },
-  idContainer: {
-    flex: 1, // 입력 필드 영역 확장
-    justifyContent: 'flex-start', // 위쪽 정렬
-    paddingHorizontal: 20, // 좌우 여백 조정
-    alignItems: 'center',
+  pwBigInputfield: {
+    paddingTop: 30, // 위쪽 여백 조정
+    gap: 20,
   },
-  PwContainer: {
-    flex: 2, // 입력 필드 영역 확장
-    justifyContent: 'flex-start', // 위쪽 정렬
-    paddingHorizontal: 20, // 좌우 여백 조정
-    alignItems: 'center',
+  errorMessageContainer: {
+    alignSelf: 'flex-start',
+    marginLeft: deviceWidth * 0.04,
+    marginBottom: '15%',
   },
 });
 

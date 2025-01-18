@@ -1,5 +1,6 @@
 import {useRef} from 'react';
 import {
+  Dimensions,
   Pressable,
   StyleSheet,
   TextInput,
@@ -8,11 +9,23 @@ import {
 } from 'react-native';
 import {colors} from '../constants';
 
-interface miniInputField extends TextInputProps {
+interface miniInputFieldProps extends TextInputProps {
   disabled?: boolean;
+  error?: string;
+  touched?: boolean;
+  focused?: boolean;
 }
 
-function miniInputField({disabled = false, ...props}) {
+const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
+
+function miniInputField({
+  disabled = false,
+  error,
+  touched,
+  focused,
+  ...props
+}: miniInputFieldProps) {
   const innerRef = useRef<TextInput | null>(null);
 
   const handlePressInput = () => {
@@ -20,28 +33,56 @@ function miniInputField({disabled = false, ...props}) {
   };
 
   return (
-    <TextInput
-      ref={innerRef}
-      editable={!disabled}
-      style={styles.emailInput}
-      placeholderTextColor={colors.GRAY_500}
-      autoCapitalize="none"
-      spellCheck={false}
-      autoCorrect={false}
-      {...props}
-    />
+    <Pressable onPress={handlePressInput}>
+      <View
+        style={[
+          styles.container,
+          focused && styles.inputFocused, // 포커스 되었을 때 스타일 적용
+          touched && Boolean(error) && styles.inputError,
+        ]}>
+        <TextInput
+          ref={innerRef}
+          editable={!disabled}
+          placeholderTextColor={colors.GRAY_500}
+          style={[styles.input, disabled && styles.disabled]}
+          autoCapitalize="none"
+          spellCheck={false}
+          autoCorrect={false}
+          {...props}
+        />
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  emailInput: {
-    flex: 1, // 입력 필드가 버튼을 제외한 공간을 채움
-    height: 50,
-    marginRight: 10, // 버튼과의 간격
-    backgroundColor: colors.GRAY_100,
+  container: {
     borderRadius: 5,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    backgroundColor: colors.GRAY_100,
+    padding: deviceHeight > 700 ? 14 : 10,
+    width: deviceWidth * 0.605,
+    height: deviceHeight * 0.06,
+  },
+
+  input: {
+    fontSize: 14,
+    color: colors.BLACK,
+    padding: 0,
+    fontWeight: '700',
+  },
+  disabled: {
+    backgroundColor: colors.GRAY_300,
+    color: colors.GRAY_700,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: colors.RED_300,
+    backgroundColor: colors.RED_100,
+  },
+  inputFocused: {
+    borderWidth: 1,
+    borderColor: colors.BLUE_700,
+    backgroundColor: colors.BLUE_100,
   },
 });
 

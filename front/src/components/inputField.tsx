@@ -15,6 +15,7 @@ interface inputFieldProps extends TextInputProps {
   error?: string;
   touched?: boolean;
   inValid?: boolean;
+  focused?: boolean;
 }
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -26,6 +27,7 @@ function inputField({
   error,
   touched,
   inValid = false,
+  focused,
   ...props
 }: inputFieldProps) {
   const innerRef = useRef<TextInput | null>(null);
@@ -36,7 +38,13 @@ function inputField({
 
   return (
     <Pressable onPress={handlePressInput}>
-      <View style={[styles.container, disabled && styles.disabled]}>
+      <View
+        style={[
+          styles.container,
+          disabled && styles.disabled,
+          focused && styles.inputFocused, // 포커스 되었을 때 스타일 적용
+          touched && Boolean(error) && styles.inputError,
+        ]}>
         <TextInput
           ref={innerRef}
           editable={!disabled}
@@ -54,11 +62,11 @@ function inputField({
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 0,
     borderRadius: 5,
     backgroundColor: colors.GRAY_100,
     padding: deviceHeight > 700 ? 14 : 10,
-    width: deviceWidth * 0.8,
+    width: deviceWidth * 0.84,
+    height: deviceHeight * 0.06,
   },
   input: {
     fontSize: 14,
@@ -69,6 +77,16 @@ const styles = StyleSheet.create({
   disabled: {
     backgroundColor: colors.GRAY_300,
     color: colors.GRAY_700,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: colors.RED_300,
+    backgroundColor: colors.RED_100,
+  },
+  inputFocused: {
+    borderWidth: 1,
+    borderColor: colors.BLUE_700,
+    backgroundColor: colors.BLUE_100,
   },
 });
 

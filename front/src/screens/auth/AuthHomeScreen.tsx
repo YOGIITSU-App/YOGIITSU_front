@@ -59,6 +59,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
             />
             <InputField
               placeholder="비밀번호 입력"
+              inputMode="text"
               secureTextEntry
               {...login.getTextInputProps('password')}
             />

@@ -43,7 +43,7 @@ function AuthStackNavigator() {
           headerTitle: '아이디찾기',
           headerTitleAlign: 'center', // 상단 제목 중앙 정렬
           headerTitleStyle: {
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: '700',
             color: colors.BLACK_500,
           },
@@ -60,7 +60,7 @@ function AuthStackNavigator() {
           headerTitle: '비밀번호찾기',
           headerTitleAlign: 'center', // 상단 제목 중앙 정렬
           headerTitleStyle: {
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: '700',
             color: colors.BLACK_500,
           },
@@ -77,7 +77,7 @@ function AuthStackNavigator() {
           headerTitle: '회원가입',
           headerTitleAlign: 'center', // 상단 제목 중앙 정렬
           headerTitleStyle: {
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: '700',
             color: colors.BLACK_500,
           },

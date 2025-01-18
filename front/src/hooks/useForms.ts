@@ -9,11 +9,9 @@ function useForm<T>({initialValue, validate}: useFormProps<T>) {
   const [values, setValues] = useState(initialValue);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [focused, setFocused] = useState<Record<string, boolean>>({});
 
   const handleChangeText = (name: keyof T, text: string) => {
-    // 값을 숫자로 변환해야 한다면, 필요한 경우 이 부분을 수정할 수 있습니다.
-    const parsedValue = isNaN(Number(text)) ? text : Number(text);
-
     setValues({
       ...values,
       [name]: text,
@@ -25,14 +23,26 @@ function useForm<T>({initialValue, validate}: useFormProps<T>) {
       ...touched,
       [name]: true,
     });
+    setFocused({
+      ...focused,
+      [name]: false,
+    });
+  };
+
+  const handleFocus = (name: keyof T) => {
+    setFocused({
+      ...focused,
+      [name]: true,
+    });
   };
 
   function getTextInputProps(name: keyof T) {
     const value = values[name];
     const onChangeText = (text: string) => handleChangeText(name, text);
     const onBlur = () => handleBlur(name);
+    const onFocus = () => handleFocus(name);
 
-    return {value: String(value), onChangeText};
+    return {value: String(value), onChangeText, onBlur, onFocus};
   }
   useEffect(() => {
     const validationErrors = validate(values);
@@ -41,7 +51,7 @@ function useForm<T>({initialValue, validate}: useFormProps<T>) {
 
   const isFormValid = Object.values(errors).every(error => error === '');
 
-  return {values, isFormValid, getTextInputProps};
+  return {values, errors, touched, focused, isFormValid, getTextInputProps};
 }
 
 export default useForm;
