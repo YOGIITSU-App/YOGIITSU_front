@@ -64,3 +64,6 @@ yarn-error.log
 
 # testing
 /coverage
+
+# .env 파일 깃허브에서 제외
+.env
