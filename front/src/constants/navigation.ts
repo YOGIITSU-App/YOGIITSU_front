@@ -6,4 +6,10 @@ const authNavigations = {
   FINDPW: 'FindPw',
 } as const;
 
-export {authNavigations};
+const mapNavigation = {
+  MAPHOME: 'MapHome',
+  SEARCH: 'Search',
+  PLACEDETAIL: 'PlaceDetail',
+} as const;
+
+export {authNavigations, mapNavigation};

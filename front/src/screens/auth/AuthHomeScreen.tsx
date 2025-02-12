@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    // paddingHorizontal: 10, // ScrollView의 내용 정렬 스타일
   },
   imageContainer: {
     flex: 3,
