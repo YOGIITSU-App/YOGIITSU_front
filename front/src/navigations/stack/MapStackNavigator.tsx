@@ -2,16 +2,42 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import MapHomeScreen from '../../screens/map/MapHomeScreen';
 import SearchScreen from '../../screens/map/SearchScreen';
-import PlaceDetailScreen from '../../screens/map/PlaceDetailScreen';
 import {mapNavigation} from '../../constants';
+import RouteSelectionScreen from '../../screens/map/RouteSelectionScreen';
+import RouteResultScreen from '../../screens/map/RouteResultScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
   [mapNavigation.MAPHOME]:
-    | {selectedPlace?: string; startLocation?: string; endLocation?: string}
+    | {
+        selectedPlace?: string;
+        selectedLocation?: string; // ✅ 추가
+        selectionType?: 'start' | 'end'; // ✅ 추가
+        startLocation?: string;
+        startLocationName?: string;
+        endLocation?: string;
+        endLocationName?: string;
+      }
     | undefined;
-  [mapNavigation.SEARCH]: undefined;
-  [mapNavigation.PLACEDETAIL]: {placeName: string}; // ✅ 장소 정보를 전달받을 수 있도록 설정
+  [mapNavigation.SEARCH]: {
+    selectionType: 'start' | 'end';
+    previousStartLocation?: string;
+    previousStartLocationName?: string;
+    previousEndLocation?: string;
+    previousEndLocationName?: string;
+  };
+  [mapNavigation.ROUTE_SELECTION]: {
+    startLocation?: string;
+    startLocationName?: string;
+    endLocation?: string;
+    endLocationName?: string;
+  };
+  [mapNavigation.ROUTE_RESULT]: {
+    startLocation: string;
+    startLocationName: string;
+    endLocation: string;
+    endLocationName: string;
+  };
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -30,9 +56,14 @@ function MapStackNavigator() {
         options={{title: '검색'}}
       />
       <Stack.Screen
-        name="PlaceDetail"
-        component={PlaceDetailScreen}
-        options={{title: '장소 정보'}}
+        name={mapNavigation.ROUTE_SELECTION}
+        component={RouteSelectionScreen}
+        options={{headerTitle: '출발 & 도착 선택'}}
+      />
+      <Stack.Screen
+        name={mapNavigation.ROUTE_RESULT}
+        component={RouteResultScreen}
+        options={{title: '길찾기 결과'}}
       />
     </Stack.Navigator>
   );
