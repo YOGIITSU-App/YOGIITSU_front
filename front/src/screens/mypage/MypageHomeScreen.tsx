@@ -1,14 +1,14 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-function FeedHomeScreen() {
+function MypageHomeScreen() {
   return (
     <View>
-      <Text>피드</Text>
+      <Text>마이 페이지</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({});
 
-export default FeedHomeScreen;
+export default MypageHomeScreen;

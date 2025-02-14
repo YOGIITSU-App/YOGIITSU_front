@@ -1,14 +1,14 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-function CalendarHomeScreen() {
+function FavoriteHomeScreen() {
   return (
     <View>
-      <Text>캘린더</Text>
+      <Text>즐겨찾기</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({});
 
-export default CalendarHomeScreen;
+export default FavoriteHomeScreen;

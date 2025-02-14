@@ -9,6 +9,7 @@ import {
   Platform,
   Animated,
   Text,
+  Image,
 } from 'react-native';
 import MapView, {PROVIDER_GOOGLE, Marker, Region} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
@@ -16,6 +17,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
+import {colors} from '../../constants';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -169,13 +171,18 @@ function MapHomeScreen() {
           () =>
             navigation.navigate(mapNavigation.SEARCH, {selectionType: 'start'}) // ✅ 타입 오류 해결
         }>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="어디로 떠나볼까요?"
-          editable={false}
-        />
+        <View style={styles.searchBoxInput}>
+          <Image
+            source={require('../../assets/Search-icon.png')}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="어디로 떠나볼까요?"
+            editable={false}
+          />
+        </View>
       </TouchableOpacity>
-
       {/* ✅ 지도 */}
       <MapView
         style={styles.map}
@@ -212,12 +219,15 @@ function MapHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
+  container: {
+    flex: 1, // 화면 전체를 차지
+  },
+
   searchBox: {
     position: 'absolute',
-    top: 20,
-    left: '10%',
-    width: deviceWidth * 0.8,
+    top: 30,
+    left: '5%',
+    width: deviceWidth * 0.9,
     height: deviceHeight * 0.06,
     paddingHorizontal: 10,
     backgroundColor: 'white',
@@ -229,7 +239,21 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 10,
   },
-  searchInput: {fontSize: 16, color: '#999'},
+  searchBoxInput: {
+    flexDirection: 'row',
+    alignItems: 'center', // ✅ 세로 중앙 정렬
+  },
+  searchIcon: {
+    width: 20, // ✅ 아이콘 크기 조정
+    height: 20,
+    marginRight: 8, // ✅ 아이콘과 텍스트 간격 조정
+  },
+  searchInput: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.GRAY_500,
+    flex: 1, // ✅ 남은 공간을 차지하도록 설정
+  },
   map: {flex: 1},
   bottomSheet: {
     position: 'absolute',

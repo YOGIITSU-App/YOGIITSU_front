@@ -1,18 +1,17 @@
-import {createDrawerNavigator} from '@react-navigation/drawer';
-import FeedHomeScreen from '../../screens/feed/FeedHomeScreen';
-import CalendarHomeScreen from '../../screens/calendar/CalendarHomeScreen';
-import MapHomeScreen from '../../screens/map/MapHomeScreen';
-import MapStackNavigator from '../stack/MapStackNavigator';
+import {createStackNavigator} from '@react-navigation/stack';
+import BottomTabNavigator from './BottomTabNavigator';
 
-const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
 function MainDrawerNavigator() {
   return (
-    <Drawer.Navigator>
-      <Drawer.Screen name="Map" component={MapStackNavigator} />
-      <Drawer.Screen name="FeedHome" component={FeedHomeScreen} />
-      <Drawer.Screen name="CalendarHome" component={CalendarHomeScreen} />
-    </Drawer.Navigator>
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Map"
+        component={BottomTabNavigator}
+        options={{headerShown: false}}
+      />
+    </Stack.Navigator>
   );
 }
 
