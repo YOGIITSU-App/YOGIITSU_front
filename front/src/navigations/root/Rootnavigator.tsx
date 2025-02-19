@@ -1,11 +1,11 @@
 import React from 'react';
 import AuthStackNavigator from '../stack/AuthStackNavigator';
-import MainDrawerNavigator from '../drawer/MainDrawerNavigation';
+import BottomTabNavigator from '../drawer/BottomTabNavigator';
 
 function Rootnavigator() {
   const isLoggedIn = true;
 
-  return <>{isLoggedIn ? <MainDrawerNavigator /> : <AuthStackNavigator />}</>;
+  return <>{isLoggedIn ? <BottomTabNavigator /> : <AuthStackNavigator />}</>;
 }
 
 export default Rootnavigator;

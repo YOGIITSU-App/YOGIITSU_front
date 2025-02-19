@@ -6,7 +6,7 @@ import {authNavigations, colors} from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import FindIdScreen from '../../screens/auth/FindIdScreen';
 import FindPwScreen from '../../screens/auth/FindPwScreen';
-import MainDrawerNavigator from '../drawer/MainDrawerNavigation';
+import BottomTabNavigator from '../drawer/BottomTabNavigator';
 
 export type AuthStackParamList = {
   [authNavigations.AUTH_HOME]: undefined;
@@ -33,7 +33,7 @@ function AuthStackNavigator() {
       />
       <Stack.Screen
         name={authNavigations.LOGIN}
-        component={MainDrawerNavigator}
+        component={BottomTabNavigator}
         options={{headerTitle: '로그인'}}
       />
       <Stack.Screen
