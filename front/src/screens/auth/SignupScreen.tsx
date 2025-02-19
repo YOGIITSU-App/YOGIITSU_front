@@ -65,7 +65,7 @@ function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior="padding">
+      <KeyboardAvoidingView behavior="height">
         <ScrollView
           contentContainerStyle={{flexGrow: 1}}
           keyboardShouldPersistTaps="handled">
@@ -119,11 +119,12 @@ function SignupScreen() {
                 inValid={!codemessagecheck.isFormValid}
               />
             </View>
-            <Text style={styles.emailText}>*아이디 찾기에 사용됩니다.</Text>
+            <Text style={styles.emailText}>* 아이디 찾기에 사용됩니다.</Text>
             <View style={styles.smallContainer}>
               <MiniInputField
                 placeholder="아이디"
                 inputMode="text"
+                keyboardType="ascii-capable"
                 focused={idcheak.focused.id}
                 {...signup.getTextInputProps('id')}
                 {...idcheak.getTextInputProps('id')}

@@ -55,6 +55,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
             <InputField
               placeholder="아이디 입력"
               inputMode="text"
+              keyboardType="ascii-capable"
               {...login.getTextInputProps('id')}
             />
             <InputField

@@ -16,12 +16,17 @@ function validateLogin(values: LoginInfo) {
     password: '',
   };
 
-  if (values.id.length < 4) {
-    Loginerrors.id = '아이디는 4자 이상이어야 합니다.';
+  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,8}$/.test(values.id)) {
+    Loginerrors.id = '아이디는 4~8자의 영문과 숫자를 포함해야 합니다.';
   }
 
-  if (values.password.length < 4) {
-    Loginerrors.password = '비밀번호는 4자 이상이어야 합니다.';
+  if (
+    !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(
+      values.password,
+    )
+  ) {
+    Loginerrors.password =
+      '비밀번호는 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
   }
 
   return Loginerrors;
@@ -37,8 +42,8 @@ function validateId(values: IdInfo) {
     id: '',
   };
 
-  if (values.id.length < 4) {
-    Iderrors.id = '아이디는 4자 이상이어야 합니다.';
+  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,8}$/.test(values.id)) {
+    Iderrors.id = '아이디는 4~8자의 영문과 숫자를 포함해야 합니다.';
   }
 
   return Iderrors;
@@ -54,8 +59,13 @@ function validatePw(values: PwInfo) {
     password: '',
   };
 
-  if (values.password.length < 4) {
-    Pwerrors.password = '비밀번호는 4자 이상이어야 합니다.';
+  if (
+    !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(
+      values.password,
+    )
+  ) {
+    Pwerrors.password =
+      '비밀번호는 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
   }
 
   return Pwerrors;

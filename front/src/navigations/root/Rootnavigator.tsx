@@ -3,7 +3,7 @@ import AuthStackNavigator from '../stack/AuthStackNavigator';
 import BottomTabNavigator from '../drawer/BottomTabNavigator';
 
 function Rootnavigator() {
-  const isLoggedIn = true;
+  const isLoggedIn = false;
 
   return <>{isLoggedIn ? <BottomTabNavigator /> : <AuthStackNavigator />}</>;
 }
