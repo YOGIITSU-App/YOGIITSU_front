@@ -4,6 +4,7 @@ import MapStackNavigator from '../stack/MapStackNavigator';
 import FavoriteHomeScreen from '../../screens/favorite/FavoriteHomeScreen';
 import MypageHomeScreen from '../../screens/mypage/MypageHomeScreen';
 import {colors} from '../../constants';
+import MypageStackNavigator from '../stack/MypageStackNavigator';
 
 const BottomTab = createBottomTabNavigator();
 const deviceHeight = Dimensions.get('screen').height;
@@ -58,17 +59,7 @@ function BottomTabNavigator() {
       <BottomTab.Screen name="즐겨찾기" component={FavoriteHomeScreen} />
       <BottomTab.Screen
         name="MY"
-        component={MypageHomeScreen}
-        options={{
-          headerShown: true,
-          title: 'MY',
-          headerTitleAlign: 'center',
-          headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: '600',
-            color: colors.BLACK_500,
-          },
-        }}
+        component={MypageStackNavigator} // ✅ 변경!
       />
     </BottomTab.Navigator>
   );

@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Button,
   Dimensions,
   StyleSheet,
   Text,
@@ -9,24 +8,35 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {colors} from '../../constants';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {MypageStackParamList} from '../../navigations/stack/MypageStackNavigator';
+
+// 🔹 네비게이션 타입 정의
+type MypageHomeScreenNavigationProp = StackNavigationProp<
+  MypageStackParamList,
+  'MypageHome'
+>;
 
 const deviceWidth = Dimensions.get('screen').width;
 
 function MypageHomeScreen() {
+  const navigation = useNavigation<MypageHomeScreenNavigationProp>();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.subContainer}>
         <Text style={styles.subTitleText}>계정</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => console.log('비밀번호 변경')}>
+          onPress={() => navigation.navigate('ChangePw')}>
           <Text style={styles.text}>비밀번호 변경</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => console.log('이메일 설정')}>
+          onPress={() => navigation.navigate('EmailSetting')}>
           <Text style={styles.text}>이메일 설정</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
@@ -36,14 +46,14 @@ function MypageHomeScreen() {
         <Text style={styles.subTitleText}>이용안내</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => console.log('공지사항')}>
+          onPress={() => navigation.navigate('Notice')}>
           <Text style={styles.text}>공지사항</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => console.log('문의')}>
+          onPress={() => navigation.navigate('Inquiry')}>
           <Text style={styles.text}>문의</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
@@ -53,7 +63,7 @@ function MypageHomeScreen() {
         <Text style={styles.subTitleText}>기타</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => console.log('회원탈퇴')}>
+          onPress={() => navigation.navigate('DeleteAccountWarning')}>
           <Text style={styles.text}>회원탈퇴</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
@@ -76,7 +86,7 @@ const styles = StyleSheet.create({
   },
   subContainer: {
     marginTop: 20,
-    paddingHorizontal: deviceWidth * 0.04, // ✅ 내부 요소만 좌우 여백
+    paddingHorizontal: deviceWidth * 0.04,
     gap: 3,
     marginBottom: '5%',
     borderBottomWidth: 1,
