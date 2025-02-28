@@ -1,17 +1,19 @@
 import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import MypageHomeScreen from '../../screens/mypage/MypageHomeScreen';
-import ChangePwScreen from '../../screens/mypage/ChangePwScreen';
 import EmailSettingScreen from '../../screens/mypage/EmailSettingScreen';
 import NoticeScreen from '../../screens/mypage/NoticeScreen';
 import InquiryScreen from '../../screens/mypage/InquiryScreen';
 import {colors} from '../../constants';
 import DeleteAccountWarningScreen from '../../screens/mypage/DeleteAccount/DeleteAccountWarningScreen';
 import DeleteAccountScreen from '../../screens/mypage/DeleteAccount/DeleteAccountScreen';
+import ChangePwCodeConfirmScreen from '../../screens/mypage/ChangePw/ChangePwCodeConfirmScreen';
+import ChangePwScreen from '../../screens/mypage/ChangePw/ChangePwScreen';
 
 // 🔹 네비게이션 타입 정의
 export type MypageStackParamList = {
   MypageHome: undefined;
+  ChangePwCodeConfirm: undefined;
   ChangePw: undefined;
   EmailSetting: undefined;
   Notice: undefined;
@@ -44,6 +46,11 @@ function MypageStackNavigator() {
         options={{title: 'MY'}}
       />
       <Stack.Screen
+        name="ChangePwCodeConfirm"
+        component={ChangePwCodeConfirmScreen}
+        options={{title: '비밀번호 변경'}}
+      />
+      <Stack.Screen
         name="ChangePw"
         component={ChangePwScreen}
         options={{title: '비밀번호 변경'}}
@@ -71,9 +78,7 @@ function MypageStackNavigator() {
       <Stack.Screen
         name="DeleteAccount"
         component={DeleteAccountScreen}
-        options={{
-          title: '회원 탈퇴',
-        }}
+        options={{title: '회원 탈퇴'}}
       />
     </Stack.Navigator>
   );

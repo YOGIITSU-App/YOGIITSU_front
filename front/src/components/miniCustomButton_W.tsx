@@ -1,8 +1,14 @@
 import React from 'react';
-import {Dimensions, Pressable, StyleSheet, Text} from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  PressableProps,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {colors} from '../constants';
 
-interface miniCustomButton_WProps {
+interface miniCustomButton_WProps extends PressableProps {
   label: string;
   inValid?: boolean;
 }
@@ -11,10 +17,15 @@ const deviceWidth = Dimensions.get('screen').width;
 
 const deviceHeight = Dimensions.get('screen').height;
 
-function miniCustomButton_W({label, inValid = false}: miniCustomButton_WProps) {
+function miniCustomButton_W({
+  label,
+  inValid = false,
+  ...props
+}: miniCustomButton_WProps) {
   return (
     <Pressable
       disabled={inValid}
+      {...props}
       style={({pressed}) => [
         styles.container,
         pressed ? styles.filledPressed : styles.filled,
@@ -35,9 +46,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inValid: {
-    backgroundColor: colors.WHITE,
+    backgroundColor: colors.GRAY_300,
     borderWidth: 1,
-    borderColor: colors.GRAY_300,
+    borderColor: colors.WHITE,
   },
   filled: {
     backgroundColor: colors.BLUE_700,
@@ -50,7 +61,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   filledText: {
-    color: colors.GRAY_500,
+    color: colors.WHITE,
   },
 });
 

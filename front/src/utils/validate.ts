@@ -16,17 +16,17 @@ function validateLogin(values: LoginInfo) {
     password: '',
   };
 
-  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,8}$/.test(values.id)) {
-    Loginerrors.id = '아이디는 4~8자의 영문과 숫자를 포함해야 합니다.';
+  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,10}$/.test(values.id)) {
+    Loginerrors.id = '아이디는 4~10자의 영문과 숫자를 포함해야 합니다.';
   }
 
   if (
-    !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(
+    !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
       values.password,
     )
   ) {
     Loginerrors.password =
-      '비밀번호는 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
+      '비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.';
   }
 
   return Loginerrors;
@@ -42,8 +42,8 @@ function validateId(values: IdInfo) {
     id: '',
   };
 
-  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,8}$/.test(values.id)) {
-    Iderrors.id = '아이디는 4~8자의 영문과 숫자를 포함해야 합니다.';
+  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,10}$/.test(values.id)) {
+    Iderrors.id = '아이디는 4~10자의 영문과 숫자를 포함해야 합니다.';
   }
 
   return Iderrors;
@@ -60,12 +60,12 @@ function validatePw(values: PwInfo) {
   };
 
   if (
-    !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(
+    /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
       values.password,
     )
   ) {
     Pwerrors.password =
-      '비밀번호는 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
+      '비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.';
   }
 
   return Pwerrors;
@@ -79,6 +79,15 @@ function validatePwConfirm(values: PwInfo & {passwordConfirm: string}) {
     password: '',
     passwordConfirm: '',
   };
+
+  if (
+    !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
+      values.password,
+    )
+  ) {
+    PwConfirmerrors.password =
+      '비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.';
+  }
 
   if (values.password !== values.passwordConfirm) {
     PwConfirmerrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
@@ -141,11 +150,16 @@ function validateSignup(
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
     Signuperrors.email = '올바른 이메일 형식이 아닙니다.';
   }
-  if (values.id.length < 4) {
-    Signuperrors.id = '아이디는 4자 이상이어야 합니다.';
+  if (!/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,10}$/.test(values.id)) {
+    Signuperrors.id = '아이디는 4~10자의 영문과 숫자를 포함해야 합니다.';
   }
-  if (values.password.length < 4) {
-    Signuperrors.password = '비밀번호는 4자 이상이어야 합니다.';
+  if (
+    !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
+      values.password,
+    )
+  ) {
+    Signuperrors.password =
+      '비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.';
   }
   if (values.password !== values.passwordConfirm) {
     Signuperrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';

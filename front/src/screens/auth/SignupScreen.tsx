@@ -63,6 +63,13 @@ function SignupScreen() {
     validate: validateId,
   });
 
+  const pwcheak = useForm({
+    initialValue: {
+      password: '',
+    },
+    validate: validatePw,
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior="height">
@@ -138,6 +145,7 @@ function SignupScreen() {
                 secureTextEntry
                 // focused={signup.focused.password}
                 {...signup.getTextInputProps('password')}
+                {...pwcheak.getTextInputProps('password')}
               />
               <InputField
                 placeholder="비밀번호 확인"

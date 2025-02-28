@@ -29,7 +29,7 @@ function MypageHomeScreen() {
         <Text style={styles.subTitleText}>계정</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('ChangePw')}>
+          onPress={() => navigation.navigate('ChangePwCodeConfirm')}>
           <Text style={styles.text}>비밀번호 변경</Text>
           <Text style={styles.arrow}>〉</Text>
         </TouchableOpacity>
