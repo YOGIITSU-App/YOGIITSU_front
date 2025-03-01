@@ -5,8 +5,6 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import InputField from '../../../components/inputField';
@@ -16,15 +14,15 @@ import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validateCodeMessage, validateEmail} from '../../../utils';
 import {useNavigation} from '@react-navigation/native';
-import MiniInputField from '../../../components/miniInputField';
-import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import {StackNavigationProp} from '@react-navigation/stack';
+import MiniCustomButton_W from '../../../components/miniCustomButton_W';
+import MiniInputField from '../../../components/miniInputField';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
-function ChangePwCodeConfirmScreen() {
+function CurrentEmailCodeConfirmScreen() {
   const emailcheak = useForm({
     initialValue: {
       email: '',
@@ -62,9 +60,9 @@ function ChangePwCodeConfirmScreen() {
         {/* ✅ 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
           <>
-            <Text style={styles.guideText}>비밀번호를 변경하기 위해</Text>
+            <Text style={styles.guideText}>이메일을 변경하기 위해</Text>
             <Text style={styles.guideText}>
-              <Text style={styles.highlightedText}>가입 이메일</Text>을 입력해
+              <Text style={styles.highlightedText}>기존 이메일</Text>을 입력해
               주세요
             </Text>
           </>
@@ -149,7 +147,7 @@ function ChangePwCodeConfirmScreen() {
               inValid={!codemessagecheck.isFormValid}
               onPress={() => {
                 if (codemessagecheck.isFormValid) {
-                  navigation.navigate('ChangePw'); // ✅ ChangePwScreen으로 이동
+                  navigation.navigate('ChangeNewEmail'); // ✅ ChangeNewEmailScreen으로 이동
                 }
               }}
             />
@@ -235,4 +233,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChangePwCodeConfirmScreen;
+export default CurrentEmailCodeConfirmScreen;

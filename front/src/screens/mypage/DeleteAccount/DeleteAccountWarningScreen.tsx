@@ -17,14 +17,8 @@ const deviceWidth = Dimensions.get('screen').width;
 
 const deviceHeight = Dimensions.get('screen').height;
 
-// ✅ 네비게이션 타입 지정
-type NavigationProp = StackNavigationProp<
-  MypageStackParamList,
-  'DeleteAccount'
->;
-
 function DeleteAccountWarningScreen() {
-  const navigation = useNavigation<NavigationProp>(); // ✅ 타입 적용
+  const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
   useEffect(() => {
     // ✅ 화면에 들어오면 바텀 탭 숨기기
@@ -47,7 +41,7 @@ function DeleteAccountWarningScreen() {
       <View style={styles.centeredContainer}>
         <View style={styles.warningBox}>
           <Image
-            source={require('../../../assets/Warning-icon.png')}
+            source={require('../../../assets/Warning-icon-black.png')}
             style={styles.warningIcon}
           />
           <Text style={styles.warningText}> 탈퇴 전에 꼭 확인해주세요</Text>

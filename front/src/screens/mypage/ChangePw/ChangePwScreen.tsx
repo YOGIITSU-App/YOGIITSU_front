@@ -7,10 +7,14 @@ import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validateEmail, validatePw, validatePwConfirm} from '../../../utils';
 import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 
 const deviceWidth = Dimensions.get('screen').width;
 
 function ChangePwScreen() {
+  const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
+
   const pwconfirmcheak = useForm({
     initialValue: {
       password: '',
@@ -18,8 +22,6 @@ function ChangePwScreen() {
     },
     validate: validatePwConfirm,
   });
-
-  const navigation = useNavigation();
 
   useEffect(() => {
     // ✅ 화면에 들어오면 바텀 탭 숨기기
@@ -80,6 +82,11 @@ function ChangePwScreen() {
             variant="filled"
             size="large"
             inValid={!pwconfirmcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
+            onPress={() => {
+              if (pwconfirmcheak.isFormValid) {
+                navigation.navigate('ChangePwComplete'); // ✅ ChangePwCompleteScreen으로 이동
+              }
+            }}
           />
         </View>
       </View>

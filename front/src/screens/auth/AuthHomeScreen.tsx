@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext} from 'react';
 
 import {
   Dimensions,
@@ -19,13 +19,21 @@ import InputField from '../../components/inputField';
 import useForm from '../../hooks/useForms';
 import {validateLogin} from '../../utils';
 import {colors} from '../../constants/colors';
+import {
+  AuthContext,
+  RootStackParamList,
+} from '../../navigations/root/Rootnavigator';
+import {CommonActions} from '@react-navigation/native';
 
 type AuthHomeScreenProps = StackScreenProps<
-  AuthStackParamList,
+  AuthStackParamList & RootStackParamList,
   typeof authNavigations.AUTH_HOME
 >;
 
 function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
+  const authContext = useContext(AuthContext); // ✅ Context 가져오기
+  if (!authContext) return null; // ✅ null 체크 (안전한 코드)
+
   const login = useForm({
     initialValue: {
       id: '',
@@ -71,7 +79,15 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
               variant="filled"
               size="large"
               inValid={!login.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-              onPress={handleSubmit}
+              onPress={() => {
+                authContext.setIsLoggedIn(true); // ✅ 로그아웃 처리
+
+                // ✅ 네비게이션 스택을 초기화하고 AuthStack으로 이동
+                navigation.reset({
+                  index: 0,
+                  routes: [{name: 'AuthStack'}], // RootStack 내에서 정의된 AuthStack으로 이동
+                });
+              }}
             />
           </View>
           <View style={styles.buttonContainer}>

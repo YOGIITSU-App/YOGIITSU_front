@@ -1,5 +1,3 @@
-import {UserSelect} from 'react-native-gesture-handler/lib/typescript/handlers/gestureHandlerCommon';
-
 type UserInfomation = {
   id: string;
   password: string;
@@ -60,7 +58,7 @@ function validatePw(values: PwInfo) {
   };
 
   if (
-    /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
+    !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[a-zA-Z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(
       values.password,
     )
   ) {
@@ -115,24 +113,23 @@ function validateEmail(values: EmailInfo) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-// 메일 인증번호 유효성 검사
-type CodeInfo = {codemessage: number};
+type CodeInfo = {codemessage: string};
 
 function validateCodeMessage(values: CodeInfo) {
-  const CodeMessagerrors = {codemessage: ''};
+  const CodeMessageErrors = {codemessage: ''};
 
-  if (values.codemessage.toString().length < 6) {
-    CodeMessagerrors.codemessage = '인증번호는 6자리 숫자입니다.';
+  if (!/^[A-Z]{6}$/.test(values.codemessage)) {
+    CodeMessageErrors.codemessage = '인증번호는 6자의 영문 대문자입니다.';
   }
 
-  return CodeMessagerrors;
+  return CodeMessageErrors;
 }
 
 ///////////////////////////////////////////////////////////////////////////
 
 // 회원가입 유효성 검사
 function validateSignup(
-  values: UserInfomation & {passwordConfirm: string} & {codemessage: number},
+  values: UserInfomation & {passwordConfirm: string} & {codemessage: string},
 ) {
   const Signuperrors = {
     username: '',
@@ -143,8 +140,9 @@ function validateSignup(
     codemessage: '',
   };
 
-  if (values.username.length < 2) {
-    Signuperrors.username = '사용자 이름은 2자 이상이어야 합니다.'; // 올바른 키 사용
+  if (!/^[a-zA-Z가-힣]{2,}$/.test(values.username)) {
+    Signuperrors.username =
+      '사용자 이름은 영어 또는 한글 2자 이상이어야 합니다.';
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
@@ -165,8 +163,8 @@ function validateSignup(
     Signuperrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
   }
 
-  if (values.codemessage.toString().length < 6) {
-    Signuperrors.codemessage = '인증번호는 6자리 숫자입니다.';
+  if (!/^[A-Z]{6}$/.test(values.codemessage)) {
+    Signuperrors.codemessage = '인증번호는 6자의 영문 대문자입니다.';
   }
 
   return Signuperrors;

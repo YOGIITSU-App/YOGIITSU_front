@@ -37,7 +37,7 @@ function SignupScreen() {
       username: '',
       email: '',
       passwordConfirm: '',
-      codemessage: 0,
+      codemessage: '',
     },
     validate: validateSignup,
   });
@@ -51,7 +51,7 @@ function SignupScreen() {
 
   const codemessagecheck = useForm({
     initialValue: {
-      codemessage: 0,
+      codemessage: '',
     },
     validate: validateCodeMessage,
   });
@@ -113,11 +113,11 @@ function SignupScreen() {
                 {...signup.getTextInputProps('codemessage')}
                 {...codemessagecheck.getTextInputProps('codemessage')}
                 onChangeText={text => {
-                  // 6자리 이상 입력을 제한
-                  if (text.length <= 6) {
+                  const upperText = text.toUpperCase(); // ✅ 입력값을 대문자로 변환
+                  if (upperText.length <= 6) {
                     codemessagecheck
                       .getTextInputProps('codemessage')
-                      .onChangeText(text);
+                      .onChangeText(upperText);
                   }
                 }}
               />
@@ -138,31 +138,43 @@ function SignupScreen() {
               />
               <MiniCustomButton label="확인" inValid={!idcheak.isFormValid} />
             </View>
-            <View style={styles.pwBigInputfield}>
-              <InputField
-                placeholder="비밀번호"
-                inputMode="text"
-                secureTextEntry
-                // focused={signup.focused.password}
-                {...signup.getTextInputProps('password')}
-                {...pwcheak.getTextInputProps('password')}
-              />
-              <InputField
-                placeholder="비밀번호 확인"
-                inputMode="text"
-                secureTextEntry
-                touched={signup.touched.passwordConfirm}
-                error={signup.errors.passwordConfirm}
-                // focused={signup.focused.passwordConfirm}
-                {...signup.getTextInputProps('passwordConfirm')}
-              />
-            </View>
-            <View style={styles.errorMessageContainer}>
-              <CustomText
-                text="위의 비밀번호와 일치하지 않습니다."
-                touched={signup.touched.passwordConfirm}
-                error={signup.errors.passwordConfirm}
-              />
+            <View style={styles.pwContainer}>
+              <View style={styles.pwBigInputfield}>
+                <InputField
+                  placeholder="비밀번호"
+                  inputMode="text"
+                  secureTextEntry
+                  touched={signup.touched.password}
+                  error={signup.errors.password}
+                  // focused={signup.focused.password}
+                  {...signup.getTextInputProps('password')}
+                />
+              </View>
+              <View style={styles.errorMessageContainer}>
+                <CustomText
+                  text="영문, 숫자, 특수문자를 포함한 8자리 이상"
+                  touched={signup.touched.password}
+                  error={signup.errors.password}
+                />
+              </View>
+              <View style={styles.pwBigInputfield}>
+                <InputField
+                  placeholder="비밀번호 확인"
+                  inputMode="text"
+                  secureTextEntry
+                  touched={signup.touched.passwordConfirm}
+                  error={signup.errors.passwordConfirm}
+                  // focused={signup.focused.passwordConfirm}
+                  {...signup.getTextInputProps('passwordConfirm')}
+                />
+              </View>
+              <View style={styles.errorMessageContainer}>
+                <CustomText
+                  text="위의 비밀번호와 일치하지 않습니다."
+                  touched={signup.touched.passwordConfirm}
+                  error={signup.errors.passwordConfirm}
+                />
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -209,13 +221,6 @@ const styles = StyleSheet.create({
     marginBottom: 15, // 이메일 입력 필드와 다음 요소 간격,
     gap: deviceWidth * 0.025,
   },
-  smallInputContainer: {
-    borderRadius: 5,
-    backgroundColor: colors.GRAY_100,
-    padding: deviceHeight > 700 ? 14 : 10,
-    width: deviceWidth * 0.605,
-    height: deviceHeight * 0.06,
-  },
   smallInputText: {
     fontSize: 14,
     color: colors.BLACK,
@@ -227,16 +232,19 @@ const styles = StyleSheet.create({
     marginRight: deviceWidth * 0.03,
     fontSize: 12,
     color: colors.GRAY_500,
-    marginBottom: '20%',
+    marginBottom: '15%',
+  },
+  pwContainer: {
+    marginTop: '8%',
   },
   pwBigInputfield: {
-    paddingTop: 30, // 위쪽 여백 조정
+    paddingTop: 20, // 위쪽 여백 조정
     gap: 20,
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
     marginLeft: deviceWidth * 0.04,
-    marginBottom: '15%',
+    // marginBottom: '15%',
   },
 });
 
