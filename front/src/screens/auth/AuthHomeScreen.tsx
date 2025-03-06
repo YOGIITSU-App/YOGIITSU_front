@@ -1,8 +1,6 @@
 import React, {useContext} from 'react';
 
 import {
-  Dimensions,
-  Image,
   KeyboardAvoidingView,
   SafeAreaView,
   ScrollView,
@@ -23,7 +21,7 @@ import {
   AuthContext,
   RootStackParamList,
 } from '../../navigations/root/Rootnavigator';
-import {CommonActions} from '@react-navigation/native';
+import Yogiitsu from '../../assets/Yogiitsu.svg';
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -53,11 +51,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
           <View style={styles.imageContainer}>
-            <Image
-              resizeMode="contain"
-              style={styles.image}
-              source={require('../../assets/yogiitsu.png')}
-            />
+            <Yogiitsu />
           </View>
           <View style={styles.inputContainer}>
             <InputField
@@ -126,11 +120,8 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     flex: 3,
-    width: Dimensions.get('screen').width / 2,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
+    alignContent: 'center',
+    justifyContent: 'center',
   },
   inputContainer: {
     flex: 1,

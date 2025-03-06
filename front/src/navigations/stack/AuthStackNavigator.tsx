@@ -6,7 +6,7 @@ import {authNavigations, colors} from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import FindIdScreen from '../../screens/auth/FindIdScreen';
 import FindPwScreen from '../../screens/auth/FindPwScreen';
-import BottomTabNavigator from '../drawer/BottomTabNavigator';
+import BottomTabNavigator from '../tab/BottomTabNavigator';
 
 export type AuthStackParamList = {
   [authNavigations.AUTH_HOME]: undefined;

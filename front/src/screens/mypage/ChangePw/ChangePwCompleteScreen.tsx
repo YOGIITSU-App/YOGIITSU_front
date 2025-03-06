@@ -3,6 +3,7 @@ import {SafeAreaView, StyleSheet, Text, View, Image} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {AuthContext} from '../../../navigations/root/Rootnavigator';
+import CompleteCheck from '../../../assets/CompleteCheck.svg';
 
 function ChangePwCompleteScreen() {
   const authContext = useContext(AuthContext); // ✅ Context 가져오기
@@ -12,10 +13,7 @@ function ChangePwCompleteScreen() {
     <SafeAreaView style={styles.container}>
       {/* ✅ 체크 아이콘 */}
       <View style={styles.iconContainer}>
-        <Image
-          style={styles.warningIcon}
-          source={require('../../../assets/Warning-icon-gray.png')}
-        />
+        <CompleteCheck width={38} height={38} />
       </View>
 
       {/* ✅ 안내 문구 */}
@@ -46,10 +44,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 30,
     marginBottom: 25,
-  },
-  warningIcon: {
-    width: 38,
-    height: 38,
   },
   title: {
     fontSize: 20,

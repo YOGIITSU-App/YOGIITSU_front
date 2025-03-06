@@ -1,7 +1,7 @@
 import React, {useState, createContext} from 'react'; // ✅ useState, createContext 추가
 import {createStackNavigator} from '@react-navigation/stack';
 import AuthStackNavigator from '../stack/AuthStackNavigator';
-import BottomTabNavigator from '../drawer/BottomTabNavigator';
+import BottomTabNavigator from '../tab/BottomTabNavigator';
 
 // 🔹 네비게이터에서 사용할 타입 정의
 export type RootStackParamList = {
