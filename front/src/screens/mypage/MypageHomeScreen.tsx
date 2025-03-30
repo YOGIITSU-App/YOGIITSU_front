@@ -1,7 +1,6 @@
-import React, {useContext, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Dimensions,
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -10,20 +9,25 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {colors} from '../../constants';
-import {useNavigation} from '@react-navigation/native';
+import {CompositeNavigationProp, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../navigations/stack/MypageStackNavigator';
 import CustomBotton from '../../components/CustomButton';
-import {AuthContext} from '../../navigations/root/Rootnavigator';
+import {RootStackParamList} from '../../navigations/root/Rootnavigator';
+import {useUser} from '../../contexts/UserContext';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
-function MypageHomeScreen() {
-  const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
+// ✅ 두 네비게이터 타입을 합친 Composite 타입 정의
+type MypageNavigationProp = CompositeNavigationProp<
+  StackNavigationProp<MypageStackParamList>,
+  StackNavigationProp<RootStackParamList>
+>;
 
-  const authContext = useContext(AuthContext); // ✅ Context 가져오기
-  if (!authContext) return null; // ✅ null 체크 (안전한 코드)
+function MypageHomeScreen() {
+  const {logout} = useUser(); // ✅ logout 함수 가져오기
+  const navigation = useNavigation<MypageNavigationProp>();
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -105,7 +109,7 @@ function MypageHomeScreen() {
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={() => {
                     setModalVisible(false); // 모달 닫기
-                    authContext.setIsLoggedIn(false); // ✅ 로그아웃 처리
+                    logout(); // ✅ 유저 정보 초기화
                   }}></CustomBotton>
               </View>
             </View>

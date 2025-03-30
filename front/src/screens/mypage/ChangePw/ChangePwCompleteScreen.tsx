@@ -1,13 +1,16 @@
 import React, {useContext} from 'react';
 import {SafeAreaView, StyleSheet, Text, View, Image} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
-import {colors} from '../../../constants';
-import {AuthContext} from '../../../navigations/root/Rootnavigator';
+import {authNavigations, colors} from '../../../constants';
+import {useUser} from '../../../contexts/UserContext'; // ✅ UserContext import
+import {useNavigation} from '@react-navigation/native'; // ✅ 네비게이션
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
+import {RootStackParamList} from '../../../navigations/root/Rootnavigator';
+import {StackNavigationProp} from '@react-navigation/stack';
 
 function ChangePwCompleteScreen() {
-  const authContext = useContext(AuthContext); // ✅ Context 가져오기
-  if (!authContext) return null; // ✅ null 체크 (안전한 코드)
+  const {logout} = useUser(); // ✅ logout 함수 가져오기
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -26,7 +29,7 @@ function ChangePwCompleteScreen() {
         variant="filled"
         size="large"
         onPress={() => {
-          authContext.setIsLoggedIn(false); // ✅ 로그아웃 처리
+          logout(); // ✅ 유저 정보 초기화
         }}
       />
     </SafeAreaView>

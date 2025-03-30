@@ -17,11 +17,10 @@ import InputField from '../../components/inputField';
 import useForm from '../../hooks/useForms';
 import {validateLogin} from '../../utils';
 import {colors} from '../../constants/colors';
-import {
-  AuthContext,
-  RootStackParamList,
-} from '../../navigations/root/Rootnavigator';
+import {RootStackParamList} from '../../navigations/root/Rootnavigator';
 import Yogiitsu from '../../assets/Yogiitsu.svg';
+import {useUser} from '../../contexts/UserContext'; // ✅ 유저 컨텍스트 추가
+import {Alert} from 'react-native'; // ✅ 알림창 위해 추가
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -29,10 +28,9 @@ type AuthHomeScreenProps = StackScreenProps<
 >;
 
 function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
-  const authContext = useContext(AuthContext); // ✅ Context 가져오기
-  if (!authContext) return null; // ✅ null 체크 (안전한 코드)
+  const {login} = useUser(); // ✅ UserContext의 login 함수 가져오기
 
-  const login = useForm({
+  const loginForm = useForm({
     initialValue: {
       id: '',
       password: '',
@@ -40,8 +38,19 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     validate: validateLogin,
   });
 
-  const handleSubmit = () => {
-    console.log('value', login.values);
+  const handleLogin = () => {
+    const {id, password} = loginForm.values;
+
+    if (id === 'test123' && password === 'yogi1234@@') {
+      login({
+        // 더미 테스트 유저 정보
+        id: 'test123',
+        username: '김테스트',
+        email: 'test@dev.com',
+      });
+    } else {
+      Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');
+    }
   };
 
   return (
@@ -58,13 +67,13 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
               placeholder="아이디 입력"
               inputMode="text"
               keyboardType="ascii-capable"
-              {...login.getTextInputProps('id')}
+              {...loginForm.getTextInputProps('id')}
             />
             <InputField
               placeholder="비밀번호 입력"
               inputMode="text"
               secureTextEntry
-              {...login.getTextInputProps('password')}
+              {...loginForm.getTextInputProps('password')}
             />
           </View>
           <View>
@@ -72,16 +81,8 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
               label="로그인"
               variant="filled"
               size="large"
-              inValid={!login.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-              onPress={() => {
-                authContext.setIsLoggedIn(true); // ✅ 로그아웃 처리
-
-                // ✅ 네비게이션 스택을 초기화하고 AuthStack으로 이동
-                navigation.reset({
-                  index: 0,
-                  routes: [{name: 'AuthStack'}], // RootStack 내에서 정의된 AuthStack으로 이동
-                });
-              }}
+              inValid={!loginForm.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
+              onPress={handleLogin}
             />
           </View>
           <View style={styles.buttonContainer}>
