@@ -1,5 +1,5 @@
-import React from 'react';
-import {SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useLayoutEffect} from 'react';
+import {BackHandler, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useNavigation} from '@react-navigation/native';
@@ -9,6 +9,27 @@ import CompleteCheck from '../../../assets/CompleteCheck.svg';
 
 function ChangeEmailCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
+
+  // ✅ InquiryCompleteScreen 컴포넌트 내부에서
+  useEffect(() => {
+    // ✅ 안드로이드 하드웨어 뒤로가기 차단
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        return true; // 뒤로가기 무시!
+      },
+    );
+    return () => {
+      backHandler.remove();
+    };
+  }, [navigation]);
+
+  // ✅ 헤더 왼쪽 ← 버튼 없애기
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => null, // ← 버튼 제거!
+    });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>

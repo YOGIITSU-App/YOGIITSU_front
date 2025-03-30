@@ -1,15 +1,35 @@
-import React, {useContext} from 'react';
-import {SafeAreaView, StyleSheet, Text, View, Image} from 'react-native';
+import React, {useEffect, useLayoutEffect} from 'react';
+import {SafeAreaView, StyleSheet, Text, View, BackHandler} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import InquiryScreen from './InquiryScreen';
 
 function InquiryCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
+
+  // ✅ InquiryCompleteScreen 컴포넌트 내부에서
+  useEffect(() => {
+    // ✅ 안드로이드 하드웨어 뒤로가기 차단
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        return true; // 뒤로가기 무시!
+      },
+    );
+    return () => {
+      backHandler.remove();
+    };
+  }, [navigation]);
+
+  // ✅ 헤더 왼쪽 ← 버튼 없애기
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => null, // ← 버튼 제거!
+    });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
