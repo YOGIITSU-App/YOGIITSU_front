@@ -21,6 +21,8 @@ import {RootStackParamList} from '../../navigations/root/Rootnavigator';
 import Yogiitsu from '../../assets/Yogiitsu.svg';
 import {useUser} from '../../contexts/UserContext'; // ✅ 유저 컨텍스트 추가
 import {Alert} from 'react-native'; // ✅ 알림창 위해 추가
+import authApi from '../../api/authApi'; // ✅ 로그인 API 불러오기
+import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ 토큰 저장용
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -38,17 +40,27 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     validate: validateLogin,
   });
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const {id, password} = loginForm.values;
 
-    if (id === 'test123' && password === 'yogi1234@@') {
+    try {
+      // ✅ 1. 백엔드 로그인 요청
+      const res = await authApi.login(id, password);
+
+      // ✅ 2. 응답에서 토큰과 유저 정보 꺼냄 (구조는 백엔드에 따라 다름!)
+      const {accessToken, user} = res.data;
+
+      // ✅ 3. 토큰 저장 (로그인 상태 유지용!)
+      await AsyncStorage.setItem('accessToken', accessToken);
+
+      // ✅ 4. 전역 상태에 유저 정보 저장 (RootNavigator가 화면 전환 해줌!)
       login({
-        // 더미 테스트 유저 정보
-        id: 'test123',
-        username: '김테스트',
-        email: 'test@dev.com',
+        id: user.id,
+        username: user.username,
+        email: user.email,
       });
-    } else {
+    } catch (err) {
+      console.error('로그인 실패:', err);
       Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');
     }
   };
