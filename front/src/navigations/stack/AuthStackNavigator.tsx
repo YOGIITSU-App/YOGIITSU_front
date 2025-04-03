@@ -5,14 +5,18 @@ import AuthHomeScreen from '../../screens/auth/AuthHomeScreen';
 import {authNavigations, colors} from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import FindIdScreen from '../../screens/auth/FindIdScreen';
-import FindPwScreen from '../../screens/auth/FindPwScreen';
+import FindPwScreen from '../../screens/auth/FindPw/FindPwScreen';
 import BottomTabNavigator from '../tab/BottomTabNavigator';
+import FindPwCodeConfirmScreen from '../../screens/auth/FindPw/FindPwCodeConfirmScreen';
+import FindPwCompleteScreen from '../../screens/auth/FindPw/FindPwCompleteScreen';
 
 export type AuthStackParamList = {
   [authNavigations.AUTH_HOME]: undefined;
   [authNavigations.LOGIN]: undefined;
   [authNavigations.FINDID]: undefined;
-  [authNavigations.FINDPW]: undefined;
+  FindPwCodeConfirm: undefined;
+  FindPw: undefined;
+  FindPwComplete: undefined;
   [authNavigations.SIGNUP]: undefined;
 };
 
@@ -54,8 +58,8 @@ function AuthStackNavigator() {
         }}
       />
       <Stack.Screen
-        name={authNavigations.FINDPW}
-        component={FindPwScreen}
+        name="FindPwCodeConfirm"
+        component={FindPwCodeConfirmScreen}
         options={{
           headerTitle: '비밀번호찾기',
           headerTitleAlign: 'center', // 상단 제목 중앙 정렬
@@ -69,6 +73,16 @@ function AuthStackNavigator() {
             borderBottomColor: colors.GRAY_200,
           },
         }}
+      />
+      <Stack.Screen
+        name="FindPw"
+        component={FindPwScreen}
+        options={{title: '비밀번호찾기'}}
+      />
+      <Stack.Screen
+        name="FindPwComplete"
+        component={FindPwCompleteScreen}
+        options={{title: '비밀번호찾기'}}
       />
       <Stack.Screen
         name={authNavigations.SIGNUP}

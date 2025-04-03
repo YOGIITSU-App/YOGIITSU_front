@@ -93,7 +93,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
               </TouchableOpacity>
               <Text style={styles.footerText}>|</Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate(authNavigations.FINDPW)}>
+                onPress={() => navigation.navigate('FindPwCodeConfirm')}>
                 <Text style={styles.footerText}>비밀번호찾기</Text>
               </TouchableOpacity>
               <Text style={styles.footerText}>|</Text>
