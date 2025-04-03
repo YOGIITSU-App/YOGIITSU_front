@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
 } from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
@@ -18,6 +19,7 @@ import MiniInputField from '../../../components/miniInputField';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
+import authApi from '../../../api/authApi'; // ✅ 추가
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -44,10 +46,35 @@ function FindPwCodeConfirmScreen() {
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
 
+  // ✉️ 인증번호 전송
+  const handleSendCode = async () => {
+    try {
+      await authApi.sendResetCode(emailcheak.values.email);
+      setModalVisible(true);
+    } catch (error) {
+      Alert.alert('전송 실패', '가입된 이메일이 아니에요!');
+    }
+  };
+
+  // ✅ 인증번호 확인
+  const handleVerifyCode = async () => {
+    try {
+      await authApi.verifyResetCode(
+        emailcheak.values.email,
+        codemessagecheck.values.codemessage,
+      );
+      navigation.navigate('FindPw', {
+        email: emailcheak.values.email, // ✅ 다음 화면에 이메일 넘김
+      });
+    } catch (error) {
+      Alert.alert('실패', '인증번호가 올바르지 않아요!');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* 안내 문구 */}
       <View style={styles.guideContainer}>
-        {/* ✅ 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
           <>
             <Text style={styles.guideText}>비밀번호를 찾기 위해</Text>
@@ -57,74 +84,42 @@ function FindPwCodeConfirmScreen() {
             </Text>
           </>
         ) : (
-          <>
-            <Text style={styles.guideText}>
-              전송된 <Text style={styles.highlightedText}>인증번호</Text>를
-              입력해 주세요
-            </Text>
-          </>
+          <Text style={styles.guideText}>
+            <Text style={styles.highlightedText}>인증번호</Text>를 입력해 주세요
+          </Text>
         )}
       </View>
+
+      {/* 이메일 입력 */}
       <View style={styles.infoContainer}>
-        <View style={styles.emailContainer}>
-          <InputField
-            placeholder="이메일 입력"
-            inputMode="email"
-            touched={emailcheak.touched.email}
-            error={emailcheak.errors.email}
-            {...emailcheak.getTextInputProps('email')}
-          />
-        </View>
-        <View style={styles.errorMessageContainer}>
-          <CustomText
-            text="이메일 형식으로 입력해 주세요"
-            touched={emailcheak.touched.email}
-            error={emailcheak.errors.email}
-            {...emailcheak.getTextInputProps('email')}
-          />
-        </View>
+        <InputField
+          placeholder="이메일 입력"
+          inputMode="email"
+          touched={emailcheak.touched.email}
+          error={emailcheak.errors.email}
+          {...emailcheak.getTextInputProps('email')}
+        />
+
+        {/* 인증번호 전송 버튼 */}
         {isSendButtonVisible && (
           <CustomBotton
             label="인증번호 전송"
             variant="filled"
             size="large"
-            inValid={!emailcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-            onPress={() => {
-              setModalVisible(true); // 모달 표시
-            }}
+            inValid={!emailcheak.isFormValid}
+            onPress={handleSendCode}
           />
         )}
-        {/* ✅ 모달 (인증번호 전송 안내) */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
-              <CustomBotton
-                label="확인"
-                style={styles.confirmButton}
-                onPress={() => {
-                  setModalVisible(false); // 모달 닫기
-                  setSendButtonVisible(false); // 버튼 숨기기
-                  setGuideTextType('code'); // 안내 문구 변경
-                  setCodeFieldVisible(true); // 인증번호 입력란 보이기
-                }}></CustomBotton>
-            </View>
-          </View>
-        </Modal>
-        {/* ✅ 인증번호 입력란 (모달 확인 버튼 클릭 시 표시됨) */}
+
+        {/* 인증번호 입력 UI */}
         {isCodeFieldVisible && (
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
               inputMode="text"
-              focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
-                const upperText = text.toUpperCase(); // ✅ 입력값을 대문자로 변환
+                const upperText = text.toUpperCase();
                 if (upperText.length <= 6) {
                   codemessagecheck
                     .getTextInputProps('codemessage')
@@ -135,23 +130,40 @@ function FindPwCodeConfirmScreen() {
             <MiniCustomButton_W
               label="확인"
               inValid={!codemessagecheck.isFormValid}
-              onPress={() => {
-                if (codemessagecheck.isFormValid) {
-                  navigation.navigate('FindPw');
-                }
-              }}
+              onPress={handleVerifyCode}
             />
           </View>
         )}
       </View>
+
+      {/* 인증번호 전송 완료 모달 */}
+      <Modal
+        transparent
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
+            <CustomBotton
+              label="확인"
+              style={styles.confirmButton}
+              onPress={() => {
+                setModalVisible(false);
+                setSendButtonVisible(false);
+                setGuideTextType('code');
+                setCodeFieldVisible(true);
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  // 🎨 스타일은 그대로 두셔도 돼요!
+  container: {flex: 1},
   guideContainer: {
     marginTop: 15,
     marginLeft: deviceWidth * 0.08,
@@ -167,59 +179,36 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   infoContainer: {
-    justifyContent: 'flex-start', // 위쪽 정렬
-    paddingTop: 20, // 위쪽 여백 조정
-    paddingHorizontal: 20, // 상하 여백 조정
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  emailContainer: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    gap: 20,
   },
-  errorMessageContainer: {
-    alignSelf: 'flex-start',
-    marginLeft: deviceWidth * 0.05,
-    marginTop: 58,
-    marginBottom: '5%',
+  smallContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
   },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalBox: {
-    width: deviceWidth * 0.85,
-    height: deviceHeight * 0.19375,
     backgroundColor: 'white',
-    padding: 20,
+    width: '80%',
     borderRadius: 10,
     alignItems: 'center',
+    padding: 20,
   },
   modalText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.BLACK_500,
-    marginBottom: 20,
-    marginTop: 10,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   confirmButton: {
-    width: deviceWidth * 0.7277,
-    height: deviceHeight * 0.06125,
-    backgroundColor: colors.BLUE_700,
-    paddingVertical: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
-  },
-  smallContainer: {
-    width: deviceWidth * 0.84,
-    flexDirection: 'row',
-    justifyContent: 'space-between', // 이메일 입력칸과 버튼의 간격 유지
-    alignItems: 'center',
-    gap: deviceWidth * 0.025,
+    width: '100%',
   },
 });
 
