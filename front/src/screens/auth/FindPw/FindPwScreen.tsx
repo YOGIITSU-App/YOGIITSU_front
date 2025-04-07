@@ -35,9 +35,9 @@ function FindPwScreen() {
 
   const handleChangePassword = async () => {
     try {
-      const {password} = pwconfirmcheak.values;
+      const {password, passwordConfirm} = pwconfirmcheak.values;
       // ✅ API 호출: 이메일 + 새로운 비밀번호
-      await authApi.resetPassword(email, password);
+      await authApi.resetPassword(email, password, passwordConfirm);
       navigation.navigate('FindPwComplete');
     } catch (err) {
       Alert.alert('비밀번호 변경 실패', '다시 시도해주세요!');
