@@ -5,6 +5,8 @@ export type Inquiry = {
   title: string;
   content: string;
   date: string;
+  status: 'WAITING' | 'COMPLETE'; // 🔹 상태
+  author: string; // 🔹 작성자 (예: '김**')
 };
 
 type InquiryContextType = {

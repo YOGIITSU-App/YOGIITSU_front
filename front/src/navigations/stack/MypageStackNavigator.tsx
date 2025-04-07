@@ -14,8 +14,9 @@ import ChangeNewEmailScreen from '../../screens/mypage/ChangeEmail/ChangeNewEmai
 import ChangeEmailCompleteScreen from '../../screens/mypage/ChangeEmail/ChangeEmailCompleteScreen';
 import DeleteAccountCompleteScreen from '../../screens/mypage/DeleteAccount/DeleteAccountCompleteScreen';
 import InquiryWriteScreen from '../../screens/mypage/Inquiry/InquiryWriteScreen';
-import {InquiryProvider} from '../../contexts/InquiryContext';
+import {Inquiry, InquiryProvider} from '../../contexts/InquiryContext';
 import InquiryCompleteScreen from '../../screens/mypage/Inquiry/InquiryCompleteScreen';
+import InquiryDetailScreen from '../../screens/mypage/Inquiry/InquiryDetailScreen';
 
 // 🔹 네비게이션 타입 정의
 export type MypageStackParamList = {
@@ -30,6 +31,7 @@ export type MypageStackParamList = {
   Inquiry: undefined;
   InquiryWrite: undefined;
   InquiryComplete: undefined;
+  InquiryDetail: {inquiry: Inquiry};
   DeleteAccountWarning: undefined;
   DeleteAccount: undefined;
   DeleteAccountComplete: undefined;
@@ -107,6 +109,11 @@ function MypageStackNavigator() {
         <Stack.Screen
           name="InquiryComplete"
           component={InquiryCompleteScreen}
+          options={{title: '문의'}}
+        />
+        <Stack.Screen
+          name="InquiryDetail"
+          component={InquiryDetailScreen}
           options={{title: '문의'}}
         />
         <Stack.Screen
