@@ -9,8 +9,6 @@ const authApi = {
       password,
     }),
 
-  // 존재하는 이메일 여부 추가 예정
-
   // ✅ 인증번호 이메일로 전송
   sendResetCode: (email: string) =>
     axiosInstance.post('/send-mail/email', {
@@ -18,31 +16,41 @@ const authApi = {
     }),
 
   // ✅ 인증번호 확인
-  verifyResetCode: async (email: string, code: string) => {
-    const response = await axiosInstance.post('/verify/code', {
-      email,
-      code,
-    });
+  verifyResetCode: async (email: string, code: string, token: string) => {
+    const response = await axiosInstance.post(
+      '/verify/code',
+      {email, code, token},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
-    const token = response.data?.token;
-    if (token) {
-      await AsyncStorage.setItem('accessToken', token);
+    const newToken = response.data?.token;
+    if (newToken) {
+      await AsyncStorage.setItem('accessToken', newToken);
     }
 
     return response;
   },
 
   // 🔑 비밀번호 재설정
-  resetPassword: (
-    email: string,
-    newPassword: string,
-    confirmPassword: string,
-  ) =>
-    axiosInstance.patch('/members/find-password', {
-      email,
-      newPassword,
-      confirmPassword,
-    }),
+  resetPassword: async (newPassword: string, confirmPassword: string) => {
+    const token = await AsyncStorage.getItem('accessToken');
+    return axiosInstance.patch(
+      '/members/find-password',
+      {
+        newPassword,
+        confirmPassword,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+  },
 };
 
 export default authApi;

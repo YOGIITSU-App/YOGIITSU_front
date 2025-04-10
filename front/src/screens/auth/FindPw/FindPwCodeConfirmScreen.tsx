@@ -45,11 +45,14 @@ function FindPwCodeConfirmScreen() {
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
+  const [token, setToken] = useState('');
 
   // ✉️ 인증번호 전송
   const handleSendCode = async () => {
     try {
-      await authApi.sendResetCode(emailcheak.values.email);
+      const res = await authApi.sendResetCode(emailcheak.values.email);
+
+      setToken(res.data.token); // 토큰 저장
       setModalVisible(true);
     } catch (error) {
       Alert.alert('전송 실패', '가입된 이메일이 아니에요!');
@@ -62,6 +65,7 @@ function FindPwCodeConfirmScreen() {
       await authApi.verifyResetCode(
         emailcheak.values.email,
         codemessagecheck.values.codemessage,
+        token,
       );
       navigation.navigate('FindPw', {
         email: emailcheak.values.email, // ✅ 다음 화면에 이메일 넘김
@@ -120,7 +124,7 @@ function FindPwCodeConfirmScreen() {
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
                 const upperText = text.toUpperCase();
-                if (upperText.length <= 6) {
+                if (upperText.length <= 8) {
                   codemessagecheck
                     .getTextInputProps('codemessage')
                     .onChangeText(upperText);
@@ -201,6 +205,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     padding: 20,
+    gap: 20,
   },
   modalText: {
     fontSize: 16,

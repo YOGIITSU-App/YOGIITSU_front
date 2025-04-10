@@ -118,7 +118,7 @@ type CodeInfo = {codemessage: string};
 function validateCodeMessage(values: CodeInfo) {
   const CodeMessageErrors = {codemessage: ''};
 
-  if (!/^[A-Z]{6}$/.test(values.codemessage)) {
+  if (!/^[A-Z]{8}$/.test(values.codemessage)) {
     CodeMessageErrors.codemessage = '인증번호는 6자의 영문 대문자입니다.';
   }
 
