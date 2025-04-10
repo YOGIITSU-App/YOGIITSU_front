@@ -8,6 +8,7 @@ const colors = {
   GRAY_800: '#868686',
   GRAY_900: '#939393',
   BLACK: '#000',
+  BLACK_900: '#2E2E2E',
   BLACK_700: '#474747',
   BLACK_500: '#717171',
   BLUE_700: '#3E6DEF',

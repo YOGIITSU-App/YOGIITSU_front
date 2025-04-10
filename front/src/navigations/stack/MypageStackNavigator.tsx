@@ -50,12 +50,11 @@ function MypageStackNavigator() {
             backgroundColor: 'white',
           },
           headerShown: true, // ✅ 헤더 표시
-          title: 'MY', // ✅ 헤더 타이틀
           headerTitleAlign: 'center', // ✅ 중앙 정렬
           headerTitleStyle: {
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: '600',
-            color: colors.BLACK_500,
+            color: colors.BLACK_900,
           },
         }}>
         <Stack.Screen
