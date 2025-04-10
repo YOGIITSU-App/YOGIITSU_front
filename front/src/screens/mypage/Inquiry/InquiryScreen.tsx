@@ -48,24 +48,22 @@ function InquiryScreen() {
         </View>
       ) : (
         <>
-          {/* 🔹 헤더 바 */}
           <View style={styles.headerRow}>
             <Text style={[styles.headerText, {flex: 1}]}>상태</Text>
             <Text style={[styles.headerText, {flex: 3}]}>제목</Text>
             <Text style={[styles.headerText, {flex: 1}]}>작성자</Text>
           </View>
 
-          {/* 🔹 목록 */}
           <FlatList
-            data={inquiries}
+            data={[...inquiries].reverse()} // ✅ 최신순
             keyExtractor={item => item.id.toString()}
             renderItem={({item}) => (
               <TouchableOpacity
                 style={styles.itemRow}
-                onPress={() =>
-                  navigation.navigate('InquiryDetail', {inquiry: item})
+                onPress={
+                  () =>
+                    navigation.navigate('InquiryDetail', {inquiryId: item.id}) // ✅ id만 넘겨요!
                 }>
-                {/* 상태 */}
                 <View
                   style={[
                     styles.statusBadge,
@@ -90,7 +88,6 @@ function InquiryScreen() {
                   </Text>
                 </View>
 
-                {/* 제목 + 날짜 */}
                 <View style={styles.titleDateContainer}>
                   <Text numberOfLines={1} style={styles.titleText}>
                     🔒 {item.title}
@@ -98,7 +95,6 @@ function InquiryScreen() {
                   <Text style={styles.dateText}>{item.date}</Text>
                 </View>
 
-                {/* 작성자 */}
                 <Text style={styles.authorText}>{maskName(item.author)}</Text>
               </TouchableOpacity>
             )}
@@ -106,7 +102,6 @@ function InquiryScreen() {
         </>
       )}
 
-      {/* 등록 버튼 */}
       <View style={styles.buttonContainer}>
         <CustomBotton
           label="문의 등록하기"
@@ -118,9 +113,7 @@ function InquiryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {flex: 1},
   headerRow: {
     flexDirection: 'row',
     paddingVertical: 10,
@@ -156,16 +149,16 @@ const styles = StyleSheet.create({
   },
   titleDateContainer: {
     flex: 3,
-    flexDirection: 'row', // ✅ 수평 정렬
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6, // (선택) 제목과 날짜 간격
+    gap: 6,
   },
   titleText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.BLACK_700,
-    flexShrink: 1, // 🔸 길어질 때 줄어들 수 있게
+    flexShrink: 1,
   },
   dateText: {
     fontSize: 12,

@@ -17,6 +17,7 @@ import InquiryWriteScreen from '../../screens/mypage/Inquiry/InquiryWriteScreen'
 import {Inquiry, InquiryProvider} from '../../contexts/InquiryContext';
 import InquiryCompleteScreen from '../../screens/mypage/Inquiry/InquiryCompleteScreen';
 import InquiryDetailScreen from '../../screens/mypage/Inquiry/InquiryDetailScreen';
+import InquiryEditScreen from '../../screens/mypage/Inquiry/InquiryEditScreen';
 
 // 🔹 네비게이션 타입 정의
 export type MypageStackParamList = {
@@ -31,7 +32,8 @@ export type MypageStackParamList = {
   Inquiry: undefined;
   InquiryWrite: undefined;
   InquiryComplete: undefined;
-  InquiryDetail: {inquiry: Inquiry};
+  InquiryDetail: {inquiryId: number};
+  InquiryEdit: {inquiry: Inquiry};
   DeleteAccountWarning: undefined;
   DeleteAccount: undefined;
   DeleteAccountComplete: undefined;
@@ -115,6 +117,11 @@ function MypageStackNavigator() {
           name="InquiryDetail"
           component={InquiryDetailScreen}
           options={{title: '문의'}}
+        />
+        <Stack.Screen
+          name="InquiryEdit"
+          component={InquiryEditScreen}
+          options={{title: '문의 수정'}}
         />
         <Stack.Screen
           name="DeleteAccountWarning"
