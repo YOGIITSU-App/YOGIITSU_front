@@ -16,6 +16,7 @@ import CustomBotton from '../../../components/CustomButton';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {colors} from '../../../constants';
+import {useUser} from '../../../contexts/UserContext';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -23,6 +24,7 @@ const deviceHeight = Dimensions.get('screen').height;
 function InquiryWriteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const {addInquiry} = useInquiry(); // ✅ 함수 받아오기!
+  const {user} = useUser();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState('');
@@ -59,6 +61,7 @@ function InquiryWriteScreen() {
       <View style={styles.buttonContainer}>
         <CustomBotton label="문의 등록하기" onPress={handleSubmit} />
       </View>
+
       <Modal
         animationType="fade"
         transparent={true}
@@ -67,16 +70,12 @@ function InquiryWriteScreen() {
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
             <Text style={styles.modalText}>문의를 등록하시겠어요?</Text>
-            {/* 버튼 컨테이너 */}
             <View style={styles.modalbuttonContainer}>
-              {/* 취소 버튼 */}
               <CustomBotton
                 label="아니요"
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={
-                  () => setModalVisible(false) // 모달 닫기
-                }></CustomBotton>
-              {/* 탈퇴 버튼 */}
+                onPress={() => setModalVisible(false)}
+              />
               <CustomBotton
                 label="네"
                 style={[styles.modalButton, styles.confirmButton]}
@@ -85,12 +84,18 @@ function InquiryWriteScreen() {
                     id: Date.now(),
                     title,
                     content,
-                    date: new Date().toISOString().split('T')[0],
+                    date: new Date()
+                      .toISOString()
+                      .split('T')[0]
+                      .replace(/-/g, '.'),
+                    author: user?.username as string, // ✅ 타입 단언
+                    status: 'WAITING' as const,
                   };
-                  addInquiry(newInquiry); // ✅ context 함수로 추가!
-                  setModalVisible(false); // 모달 닫기
+                  addInquiry(newInquiry);
+                  setModalVisible(false);
                   navigation.navigate('InquiryComplete');
-                }}></CustomBotton>
+                }}
+              />
             </View>
           </View>
         </View>

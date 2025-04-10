@@ -17,17 +17,18 @@ import {StackNavigationProp} from '@react-navigation/stack';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {inquiries} = useInquiry(); // ✅ Context에서 상태 받아옴
+  const {inquiries} = useInquiry();
 
   useEffect(() => {
-    // ✅ 화면에 들어오면 바텀 탭 숨기기
     navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
-
     return () => {
-      // ✅ 화면을 떠나면 바텀 탭 다시 보이게 설정
       navigation.getParent()?.setOptions({tabBarStyle: undefined});
     };
   }, [navigation]);
+
+  const maskName = (name: string) => {
+    return name.length > 1 ? name[0] + '**' : name;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,17 +47,61 @@ function InquiryScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={inquiries}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
-            <View style={styles.item}>
-              <Text>{item.title}</Text>
-              <Text>{item.date}</Text>
-            </View>
-          )}
-        />
+        <>
+          <View style={styles.headerRow}>
+            <Text style={[styles.headerText, {flex: 1}]}>상태</Text>
+            <Text style={[styles.headerText, {flex: 3}]}>제목</Text>
+            <Text style={[styles.headerText, {flex: 1}]}>작성자</Text>
+          </View>
+
+          <FlatList
+            data={[...inquiries].reverse()} // ✅ 최신순
+            keyExtractor={item => item.id.toString()}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={styles.itemRow}
+                onPress={
+                  () =>
+                    navigation.navigate('InquiryDetail', {inquiryId: item.id}) // ✅ id만 넘겨요!
+                }>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        item.status === 'WAITING'
+                          ? '#eee'
+                          : 'rgba(110,135,255,0.1)',
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      {
+                        color:
+                          item.status === 'WAITING'
+                            ? colors.GRAY_500
+                            : colors.BLUE_700,
+                      },
+                    ]}>
+                    {item.status === 'WAITING' ? '답변대기' : '답변완료'}
+                  </Text>
+                </View>
+
+                <View style={styles.titleDateContainer}>
+                  <Text numberOfLines={1} style={styles.titleText}>
+                    🔒 {item.title}
+                  </Text>
+                  <Text style={styles.dateText}>{item.date}</Text>
+                </View>
+
+                <Text style={styles.authorText}>{maskName(item.author)}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </>
       )}
+
       <View style={styles.buttonContainer}>
         <CustomBotton
           label="문의 등록하기"
@@ -68,18 +113,71 @@ function InquiryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: {flex: 1},
+  headerRow: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#F6F6F6',
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
+  },
+  headerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.BLACK_700,
+    textAlign: 'center',
+  },
+  itemRow: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+  },
+  statusBadge: {
+    borderRadius: 6,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
-    backgroundColor: colors.WHITE,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  titleDateContainer: {
+    flex: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  titleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.BLACK_700,
+    flexShrink: 1,
+  },
+  dateText: {
+    fontSize: 12,
+    color: colors.GRAY_500,
+  },
+  authorText: {
+    fontSize: 13,
+    color: colors.BLACK_700,
+    textAlign: 'center',
+    flex: 1,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
+    paddingTop: 50,
   },
   iconContainer: {
     borderRadius: 50,
     padding: 15,
-    marginTop: 30,
     marginBottom: 20,
   },
   title: {
@@ -98,11 +196,6 @@ const styles = StyleSheet.create({
   warningIcon: {
     width: 38,
     height: 38,
-  },
-  item: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
   },
   buttonContainer: {
     paddingBottom: 20,

@@ -14,8 +14,10 @@ import ChangeNewEmailScreen from '../../screens/mypage/ChangeEmail/ChangeNewEmai
 import ChangeEmailCompleteScreen from '../../screens/mypage/ChangeEmail/ChangeEmailCompleteScreen';
 import DeleteAccountCompleteScreen from '../../screens/mypage/DeleteAccount/DeleteAccountCompleteScreen';
 import InquiryWriteScreen from '../../screens/mypage/Inquiry/InquiryWriteScreen';
-import {InquiryProvider} from '../../contexts/InquiryContext';
+import {Inquiry, InquiryProvider} from '../../contexts/InquiryContext';
 import InquiryCompleteScreen from '../../screens/mypage/Inquiry/InquiryCompleteScreen';
+import InquiryDetailScreen from '../../screens/mypage/Inquiry/InquiryDetailScreen';
+import InquiryEditScreen from '../../screens/mypage/Inquiry/InquiryEditScreen';
 
 // 🔹 네비게이션 타입 정의
 export type MypageStackParamList = {
@@ -30,6 +32,8 @@ export type MypageStackParamList = {
   Inquiry: undefined;
   InquiryWrite: undefined;
   InquiryComplete: undefined;
+  InquiryDetail: {inquiryId: number};
+  InquiryEdit: {inquiry: Inquiry};
   DeleteAccountWarning: undefined;
   DeleteAccount: undefined;
   DeleteAccountComplete: undefined;
@@ -46,12 +50,11 @@ function MypageStackNavigator() {
             backgroundColor: 'white',
           },
           headerShown: true, // ✅ 헤더 표시
-          title: 'MY', // ✅ 헤더 타이틀
           headerTitleAlign: 'center', // ✅ 중앙 정렬
           headerTitleStyle: {
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: '600',
-            color: colors.BLACK_500,
+            color: colors.BLACK_900,
           },
         }}>
         <Stack.Screen
@@ -108,6 +111,16 @@ function MypageStackNavigator() {
           name="InquiryComplete"
           component={InquiryCompleteScreen}
           options={{title: '문의'}}
+        />
+        <Stack.Screen
+          name="InquiryDetail"
+          component={InquiryDetailScreen}
+          options={{title: '문의'}}
+        />
+        <Stack.Screen
+          name="InquiryEdit"
+          component={InquiryEditScreen}
+          options={{title: '문의 수정'}}
         />
         <Stack.Screen
           name="DeleteAccountWarning"
