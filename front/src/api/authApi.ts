@@ -38,29 +38,21 @@ const authApi = {
       },
     );
 
-    const newToken = response.data?.token;
-    if (newToken) {
-      await AsyncStorage.setItem('accessToken', newToken);
-    }
-
     return response;
   },
 
   // 🔑 비밀번호 재설정
-  resetPassword: async (newPassword: string, confirmPassword: string) => {
-    const token = await AsyncStorage.getItem('accessToken');
-    return axiosInstance.patch(
-      '/members/find-password',
-      {
-        newPassword,
-        confirmPassword,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+  resetPassword: async (
+    newPassword: string,
+    confirmPassword: string,
+    email: string,
+  ) => {
+    // const token = await AsyncStorage.getItem('accessToken');
+    return axiosInstance.post('/members/find-password', {
+      email,
+      newPassword,
+      confirmPassword,
+    });
   },
 };
 

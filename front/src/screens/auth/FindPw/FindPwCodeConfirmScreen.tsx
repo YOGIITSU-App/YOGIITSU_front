@@ -52,6 +52,7 @@ function FindPwCodeConfirmScreen() {
   const handleSendCode = async () => {
     try {
       const res = await authApi.sendResetCode(emailcheak.values.email);
+      console.log('응답 확인 👉', res.data);
 
       setToken(res.data.token); // 토큰 저장
       setModalVisible(true);
@@ -152,7 +153,7 @@ function FindPwCodeConfirmScreen() {
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
                 const upperText = text.toUpperCase();
-                if (upperText.length <= 8) {
+                if (upperText.length <= 6) {
                   codemessagecheck
                     .getTextInputProps('codemessage')
                     .onChangeText(upperText);
