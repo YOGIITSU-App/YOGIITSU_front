@@ -1,30 +1,36 @@
 import React, {createContext, useContext, useState, ReactNode} from 'react';
 
+// ✅ 1. 사용자 타입 정의
 export type User = {
   id: string;
   username: string;
   email: string;
+  role: 'user' | 'admin';
 };
 
+// ✅ 2. Context 타입 정의
 type UserContextType = {
   user: User | null;
   login: (userInfo: User) => void;
   logout: () => void;
 };
 
+// ✅ 3. Context 생성
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// ✅ 4. 커스텀 훅
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) throw new Error('UserContext 안에서 사용해주세요!');
   return context;
 };
 
-export const UserProvider = ({children}: {children: React.ReactNode}) => {
-  const [user, setUser] = useState<User | null>(null); // ← 처음엔 null이니까 로그인 상태 아님
+// ✅ 5. Provider
+export const UserProvider = ({children}: {children: ReactNode}) => {
+  const [user, setUser] = useState<User | null>(null);
 
-  const login = (userInfo: User) => setUser(userInfo); // ← 로그인 성공 시 user 저장
-  const logout = () => setUser(null); // ← 로그아웃 시 user 제거
+  const login = (userInfo: User) => setUser(userInfo);
+  const logout = () => setUser(null);
 
   return (
     <UserContext.Provider value={{user, login, logout}}>

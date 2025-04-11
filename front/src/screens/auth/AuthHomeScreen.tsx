@@ -44,21 +44,23 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     const {id, password} = loginForm.values;
 
     try {
-      // ✅ 1. 백엔드 로그인 요청
+      // 1. 로그인 요청
       const res = await authApi.login(id, password);
-
-      // ✅ 2. 응답에서 토큰과 유저 정보 꺼냄 (구조는 백엔드에 따라 다름!)
       const {accessToken, user} = res.data;
 
-      // ✅ 3. 토큰 저장 (로그인 상태 유지용!)
+      // 2. 토큰 저장
       await AsyncStorage.setItem('accessToken', accessToken);
 
-      // ✅ 4. 전역 상태에 유저 정보 저장 (RootNavigator가 화면 전환 해줌!)
+      // 3. context에 유저 저장
       login({
         id: user.id,
         username: user.username,
         email: user.email,
+        role: user.role,
       });
+
+      // 4. 유저 정보도 AsyncStorage에 저장 (자동 로그인용)
+      await AsyncStorage.setItem('userInfo', JSON.stringify(user));
     } catch (err) {
       console.error('로그인 실패:', err);
       Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');
