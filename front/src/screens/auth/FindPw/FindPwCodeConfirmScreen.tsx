@@ -122,6 +122,27 @@ function FindPwCodeConfirmScreen() {
           />
         )}
 
+        {/* 인증번호 전송 완료 모달 */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalBackground}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
+              <CustomBotton
+                label="확인"
+                style={styles.confirmButton}
+                onPress={() => {
+                  setModalVisible(false); // 모달 닫기
+                  setSendButtonVisible(false); // 버튼 숨기기
+                  setGuideTextType('code'); // 안내 문구 변경
+                  setCodeFieldVisible(true); // 인증번호 입력란 보이기
+                }}></CustomBotton>
+            </View>
+          </View>
+        </Modal>
         {/* 인증번호 입력 UI */}
         {isCodeFieldVisible && (
           <View style={styles.smallContainer}>
@@ -146,34 +167,11 @@ function FindPwCodeConfirmScreen() {
           </View>
         )}
       </View>
-
-      {/* 인증번호 전송 완료 모달 */}
-      <Modal
-        transparent
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalBackground}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
-            <CustomBotton
-              label="확인"
-              style={styles.confirmButton}
-              onPress={() => {
-                setModalVisible(false);
-                setSendButtonVisible(false);
-                setGuideTextType('code');
-                setCodeFieldVisible(true);
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // 🎨 스타일은 그대로 두셔도 돼요!
   container: {flex: 1},
   guideContainer: {
     marginTop: 15,
@@ -204,23 +202,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
   },
   modalBox: {
+    width: deviceWidth * 0.85,
+    height: deviceHeight * 0.19375,
     backgroundColor: 'white',
-    width: '80%',
+    padding: 20,
     borderRadius: 10,
     alignItems: 'center',
-    padding: 20,
-    gap: 20,
   },
   modalText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: '600',
+    color: colors.BLACK_500,
+    marginBottom: 20,
+    marginTop: 10,
   },
   confirmButton: {
-    width: '100%',
+    width: deviceWidth * 0.7277,
+    height: deviceHeight * 0.06125,
+    backgroundColor: colors.BLUE_700,
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
   },
 });
 
