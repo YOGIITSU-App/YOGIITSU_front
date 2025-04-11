@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dimensions, StyleSheet, Text, View} from 'react-native';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import {colors} from '../../constants';
 import useForm from '../../hooks/useForms';
 import {
@@ -17,6 +17,7 @@ import MiniInputField from '../../components/miniInputField';
 import CustomText from '../../components/CustomText';
 import CustomBotton from '../../components/CustomButton';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import authApi from '../../api/authApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -34,33 +35,45 @@ function SignupScreen() {
     validate: validateSignup,
   });
 
-  const emailcheak = useForm({
-    initialValue: {
-      email: '',
-    },
-    validate: validateEmail,
-  });
+  // 인증번호 전송
+  const handleSendCode = async () => {
+    try {
+      await authApi.sendCode(signup.values.email);
+      Alert.alert('전송 완료', '이메일로 인증번호가 전송되었어요 ✉️');
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '인증번호 전송 실패 😢';
+      Alert.alert('에러', msg);
+    }
+  };
 
-  const codemessagecheck = useForm({
-    initialValue: {
-      codemessage: '',
-    },
-    validate: validateCodeMessage,
-  });
+  // 🔐 인증번호 확인
+  const handleVerifyCode = async () => {
+    try {
+      await authApi.verifyCode(signup.values.email, signup.values.codemessage);
+      Alert.alert('확인 완료', '이메일 인증이 완료되었어요 ✅');
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '인증번호가 틀렸어요!';
+      Alert.alert('오류', msg);
+    }
+  };
 
-  const idcheak = useForm({
-    initialValue: {
-      id: '',
-    },
-    validate: validateId,
-  });
+  // 🙌 최종 회원가입 요청
+  const handleSignup = async () => {
+    const {id, password, email, username} = signup.values;
 
-  const pwcheak = useForm({
-    initialValue: {
-      password: '',
-    },
-    validate: validatePw,
-  });
+    try {
+      await authApi.signup(
+        id,
+        password,
+        signup.values.email, // ✅ 수정
+        username,
+      );
+      Alert.alert('가입 완료!', '이제 로그인 해주세요 😄');
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '회원가입 실패 🥲';
+      Alert.alert('오류', msg);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,23 +109,25 @@ function SignupScreen() {
             <MiniInputField
               placeholder="이메일"
               inputMode="email"
-              focused={emailcheak.focused.email}
+              focused={signup.focused.email}
               {...signup.getTextInputProps('email')}
-              {...emailcheak.getTextInputProps('email')}
             />
-            <MiniCustomButton label="인증" inValid={!emailcheak.isFormValid} />
+            <MiniCustomButton
+              label="인증"
+              inValid={!!signup.errors.email}
+              onPress={handleSendCode}
+            />
           </View>
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
               inputMode="text"
-              focused={codemessagecheck.focused.codemessage}
+              focused={signup.focused.codemessage}
               {...signup.getTextInputProps('codemessage')}
-              {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
-                const upperText = text.toUpperCase(); // ✅ 입력값을 대문자로 변환
+                const upperText = text.toUpperCase();
                 if (upperText.length <= 6) {
-                  codemessagecheck
+                  signup
                     .getTextInputProps('codemessage')
                     .onChangeText(upperText);
                 }
@@ -120,7 +135,8 @@ function SignupScreen() {
             />
             <MiniCustomButton_W
               label="확인"
-              inValid={!codemessagecheck.isFormValid}
+              inValid={!!signup.errors.codemessage}
+              onPress={handleVerifyCode}
             />
           </View>
           <Text style={styles.emailText}>* 아이디 찾기에 사용됩니다.</Text>
@@ -129,11 +145,10 @@ function SignupScreen() {
               placeholder="아이디"
               inputMode="text"
               keyboardType="ascii-capable"
-              focused={idcheak.focused.id}
+              focused={signup.focused.id}
               {...signup.getTextInputProps('id')}
-              {...idcheak.getTextInputProps('id')}
             />
-            <MiniCustomButton label="확인" inValid={!idcheak.isFormValid} />
+            <MiniCustomButton label="확인" inValid={!!signup.errors.id} />
           </View>
           <View style={styles.pwContainer}>
             <View style={styles.pwBigInputfield}>
@@ -176,7 +191,11 @@ function SignupScreen() {
         </View>
       </KeyboardAwareScrollView>
       <View style={styles.completeButton}>
-        <CustomBotton label="가입하기" />
+        <CustomBotton
+          label="가입하기"
+          inValid={!signup.isFormValid}
+          onPress={handleSignup}
+        />
       </View>
     </SafeAreaView>
   );

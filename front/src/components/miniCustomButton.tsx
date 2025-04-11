@@ -1,8 +1,14 @@
 import React from 'react';
-import {Dimensions, Pressable, StyleSheet, Text} from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  PressableProps,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {colors} from '../constants';
 
-interface miniCustomButtonProps {
+interface miniCustomButtonProps extends PressableProps {
   label: string;
   inValid?: boolean;
 }
@@ -11,7 +17,11 @@ const deviceWidth = Dimensions.get('screen').width;
 
 const deviceHeight = Dimensions.get('screen').height;
 
-function miniCustomButton({label, inValid = false}: miniCustomButtonProps) {
+function miniCustomButton({
+  label,
+  inValid = false,
+  ...props
+}: miniCustomButtonProps) {
   return (
     <Pressable
       disabled={inValid}
@@ -19,7 +29,8 @@ function miniCustomButton({label, inValid = false}: miniCustomButtonProps) {
         styles.container,
         pressed ? styles.filledPressed : styles.filled,
         inValid && styles.inValid,
-      ]}>
+      ]}
+      {...props}>
       <Text style={[styles.text, styles.filledText]}>{label}</Text>
     </Pressable>
   );
