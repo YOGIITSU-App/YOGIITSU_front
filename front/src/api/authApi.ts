@@ -10,19 +10,30 @@ const authApi = {
     }),
 
   // ✅ 인증번호 이메일로 전송
-  sendResetCode: (email: string) =>
-    axiosInstance.post('/send-mail/email', {
+  sendResetCode: async (email: string) => {
+    const response = await axiosInstance.post('/send-mail/email', {
       email,
-    }),
+    });
+
+    const token = response.data?.token;
+
+    if (token) {
+      await AsyncStorage.setItem('emailVerifyToken', token);
+    }
+
+    return response;
+  },
 
   // ✅ 인증번호 확인
-  verifyResetCode: async (email: string, code: string, token: string) => {
+  verifyResetCode: async (email: string, code: string) => {
+    const token = await AsyncStorage.getItem('emailVerifyToken'); // ✅ 저장한 임시 토큰 불러오기
+
     const response = await axiosInstance.post(
       '/verify/code',
-      {email, code, token},
+      {email, code},
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'X-Email-Verification-Token': token ?? '', // ❗null 방지
         },
       },
     );

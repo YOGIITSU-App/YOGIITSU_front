@@ -20,6 +20,7 @@ import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator'
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import authApi from '../../../api/authApi'; // ✅ 추가
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -65,16 +66,22 @@ function FindPwCodeConfirmScreen() {
       await authApi.verifyResetCode(
         emailcheak.values.email,
         codemessagecheck.values.codemessage,
-        token,
       );
+
+      // ✅ 토큰 삭제 시도 (실패하더라도 무시)
+      try {
+        await AsyncStorage.removeItem('emailVerifyToken');
+      } catch (removeErr) {
+        console.warn('임시 토큰 삭제 실패:', removeErr);
+      }
+
       navigation.navigate('FindPw', {
-        email: emailcheak.values.email, // ✅ 다음 화면에 이메일 넘김
+        email: emailcheak.values.email,
       });
     } catch (error) {
       Alert.alert('실패', '인증번호가 올바르지 않아요!');
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* 안내 문구 */}

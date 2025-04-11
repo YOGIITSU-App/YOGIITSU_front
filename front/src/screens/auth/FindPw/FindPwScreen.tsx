@@ -57,7 +57,6 @@ function FindPwScreen() {
         <View style={styles.pwBigInputfield}>
           <InputField
             placeholder="비밀번호"
-            inputMode="text"
             secureTextEntry
             touched={pwconfirmcheak.touched.password}
             error={pwconfirmcheak.errors.password}
@@ -74,7 +73,6 @@ function FindPwScreen() {
         <View style={styles.pwBigInputfield}>
           <InputField
             placeholder="비밀번호 확인"
-            inputMode="text"
             secureTextEntry
             touched={pwconfirmcheak.touched.passwordConfirm}
             error={pwconfirmcheak.errors.passwordConfirm}
