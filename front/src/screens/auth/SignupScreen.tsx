@@ -1,14 +1,8 @@
-import React from 'react';
-import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
+import React, {useState} from 'react';
+import {Alert, Dimensions, Modal, StyleSheet, Text, View} from 'react-native';
 import {colors} from '../../constants';
 import useForm from '../../hooks/useForms';
-import {
-  validateSignup,
-  validateId,
-  validatePw,
-  validateEmail,
-  validateCodeMessage,
-} from '../../utils';
+import {validateSignup} from '../../utils';
 import InputField from '../../components/inputField';
 import MiniCustomButton from '../../components/miniCustomButton';
 import MiniCustomButton_W from '../../components/miniCustomButton_W';
@@ -35,13 +29,15 @@ function SignupScreen() {
     validate: validateSignup,
   });
 
+  const [modalVisible, setModalVisible] = useState(false);
+
   // 인증번호 전송
   const handleSendCode = async () => {
     try {
       await authApi.sendCode(signup.values.email);
-      Alert.alert('전송 완료', '이메일로 인증번호가 전송되었어요 ✉️');
+      setModalVisible(true);
     } catch (error: any) {
-      const msg = error.response?.data?.message ?? '인증번호 전송 실패 😢';
+      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
       Alert.alert('에러', msg);
     }
   };
@@ -50,7 +46,7 @@ function SignupScreen() {
   const handleVerifyCode = async () => {
     try {
       await authApi.verifyCode(signup.values.email, signup.values.codemessage);
-      Alert.alert('확인 완료', '이메일 인증이 완료되었어요 ✅');
+      Alert.alert('확인 완료', '이메일 인증이 완료되었어요');
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호가 틀렸어요!';
       Alert.alert('오류', msg);
@@ -62,15 +58,10 @@ function SignupScreen() {
     const {id, password, email, username} = signup.values;
 
     try {
-      await authApi.signup(
-        id,
-        password,
-        signup.values.email, // ✅ 수정
-        username,
-      );
-      Alert.alert('가입 완료!', '이제 로그인 해주세요 😄');
+      await authApi.signup(id, password, email, username);
+      Alert.alert('가입 완료!', '이제 로그인 해주세요');
     } catch (error: any) {
-      const msg = error.response?.data?.message ?? '회원가입 실패 🥲';
+      const msg = error.response?.data?.message ?? '회원가입 실패';
       Alert.alert('오류', msg);
     }
   };
@@ -118,6 +109,24 @@ function SignupScreen() {
               onPress={handleSendCode}
             />
           </View>
+          {/* 인증번호 전송 완료 모달 */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}>
+            <View style={styles.modalBackground}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
+                <CustomBotton
+                  label="확인"
+                  style={styles.confirmButton}
+                  onPress={() => {
+                    setModalVisible(false); // 모달 닫기
+                  }}></CustomBotton>
+              </View>
+            </View>
+          </Modal>
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
@@ -265,22 +274,7 @@ const styles = StyleSheet.create({
   errorMessageContainer: {
     alignSelf: 'flex-start',
     marginLeft: deviceWidth * 0.04,
-    // marginBottom: '15%',
   },
-  // completeButton: {
-  //   position: 'absolute',
-  //   bottom: 0,
-  //   left: 0,
-  //   right: 0,
-  //   height: deviceHeight * 0.1275,
-  //   paddingHorizontal: 20,
-  //   paddingVertical: 15,
-  //   backgroundColor: 'white',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   borderTopWidth: 1,
-  //   borderColor: '#eee',
-  // },
   completeButton: {
     paddingVertical: 20,
     backgroundColor: 'white',
@@ -288,6 +282,36 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
+  },
+  modalBox: {
+    width: deviceWidth * 0.85,
+    height: deviceHeight * 0.19375,
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.BLACK_500,
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  confirmButton: {
+    width: deviceWidth * 0.7277,
+    height: deviceHeight * 0.06125,
+    backgroundColor: colors.BLUE_700,
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
   },
 });
 
