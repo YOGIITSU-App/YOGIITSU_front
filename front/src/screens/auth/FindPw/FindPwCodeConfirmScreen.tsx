@@ -51,7 +51,8 @@ function FindPwCodeConfirmScreen() {
   // ✉️ 인증번호 전송
   const handleSendCode = async () => {
     try {
-      const res = await authApi.sendResetCode(emailcheak.values.email);
+      const res = await authApi.sendCode(emailcheak.values.email);
+
       console.log('응답 확인 👉', res.data);
 
       setToken(res.data.token); // 토큰 저장
@@ -64,18 +65,20 @@ function FindPwCodeConfirmScreen() {
   // ✅ 인증번호 확인
   const handleVerifyCode = async () => {
     try {
-      await authApi.verifyResetCode(
+      // 서버에 입력한 이메일과 인증코드를 보내어 검증 요청
+      await authApi.verifyCode(
         emailcheak.values.email,
         codemessagecheck.values.codemessage,
       );
 
-      // ✅ 토큰 삭제 시도 (실패하더라도 무시)
+      // 인증이 완료된 후, 필요하다면 임시 토큰 삭제
       try {
         await AsyncStorage.removeItem('emailVerifyToken');
       } catch (removeErr) {
         console.warn('임시 토큰 삭제 실패:', removeErr);
       }
 
+      // 입력했던 이메일 값을 바로 다음 화면에 파라미터로 전달
       navigation.navigate('FindPw', {
         email: emailcheak.values.email,
       });
@@ -83,6 +86,7 @@ function FindPwCodeConfirmScreen() {
       Alert.alert('실패', '인증번호가 올바르지 않아요!');
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* 안내 문구 */}

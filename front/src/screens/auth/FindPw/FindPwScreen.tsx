@@ -17,13 +17,14 @@ import useForm from '../../../hooks/useForms';
 import {validatePwConfirm} from '../../../utils';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
 import authApi from '../../../api/authApi'; // ✅ 비밀번호 변경 API
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const deviceWidth = Dimensions.get('screen').width;
 
 function FindPwScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, 'FindPw'>>(); // ✅ route로 email 받기
-  const {email} = route.params; // ✅ 이메일 꺼내기
+  const {email: routeEmail} = route.params; // ✅ 이메일 꺼내기
 
   const pwconfirmcheak = useForm({
     initialValue: {
@@ -36,8 +37,18 @@ function FindPwScreen() {
   const handleChangePassword = async () => {
     try {
       const {password, passwordConfirm} = pwconfirmcheak.values;
+
+      const email = routeEmail;
+
+      console.log(email);
+
+      if (!email) {
+        Alert.alert('오류', '인증된 이메일이 없어요!');
+        return;
+      }
+
       // ✅ API 호출: 이메일 + 새로운 비밀번호
-      await authApi.resetPassword(email, password, passwordConfirm);
+      await authApi.resetPassword(password, passwordConfirm, email);
       navigation.navigate('FindPwComplete');
     } catch (err) {
       Alert.alert('비밀번호 변경 실패', '다시 시도해주세요!');

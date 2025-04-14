@@ -10,7 +10,7 @@ const authApi = {
     }),
 
   // ✅ 인증번호 이메일로 전송
-  sendResetCode: async (email: string) => {
+  sendCode: async (email: string) => {
     const response = await axiosInstance.post('/send-mail/email', {
       email,
     });
@@ -25,7 +25,7 @@ const authApi = {
   },
 
   // ✅ 인증번호 확인
-  verifyResetCode: async (email: string, code: string) => {
+  verifyCode: async (email: string, code: string) => {
     const token = await AsyncStorage.getItem('emailVerifyToken'); // ✅ 저장한 임시 토큰 불러오기
 
     const response = await axiosInstance.post(
