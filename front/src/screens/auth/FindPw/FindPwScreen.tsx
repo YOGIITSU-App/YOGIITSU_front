@@ -1,7 +1,14 @@
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {useEffect} from 'react';
-import {Dimensions, SafeAreaView, View, Text, StyleSheet} from 'react-native';
+import {RouteProp} from '@react-navigation/native';
+import {
+  Dimensions,
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
 import InputField from '../../../components/inputField';
@@ -9,11 +16,15 @@ import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validatePwConfirm} from '../../../utils';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
+import authApi from '../../../api/authApi'; // ✅ 비밀번호 변경 API
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const deviceWidth = Dimensions.get('screen').width;
 
 function FindPwScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
+  const route = useRoute<RouteProp<AuthStackParamList, 'FindPw'>>(); // ✅ route로 email 받기
+  const {email: routeEmail} = route.params; // ✅ 이메일 꺼내기
 
   const pwconfirmcheak = useForm({
     initialValue: {
@@ -23,19 +34,40 @@ function FindPwScreen() {
     validate: validatePwConfirm,
   });
 
+  const handleChangePassword = async () => {
+    try {
+      const {password, passwordConfirm} = pwconfirmcheak.values;
+
+      const email = routeEmail;
+
+      console.log(email);
+
+      if (!email) {
+        Alert.alert('오류', '인증된 이메일이 없어요!');
+        return;
+      }
+
+      // ✅ API 호출: 이메일 + 새로운 비밀번호
+      await authApi.resetPassword(password, passwordConfirm, email);
+      navigation.navigate('FindPwComplete');
+    } catch (err) {
+      Alert.alert('비밀번호 변경 실패', '다시 시도해주세요!');
+      console.error(err);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
-          <Text style={styles.highlightedText}>새로운 비밀번호</Text>
-          를설정해주세요
+          <Text style={styles.highlightedText}>새로운 비밀번호</Text>를
+          설정해주세요
         </Text>
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.pwBigInputfield}>
           <InputField
             placeholder="비밀번호"
-            inputMode="text"
             secureTextEntry
             touched={pwconfirmcheak.touched.password}
             error={pwconfirmcheak.errors.password}
@@ -52,7 +84,6 @@ function FindPwScreen() {
         <View style={styles.pwBigInputfield}>
           <InputField
             placeholder="비밀번호 확인"
-            inputMode="text"
             secureTextEntry
             touched={pwconfirmcheak.touched.passwordConfirm}
             error={pwconfirmcheak.errors.passwordConfirm}
@@ -71,12 +102,8 @@ function FindPwScreen() {
             label="변경"
             variant="filled"
             size="large"
-            inValid={!pwconfirmcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-            onPress={() => {
-              if (pwconfirmcheak.isFormValid) {
-                navigation.navigate('FindPwComplete');
-              }
-            }}
+            inValid={!pwconfirmcheak.isFormValid}
+            onPress={handleChangePassword}
           />
         </View>
       </View>
@@ -85,9 +112,7 @@ function FindPwScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {flex: 1},
   guideContainer: {
     marginTop: 15,
     marginLeft: deviceWidth * 0.08,
@@ -103,20 +128,19 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   infoContainer: {
-    justifyContent: 'flex-start', // 위쪽 정렬
-    paddingTop: 20, // 위쪽 여백 조정
-    paddingHorizontal: 20, // 상하 여백 조정
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 15,
   },
   pwBigInputfield: {
-    paddingTop: 30, // 위쪽 여백 조정
+    paddingTop: 30,
     gap: 15,
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
     marginLeft: deviceWidth * 0.04,
-    // marginBottom: '3%',
   },
   enterButton: {
     marginTop: '15%',

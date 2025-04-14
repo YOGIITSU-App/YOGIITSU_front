@@ -54,6 +54,19 @@ const authApi = {
       userName,
     });
   },
+
+  // 🔑 비밀번호 재설정
+  resetPassword: async (
+    newPassword: string,
+    confirmPassword: string,
+    email: string,
+  ) => {
+    return axiosInstance.post('/members/find-password', {
+      email,
+      newPassword,
+      confirmPassword,
+    });
+  },
 };
 
 export default authApi;

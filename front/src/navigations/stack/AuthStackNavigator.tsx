@@ -15,7 +15,7 @@ export type AuthStackParamList = {
   [authNavigations.LOGIN]: undefined;
   [authNavigations.FINDID]: undefined;
   FindPwCodeConfirm: undefined;
-  FindPw: undefined;
+  FindPw: {email: string};
   FindPwComplete: undefined;
   [authNavigations.SIGNUP]: undefined;
 };

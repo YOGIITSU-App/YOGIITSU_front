@@ -11,10 +11,23 @@ const axiosInstance = axios.create({
 
 // 요청 시 토큰 자동 추가
 axiosInstance.interceptors.request.use(async config => {
-  const token = await AsyncStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // ❗ accessToken이 필요한 요청만 토큰 붙이기
+  const skipAuthUrls = [
+    '/send-mail/email',
+    '/verify/code',
+    '/members/find-password',
+  ];
+
+  const shouldSkip = skipAuthUrls.some(url => config.url?.includes(url));
+  if (!shouldSkip) {
+    const token = await AsyncStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } else {
+    delete config.headers.Authorization;
   }
+
   return config;
 });
 
