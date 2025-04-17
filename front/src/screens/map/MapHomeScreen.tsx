@@ -36,20 +36,29 @@ function MapHomeScreen() {
   const navigation = useNavigation<MapHomeScreenNavigationProp>();
   const route = useRoute<MapHomeScreenRouteProp>();
 
-  // ✅ selectedPlace가 없을 경우 기본값 설정
+  // 전달된 파라미터 (SearchScreen 또는 RouteSelectionScreen에서 전달)
+  // 선택된 장소 좌표는 항상 startLocation로 전달되지만, selectionType이 함께 오면 'start' 또는 'end'로 구분합니다.
   const selectedLocation = route.params?.startLocation;
+  const selectionType = route.params?.selectionType; // 'start' 또는 'end'
   const selectedPlace = route.params?.selectedPlace || '선택한 장소';
 
-  const [location, setLocation] = useState<Region | null>(null);
-  const [markerLocation, setMarkerLocation] = useState<{
+  // 출발지와 도착지 좌표를 분리해서 관리
+  const [startCoords, setStartCoords] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [endCoords, setEndCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  // 지도에 표시할 영역(region)
+  const [region, setRegion] = useState<Region | null>(null);
+
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const bottomSheetHeight = useState(new Animated.Value(0))[0];
 
   // 기본 위치 (서울)
-  const DEFAULT_LOCATION: Region = {
+  const DEFAULT_REGION: Region = {
     latitude: 37.5665,
     longitude: 126.978,
     latitudeDelta: 0.01,
@@ -67,56 +76,67 @@ function MapHomeScreen() {
     return true;
   };
 
-  // 현재 위치 가져오기
+  // 현재 위치 가져오기 (초기 로드 시)
   const getCurrentLocation = async () => {
     const hasPermission = await requestLocationPermission();
     if (hasPermission) {
       Geolocation.getCurrentPosition(
         position => {
-          setLocation({
+          const currentRegion: Region = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
-          });
-          setMarkerLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
+          };
+          setRegion(currentRegion);
+          // 초기에는 출발지로 사용
+          if (!startCoords) {
+            setStartCoords({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          }
         },
         error => {
           console.log('위치 가져오기 실패:', error);
-          setLocation(DEFAULT_LOCATION);
-          setMarkerLocation({
-            latitude: DEFAULT_LOCATION.latitude,
-            longitude: DEFAULT_LOCATION.longitude,
-          });
+          setRegion(DEFAULT_REGION);
+          if (!startCoords) {
+            setStartCoords({
+              latitude: DEFAULT_REGION.latitude,
+              longitude: DEFAULT_REGION.longitude,
+            });
+          }
         },
         {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
       );
     } else {
-      setLocation(DEFAULT_LOCATION);
-      setMarkerLocation({
-        latitude: DEFAULT_LOCATION.latitude,
-        longitude: DEFAULT_LOCATION.longitude,
-      });
+      setRegion(DEFAULT_REGION);
+      if (!startCoords) {
+        setStartCoords({
+          latitude: DEFAULT_REGION.latitude,
+          longitude: DEFAULT_REGION.longitude,
+        });
+      }
     }
   };
 
-  // ✅ 검색 결과 받아서 지도 이동 & 마커 추가 & BottomSheet 표시
+  // 선택된 검색 결과를 받아서 좌표 업데이트
   useEffect(() => {
-    if (selectedLocation) {
+    if (selectedLocation && selectionType) {
       const coords = selectedLocation.split(',').map(Number);
-
       if (!isNaN(coords[0]) && !isNaN(coords[1])) {
-        setLocation({
+        const newRegion: Region = {
           latitude: coords[0],
           longitude: coords[1],
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
-        });
-        setMarkerLocation({latitude: coords[0], longitude: coords[1]});
-
+        };
+        setRegion(newRegion);
+        if (selectionType === 'start') {
+          setStartCoords({latitude: coords[0], longitude: coords[1]});
+        } else if (selectionType === 'end') {
+          setEndCoords({latitude: coords[0], longitude: coords[1]});
+        }
         setBottomSheetVisible(true);
         Animated.timing(bottomSheetHeight, {
           toValue: 250,
@@ -127,31 +147,31 @@ function MapHomeScreen() {
     } else {
       getCurrentLocation();
     }
-  }, [selectedLocation]);
+  }, [selectedLocation, selectionType]);
 
-  // ✅ 출발/도착 버튼 클릭 시 `RouteSelectionScreen`으로 이동
+  // 출발/도착 버튼 클릭 시 RouteSelectionScreen으로 이동
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
-    if (!markerLocation) return;
+    if (type === 'start' && !startCoords) return;
+    if (type === 'end' && !endCoords) return;
 
     navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      startLocation:
-        type === 'start'
-          ? `${markerLocation.latitude},${markerLocation.longitude}`
-          : route.params?.startLocation,
-      endLocation:
-        type === 'end'
-          ? `${markerLocation.latitude},${markerLocation.longitude}`
-          : route.params?.endLocation,
+      startLocation: startCoords
+        ? `${startCoords.latitude},${startCoords.longitude}`
+        : '',
+      endLocation: endCoords
+        ? `${endCoords.latitude},${endCoords.longitude}`
+        : '',
       startLocationName:
-        type === 'start' ? selectedPlace : route.params?.startLocationName,
+        route.params?.startLocationName ||
+        (type === 'start' ? selectedPlace : '출발지 선택'),
       endLocationName:
-        type === 'end' ? selectedPlace : route.params?.endLocationName,
+        route.params?.endLocationName ||
+        (type === 'end' ? selectedPlace : '도착지 선택'),
     });
-
-    handleCloseBottomSheet(); // ✅ BottomSheet 닫기
+    handleCloseBottomSheet();
   };
 
-  // ✅ BottomSheet 닫기
+  // BottomSheet 닫기
   const handleCloseBottomSheet = () => {
     Animated.timing(bottomSheetHeight, {
       toValue: 0,
@@ -164,12 +184,11 @@ function MapHomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ✅ 검색창 (올바른 `selectionType` 전달) */}
+      {/* 검색창: 기본적으로 출발지 검색으로 호출 */}
       <TouchableOpacity
         style={styles.searchBox}
-        onPress={
-          () =>
-            navigation.navigate(mapNavigation.SEARCH, {selectionType: 'start'}) // ✅ 타입 오류 해결
+        onPress={() =>
+          navigation.navigate(mapNavigation.SEARCH, {selectionType: 'start'})
         }>
         <View style={styles.searchBoxInput}>
           <Image
@@ -183,23 +202,23 @@ function MapHomeScreen() {
           />
         </View>
       </TouchableOpacity>
-      {/* ✅ 지도 */}
+      {/* 지도 */}
       <MapView
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        region={location || DEFAULT_LOCATION}>
-        {markerLocation && (
-          <Marker coordinate={markerLocation} title={selectedPlace} />
+        region={region || DEFAULT_REGION}>
+        {startCoords && (
+          <Marker coordinate={startCoords} title="출발지" pinColor="green" />
+        )}
+        {endCoords && (
+          <Marker coordinate={endCoords} title="도착지" pinColor="red" />
         )}
       </MapView>
-
-      {/* ✅ BottomSheet (검색했을 때만 표시) */}
+      {/* BottomSheet: 검색 결과가 있을 때 표시 */}
       {bottomSheetVisible && (
         <Animated.View
           style={[styles.bottomSheet, {height: bottomSheetHeight}]}>
           <Text style={styles.title}>{selectedPlace}</Text>
-
-          {/* 출발 / 도착 버튼 */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.button}
@@ -219,10 +238,7 @@ function MapHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, // 화면 전체를 차지
-  },
-
+  container: {flex: 1},
   searchBox: {
     position: 'absolute',
     top: 30,
@@ -239,20 +255,13 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 10,
   },
-  searchBoxInput: {
-    flexDirection: 'row',
-    alignItems: 'center', // ✅ 세로 중앙 정렬
-  },
-  searchIcon: {
-    width: 20, // ✅ 아이콘 크기 조정
-    height: 20,
-    marginRight: 8, // ✅ 아이콘과 텍스트 간격 조정
-  },
+  searchBoxInput: {flexDirection: 'row', alignItems: 'center'},
+  searchIcon: {width: 20, height: 20, marginRight: 8},
   searchInput: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.GRAY_500,
-    flex: 1, // ✅ 남은 공간을 차지하도록 설정
+    flex: 1,
   },
   map: {flex: 1},
   bottomSheet: {

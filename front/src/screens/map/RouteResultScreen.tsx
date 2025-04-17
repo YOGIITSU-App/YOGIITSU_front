@@ -1,119 +1,116 @@
 import React, {useEffect, useState} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
-import MapView, {Polyline, Marker} from 'react-native-maps';
+import {View, ActivityIndicator, StyleSheet, Alert} from 'react-native';
+import MapView, {Marker, Polyline, Region} from 'react-native-maps';
 import axios from 'axios';
+import {TMAP_API_KEY} from '@env';
 import {RouteProp, useRoute} from '@react-navigation/native';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
-import {TMAP_API_KEY} from '@env';
 
-// ✅ 네비게이션 타입 정의
+// route.params의 타입 정의
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
   typeof mapNavigation.ROUTE_RESULT
 >;
 
-function RouteResultScreen() {
+// 좌표 객체 타입
+interface Coordinate {
+  latitude: number;
+  longitude: number;
+}
+
+const GoogleMapWalkingRouteScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
+  const {
+    startLocation, // 예: "37.56520450,126.98702028"
+    endLocation, // 예: "37.566158,126.988940"
+    startLocationName = '출발지',
+    endLocationName = '도착지',
+  } = route.params;
 
-  // ✅ 출발 & 도착 정보
-  const {startLocation, startLocationName, endLocation, endLocationName} =
-    route.params;
-  const [selectedMode, setSelectedMode] = useState<'transit' | 'car' | 'walk'>(
-    'transit',
-  );
-  const [routePath, setRoutePath] = useState<
-    {latitude: number; longitude: number}[]
-  >([]);
-  const [loading, setLoading] = useState(false);
+  const [routePath, setRoutePath] = useState<Coordinate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ 출발 & 도착 좌표 변환
+  // 출발지와 도착지 좌표 파싱 (문자열 -> 숫자형 Coordinate)
   const [startLat, startLon] = startLocation.split(',').map(Number);
   const [endLat, endLon] = endLocation.split(',').map(Number);
+  const region: Region = {
+    latitude: startLat,
+    longitude: startLon,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  };
 
-  // ✅ Tmap 길찾기 API 호출
-  const fetchRoute = async () => {
+  // Tmap 보행자 길찾기 API 호출 함수 (도보모드 전용)
+  const fetchWalkingRoute = async () => {
     setLoading(true);
-    let url = '';
-    let data = {};
-
-    if (selectedMode === 'transit') {
-      // 대중교통 경로
-      url = 'https://apis.openapi.sk.com/transit/routes';
-      data = {
-        appKey: TMAP_API_KEY,
-        startX: startLon,
-        startY: startLat,
-        endX: endLon,
-        endY: endLat,
-        reqCoordType: 'WGS84GEO',
-        resCoordType: 'WGS84GEO',
-        count: 10,
-      };
-    } else if (selectedMode === 'car') {
-      // 자동차 경로
-      url = 'https://apis.openapi.sk.com/tmap/routes';
-      data = {
-        startX: startLon,
-        startY: startLat,
-        endX: endLon,
-        endY: endLat,
-        appKey: TMAP_API_KEY,
-      };
-    } else if (selectedMode === 'walk') {
-      // 도보 경로
-      url = 'https://apis.openapi.sk.com/tmap/routes/pedestrian';
-      data = {
-        startX: startLon,
-        startY: startLat,
-        endX: endLon,
-        endY: endLat,
-        appKey: TMAP_API_KEY,
-      };
-    }
+    const url =
+      'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json';
+    const requestData = {
+      appKey: TMAP_API_KEY,
+      startX: startLon, // Tmap API는 [경도, 위도] 순서를 사용합니다.
+      startY: startLat,
+      endX: endLon,
+      endY: endLat,
+      reqCoordType: 'WGS84GEO',
+      resCoordType: 'WGS84GEO',
+      startName: startLocationName,
+      endName: endLocationName,
+      searchOption: '0',
+      sort: 'index',
+      angle: 20,
+      speed: 4,
+    };
 
     try {
-      const response = await axios.post(url, data);
-      const path = response.data.features
-        .filter((feature: any) => feature.geometry.type === 'LineString')
-        .flatMap((feature: any) =>
-          feature.geometry.coordinates.map(([lon, lat]: number[]) => ({
-            latitude: lat,
-            longitude: lon,
-          })),
+      console.log(TMAP_API_KEY);
+      const response = await axios.post(url, requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      // 디버깅: 응답 전체 확인
+      console.log('Tmap 응답 데이터:', response.data);
+      if (response.data && response.data.features) {
+        // GeoJSON 데이터 중 LineString 타입만 필터링
+        const lineStrings = response.data.features.filter(
+          (feature: any) => feature.geometry.type === 'LineString',
         );
-
-      setRoutePath(path);
-    } catch (error) {
-      console.error('길찾기 API 오류:', error);
+        const coords: Coordinate[] = [];
+        // 각 LineString의 좌표 배열을 추출 (각 coord: [경도, 위도])
+        lineStrings.forEach((feature: any) => {
+          feature.geometry.coordinates.forEach((coord: number[]) => {
+            coords.push({latitude: coord[1], longitude: coord[0]});
+          });
+        });
+        // 필요하다면, 중복 좌표 제거 등의 후처리 추가 가능
+        setRoutePath(coords);
+      } else {
+        Alert.alert('오류', '경로 데이터를 가져올 수 없습니다.');
+      }
+    } catch (error: any) {
+      console.log('에러 status:', error.response?.status);
+      console.log('에러 data:', error.response?.data);
+      Alert.alert(
+        '길찾기 오류',
+        error.response?.data?.message || '길찾기 요청 실패',
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ 모드 변경 시 길찾기 요청
   useEffect(() => {
-    fetchRoute();
-  }, [selectedMode]);
+    fetchWalkingRoute();
+  }, []);
 
   return (
     <View style={styles.container}>
-      {/* ✅ 지도 표시 */}
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: startLat,
-          longitude: startLon,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}>
-        {/* 출발지 & 도착지 마커 */}
+      {loading && (
+        <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />
+      )}
+      <MapView style={styles.map} region={region}>
         <Marker
           coordinate={{latitude: startLat, longitude: startLon}}
           title="출발지"
@@ -122,8 +119,6 @@ function RouteResultScreen() {
           coordinate={{latitude: endLat, longitude: endLon}}
           title="도착지"
         />
-
-        {/* 길찾기 경로 */}
         {routePath.length > 0 && (
           <Polyline
             coordinates={routePath}
@@ -132,69 +127,14 @@ function RouteResultScreen() {
           />
         )}
       </MapView>
-
-      {/* ✅ 길찾기 모드 선택 버튼 */}
-      <View style={styles.modeContainer}>
-        <TouchableOpacity
-          style={[
-            styles.modeButton,
-            selectedMode === 'transit' && styles.selectedMode,
-          ]}
-          onPress={() => setSelectedMode('transit')}>
-          <Text style={styles.modeText}>🚌 대중교통</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.modeButton,
-            selectedMode === 'car' && styles.selectedMode,
-          ]}
-          onPress={() => setSelectedMode('car')}>
-          <Text style={styles.modeText}>🚗 자동차</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.modeButton,
-            selectedMode === 'walk' && styles.selectedMode,
-          ]}
-          onPress={() => setSelectedMode('walk')}>
-          <Text style={styles.modeText}>🚶 도보</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ✅ 로딩 표시 */}
-      {loading && (
-        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
-      )}
     </View>
   );
-}
+};
+
+export default GoogleMapWalkingRouteScreen;
 
 const styles = StyleSheet.create({
   container: {flex: 1},
   map: {flex: 1},
-  modeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10,
-    backgroundColor: 'white',
-  },
-  modeButton: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#eee',
-  },
-  selectedMode: {
-    backgroundColor: '#007AFF',
-  },
-  modeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loader: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-  },
+  loader: {position: 'absolute', top: '50%', left: '50%'},
 });
-
-export default RouteResultScreen;
