@@ -1,15 +1,5 @@
 import React, {useState} from 'react';
-import {
-  Alert,
-  Dimensions,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Alert, Dimensions, Modal, StyleSheet, Text, View} from 'react-native';
 import {authNavigations, colors} from '../../constants';
 import useForm from '../../hooks/useForms';
 import {validateSignup} from '../../utils';
@@ -20,6 +10,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import MiniInputField from '../../components/miniInputField';
 import CustomText from '../../components/CustomText';
 import CustomBotton from '../../components/CustomButton';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import authApi from '../../api/authApi';
 import AlertModal from '../../components/AlertModal';
 import CompleteCheck from '../../assets/CompleteCheck.svg';
@@ -93,208 +84,198 @@ function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-        <ScrollView
-          style={styles.flex}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}>
-          <View style={styles.guideContainer}>
-            <Text style={styles.guideText}>반가워요!</Text>
-            <Text style={styles.guideText}>
-              <Text style={styles.highlightedText}>요기있수</Text> 입니다
-            </Text>
-            <View style={styles.textHeight}>
-              <Text>가입을 위한 기본 정보를 작성해 주세요</Text>
-            </View>
+      <KeyboardAwareScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'space-between',
+          // padding: 20,
+        }}
+        keyboardShouldPersistTaps="handled">
+        <View style={styles.guideContainer}>
+          <Text style={styles.guideText}>반가워요!</Text>
+          <Text style={styles.guideText}>
+            <Text style={styles.highlightedText}>요기있수</Text> 입니다
+          </Text>
+          <View style={styles.textHeight}>
+            <Text>가입을 위한 기본 정보를 작성해 주세요</Text>
           </View>
-          <View style={styles.infoContainer}>
-            <View style={styles.nameInputfield}>
-              <InputField
-                placeholder="이름"
-                inputMode="text"
-                focused={signup.focused.username}
-                {...signup.getTextInputProps('username')}
-              />
-            </View>
-            <View style={styles.emailcontainer}>
-              <View style={styles.smallContainer}>
-                <MiniInputField
-                  placeholder="이메일"
-                  inputMode="email"
-                  focused={signup.focused.email}
-                  {...signup.getTextInputProps('email')}
-                />
-                <MiniCustomButton
-                  label="인증"
-                  inValid={!!signup.errors.email}
-                  onPress={handleSendCode}
-                />
-              </View>
-              <View style={styles.smallContainer}>
-                <MiniInputField
-                  placeholder="인증번호"
-                  inputMode="text"
-                  focused={signup.focused.codemessage}
-                  {...signup.getTextInputProps('codemessage')}
-                  onChangeText={text => {
-                    const upperText = text.toUpperCase();
-                    if (upperText.length <= 6) {
-                      signup
-                        .getTextInputProps('codemessage')
-                        .onChangeText(upperText);
-                    }
-                  }}
-                />
-                <MiniCustomButton_W
-                  label="확인"
-                  inValid={!!signup.errors.codemessage}
-                  onPress={handleVerifyCode}
-                />
-              </View>
-              <Text style={styles.emailText}>* 아이디 찾기에 사용됩니다.</Text>
-            </View>
-            <AlertModal
-              visible={sendCodeModalVisible}
-              onRequestClose={() => setSendCodeModalVisible(false)}
-              message="인증번호가 전송되었습니다"
-              buttons={[
-                {
-                  label: '확인',
-                  onPress: () => setSendCodeModalVisible(false),
-                  style: {backgroundColor: colors.BLUE_700},
-                },
-              ]}
-            />
-            <AlertModal
-              visible={codeCorrectModalVisible}
-              onRequestClose={() => setCodeCorrectModalVisible(false)}
-              message="인증번호가 일치합니다"
-              buttons={[
-                {
-                  label: '확인',
-                  onPress: () => setCodeCorrectModalVisible(false),
-                  style: {backgroundColor: colors.BLUE_700},
-                },
-              ]}
-            />
-            <AlertModal
-              visible={codeWrongModalVisible}
-              onRequestClose={() => setCodeWrongModalVisible(false)}
-              message="인증번호가 틀렸습니다"
-              buttons={[
-                {
-                  label: '다시 입력',
-                  onPress: () => setCodeWrongModalVisible(false),
-                  style: {backgroundColor: colors.GRAY_300},
-                },
-                {
-                  label: '재전송',
-                  onPress: handleReSend,
-                  style: {backgroundColor: colors.BLUE_700},
-                },
-              ]}
-            />
-            <View style={styles.idContainer}>
-              <InputField
-                placeholder="아이디"
-                inputMode="text"
-                keyboardType="ascii-capable"
-                focused={signup.focused.id}
-                {...signup.getTextInputProps('id')}
-              />
-            </View>
-            <View style={styles.pwContainer}>
-              <View style={styles.pwBigInputfield}>
-                <InputField
-                  placeholder="비밀번호"
-                  inputMode="text"
-                  secureTextEntry
-                  touched={signup.touched.password}
-                  error={signup.errors.password}
-                  {...signup.getTextInputProps('password')}
-                />
-              </View>
-              <View style={styles.errorMessageContainer}>
-                <CustomText
-                  text="영문, 숫자, 특수문자를 포함한 8자리 이상"
-                  touched={signup.touched.password}
-                  error={signup.errors.password}
-                />
-              </View>
-              <View style={styles.pwBigInputfield}>
-                <InputField
-                  placeholder="비밀번호 확인"
-                  inputMode="text"
-                  secureTextEntry
-                  touched={signup.touched.passwordConfirm}
-                  error={signup.errors.passwordConfirm}
-                  {...signup.getTextInputProps('passwordConfirm')}
-                />
-              </View>
-              <View style={styles.errorMessageContainer}>
-                <CustomText
-                  text="위의 비밀번호와 일치하지 않습니다."
-                  touched={signup.touched.passwordConfirm}
-                  error={signup.errors.passwordConfirm}
-                />
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-        <View style={styles.completeButton}>
-          <CustomBotton
-            label="가입하기"
-            inValid={!signup.isFormValid}
-            onPress={handleSignup}
-          />
         </View>
-        <Modal
-          animationType="fade"
-          transparent
-          visible={completeModalVisible}
-          onRequestClose={() => setCompleteModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <View style={styles.iconContainer}>
-                <CompleteCheck />
-              </View>
-              <Text style={styles.modalTitle}>가입이 완료되었습니다</Text>
-              <CustomBotton
-                label="로그인 하기"
-                onPress={() => {
-                  setCompleteModalVisible(false);
-                  navigation.navigate(authNavigations.AUTH_HOME); // 혹은 원하는 화면
+        <View style={styles.infoContainer}>
+          <View style={styles.nameInputfield}>
+            <InputField
+              placeholder="이름"
+              inputMode="text"
+              focused={signup.focused.username}
+              {...signup.getTextInputProps('username')}
+            />
+          </View>
+          <View style={styles.emailcontainer}>
+            <View style={styles.smallContainer}>
+              <MiniInputField
+                placeholder="이메일"
+                inputMode="email"
+                focused={signup.focused.email}
+                {...signup.getTextInputProps('email')}
+              />
+              <MiniCustomButton
+                label="인증"
+                inValid={!!signup.errors.email}
+                onPress={handleSendCode}
+              />
+            </View>
+            <View style={styles.smallContainer}>
+              <MiniInputField
+                placeholder="인증번호"
+                inputMode="text"
+                focused={signup.focused.codemessage}
+                {...signup.getTextInputProps('codemessage')}
+                onChangeText={text => {
+                  const upperText = text.toUpperCase();
+                  if (upperText.length <= 6) {
+                    signup
+                      .getTextInputProps('codemessage')
+                      .onChangeText(upperText);
+                  }
                 }}
-                style={styles.loginButton}
+              />
+              <MiniCustomButton_W
+                label="확인"
+                inValid={!!signup.errors.codemessage}
+                onPress={handleVerifyCode}
+              />
+            </View>
+            <Text style={styles.emailText}>* 아이디 찾기에 사용됩니다.</Text>
+          </View>
+          <AlertModal
+            visible={sendCodeModalVisible}
+            onRequestClose={() => setSendCodeModalVisible(false)}
+            message="인증번호가 전송되었습니다"
+            buttons={[
+              {
+                label: '확인',
+                onPress: () => setSendCodeModalVisible(false),
+                style: {backgroundColor: colors.BLUE_700},
+              },
+            ]}
+          />
+          <AlertModal
+            visible={codeCorrectModalVisible}
+            onRequestClose={() => setCodeCorrectModalVisible(false)}
+            message="인증번호가 일치합니다"
+            buttons={[
+              {
+                label: '확인',
+                onPress: () => setCodeCorrectModalVisible(false),
+                style: {backgroundColor: colors.BLUE_700},
+              },
+            ]}
+          />
+          <AlertModal
+            visible={codeWrongModalVisible}
+            onRequestClose={() => setCodeWrongModalVisible(false)}
+            message="인증번호가 틀렸습니다"
+            buttons={[
+              {
+                label: '다시 입력',
+                onPress: () => setCodeWrongModalVisible(false),
+                style: {backgroundColor: colors.GRAY_300},
+              },
+              {
+                label: '재전송',
+                onPress: handleReSend,
+                style: {backgroundColor: colors.BLUE_700},
+              },
+            ]}
+          />
+          <View style={styles.idContainer}>
+            <InputField
+              placeholder="아이디"
+              inputMode="text"
+              keyboardType="ascii-capable"
+              focused={signup.focused.id}
+              {...signup.getTextInputProps('id')}
+            />
+          </View>
+          <View style={styles.pwContainer}>
+            <View style={styles.pwBigInputfield}>
+              <InputField
+                placeholder="비밀번호"
+                inputMode="text"
+                secureTextEntry
+                touched={signup.touched.password}
+                error={signup.errors.password}
+                {...signup.getTextInputProps('password')}
+              />
+            </View>
+            <View style={styles.errorMessageContainer}>
+              <CustomText
+                text="영문, 숫자, 특수문자를 포함한 8자리 이상"
+                touched={signup.touched.password}
+                error={signup.errors.password}
+              />
+            </View>
+            <View style={styles.pwBigInputfield}>
+              <InputField
+                placeholder="비밀번호 확인"
+                inputMode="text"
+                secureTextEntry
+                touched={signup.touched.passwordConfirm}
+                error={signup.errors.passwordConfirm}
+                {...signup.getTextInputProps('passwordConfirm')}
+              />
+            </View>
+            <View style={styles.errorMessageContainer}>
+              <CustomText
+                text="위의 비밀번호와 일치하지 않습니다."
+                touched={signup.touched.passwordConfirm}
+                error={signup.errors.passwordConfirm}
               />
             </View>
           </View>
-        </Modal>
-      </KeyboardAvoidingView>
+        </View>
+      </KeyboardAwareScrollView>
+      <View style={styles.completeButton}>
+        <CustomBotton
+          label="가입하기"
+          inValid={!signup.isFormValid}
+          onPress={handleSignup}
+        />
+      </View>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={completeModalVisible}
+        onRequestClose={() => setCompleteModalVisible(false)}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            <View style={styles.iconContainer}>
+              <CompleteCheck />
+            </View>
+            <Text style={styles.modalTitle}>가입이 완료되었습니다</Text>
+            <CustomBotton
+              label="로그인 하기"
+              onPress={() => {
+                setCompleteModalVisible(false);
+                navigation.navigate(authNavigations.AUTH_HOME); // 혹은 원하는 화면
+              }}
+              style={styles.loginButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {flex: 1},
   container: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40, // 푸터 높이만큼 여유
     alignItems: 'center',
   },
-
   guideContainer: {
-    width: '100%', // 가로 전체
-    marginTop: deviceHeight * 0.01, // 비율 기반
-    marginBottom: deviceHeight * 0.015,
-    marginLeft: deviceHeight * 0.03,
-    alignItems: 'flex-start', // 텍스트는 왼쪽 정렬
+    marginTop: 15,
+    marginLeft: deviceWidth * 0.08,
+    gap: 3,
   },
   guideText: {
     fontSize: 24,
@@ -312,6 +293,7 @@ const styles = StyleSheet.create({
   infoContainer: {
     paddingTop: 20, // 위쪽 여백 조정
     paddingHorizontal: deviceWidth * 0.08,
+    marginBottom: '10%',
   },
   nameInputfield: {
     marginTop: '5%',
@@ -357,7 +339,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderColor: '#eee',
-    alignSelf: 'center',
   },
   modalBackground: {
     flex: 1,
