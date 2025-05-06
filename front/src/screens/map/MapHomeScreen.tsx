@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -7,12 +7,17 @@ import {
   Dimensions,
   PermissionsAndroid,
   Platform,
-  Animated,
   Text,
   Image,
+  Animated,
 } from 'react-native';
-import MapView, {PROVIDER_GOOGLE, Marker, Region} from 'react-native-maps';
+import MapView, {Marker, PROVIDER_GOOGLE, Region} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
+import BottomSheet, {
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
@@ -20,9 +25,7 @@ import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
 
-// 네비게이션 타입 지정
 type MapHomeScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.MAPHOME
@@ -36,13 +39,10 @@ function MapHomeScreen() {
   const navigation = useNavigation<MapHomeScreenNavigationProp>();
   const route = useRoute<MapHomeScreenRouteProp>();
 
-  // 전달된 파라미터 (SearchScreen 또는 RouteSelectionScreen에서 전달)
-  // 선택된 장소 좌표는 항상 startLocation로 전달되지만, selectionType이 함께 오면 'start' 또는 'end'로 구분합니다.
   const selectedLocation = route.params?.startLocation;
-  const selectionType = route.params?.selectionType; // 'start' 또는 'end'
-  const selectedPlace = route.params?.selectedPlace || '선택한 장소';
+  const selectionType = route.params?.selectionType;
+  const selectedPlace = route.params?.selectedPlace || '지능형SW융합대학';
 
-  // 출발지와 도착지 좌표를 분리해서 관리
   const [startCoords, setStartCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -51,21 +51,21 @@ function MapHomeScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  // 지도에 표시할 영역(region)
   const [region, setRegion] = useState<Region | null>(null);
-
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
-  const bottomSheetHeight = useState(new Animated.Value(0))[0];
+  const [sheetIndex, setSheetIndex] = useState(0);
 
-  // 기본 위치 (서울)
+  const searchOpacity = useRef(new Animated.Value(1)).current;
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['40%', '100%'], []);
+
   const DEFAULT_REGION: Region = {
-    latitude: 37.5665,
-    longitude: 126.978,
+    latitude: 37.2983,
+    longitude: 127.0047,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
 
-  // 위치 권한 요청 함수
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
@@ -76,7 +76,6 @@ function MapHomeScreen() {
     return true;
   };
 
-  // 현재 위치 가져오기 (초기 로드 시)
   const getCurrentLocation = async () => {
     const hasPermission = await requestLocationPermission();
     if (hasPermission) {
@@ -89,7 +88,6 @@ function MapHomeScreen() {
             longitudeDelta: 0.01,
           };
           setRegion(currentRegion);
-          // 초기에는 출발지로 사용
           if (!startCoords) {
             setStartCoords({
               latitude: position.coords.latitude,
@@ -97,8 +95,7 @@ function MapHomeScreen() {
             });
           }
         },
-        error => {
-          console.log('위치 가져오기 실패:', error);
+        () => {
           setRegion(DEFAULT_REGION);
           if (!startCoords) {
             setStartCoords({
@@ -120,7 +117,6 @@ function MapHomeScreen() {
     }
   };
 
-  // 선택된 검색 결과를 받아서 좌표 업데이트
   useEffect(() => {
     if (selectedLocation && selectionType) {
       const coords = selectedLocation.split(',').map(Number);
@@ -138,21 +134,24 @@ function MapHomeScreen() {
           setEndCoords({latitude: coords[0], longitude: coords[1]});
         }
         setBottomSheetVisible(true);
-        Animated.timing(bottomSheetHeight, {
-          toValue: 250,
-          duration: 300,
-          useNativeDriver: false,
-        }).start();
       }
     } else {
       getCurrentLocation();
     }
   }, [selectedLocation, selectionType]);
 
-  // 출발/도착 버튼 클릭 시 RouteSelectionScreen으로 이동
+  const handleSheetChange = (index: number) => {
+    setSheetIndex(index);
+    Animated.timing(searchOpacity, {
+      toValue: index === 1 ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
-    if (type === 'start' && !startCoords) return;
-    if (type === 'end' && !endCoords) return;
+    if ((type === 'start' && !startCoords) || (type === 'end' && !endCoords))
+      return;
 
     navigation.navigate(mapNavigation.ROUTE_SELECTION, {
       startLocation: startCoords
@@ -168,72 +167,133 @@ function MapHomeScreen() {
         route.params?.endLocationName ||
         (type === 'end' ? selectedPlace : '도착지 선택'),
     });
-    handleCloseBottomSheet();
-  };
 
-  // BottomSheet 닫기
-  const handleCloseBottomSheet = () => {
-    Animated.timing(bottomSheetHeight, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start(() => {
-      setBottomSheetVisible(false);
-    });
+    bottomSheetRef.current?.close();
   };
 
   return (
-    <View style={styles.container}>
-      {/* 검색창: 기본적으로 출발지 검색으로 호출 */}
-      <TouchableOpacity
-        style={styles.searchBox}
-        onPress={() =>
-          navigation.navigate(mapNavigation.SEARCH, {selectionType: 'start'})
-        }>
-        <View style={styles.searchBoxInput}>
-          <Image
-            source={require('../../assets/Search-icon.png')}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="어디로 떠나볼까요?"
-            editable={false}
-          />
-        </View>
-      </TouchableOpacity>
-      {/* 지도 */}
-      <MapView
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        region={region || DEFAULT_REGION}>
-        {startCoords && (
-          <Marker coordinate={startCoords} title="출발지" pinColor="green" />
-        )}
-        {endCoords && (
-          <Marker coordinate={endCoords} title="도착지" pinColor="red" />
-        )}
-      </MapView>
-      {/* BottomSheet: 검색 결과가 있을 때 표시 */}
-      {bottomSheetVisible && (
+    <GestureHandlerRootView style={{flex: 1}}>
+      <View style={styles.container}>
+        {/* 검색창 */}
         <Animated.View
-          style={[styles.bottomSheet, {height: bottomSheetHeight}]}>
-          <Text style={styles.title}>{selectedPlace}</Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => handleNavigateToRouteSelection('start')}>
-              <Text style={styles.buttonText}>출발</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => handleNavigateToRouteSelection('end')}>
-              <Text style={styles.buttonText}>도착</Text>
-            </TouchableOpacity>
-          </View>
+          style={[
+            styles.searchBox,
+            {
+              opacity: searchOpacity,
+              transform: [
+                {
+                  translateY: searchOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate(mapNavigation.SEARCH, {
+                selectionType: 'start',
+              })
+            }>
+            <View style={styles.searchBoxInput}>
+              <Image
+                source={require('../../assets/Search-icon.png')}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="어디로 떠나볼까요?"
+                editable={false}
+              />
+            </View>
+          </TouchableOpacity>
         </Animated.View>
-      )}
-    </View>
+
+        {/* 지도 */}
+        <MapView
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          region={region || DEFAULT_REGION}>
+          {startCoords && (
+            <Marker coordinate={startCoords} title="출발지" pinColor="green" />
+          )}
+          {endCoords && (
+            <Marker coordinate={endCoords} title="도착지" pinColor="red" />
+          )}
+        </MapView>
+
+        {/* 바텀시트 */}
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={bottomSheetVisible ? 0 : -1}
+          snapPoints={snapPoints}
+          enablePanDownToClose
+          handleComponent={null}
+          onChange={handleSheetChange}
+          onClose={() => setBottomSheetVisible(false)}>
+          <BottomSheetScrollView>
+            <BottomSheetView style={{padding: 20}}>
+              {/* 미리보기 UI */}
+              {sheetIndex === 0 ? (
+                <>
+                  <Image
+                    source={require('../../assets/Home.png')}
+                    style={{
+                      width: '100%',
+                      height: 150,
+                      borderRadius: 10,
+                      marginBottom: 10,
+                    }}
+                  />
+                  <Text style={styles.title}>{selectedPlace}</Text>
+                  <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
+                </>
+              ) : (
+                <>
+                  <Image
+                    source={require('../../assets/Home.png')}
+                    style={{
+                      width: '100%',
+                      height: 200,
+                      borderRadius: 10,
+                      marginBottom: 10,
+                    }}
+                  />
+                  <Text style={styles.title}>{selectedPlace}</Text>
+                  <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
+
+                  <Text style={styles.section}>학과정보</Text>
+                  <Text>📍 ICT대학 3층 (304호)</Text>
+                  <Text>📞 031-220-2516</Text>
+                  <Text>🕘 09:00 ~ 15:30</Text>
+
+                  <Text style={styles.section}>시설정보</Text>
+                  <Text>🛗 엘리베이터</Text>
+                  <Text>🖨 프린터기(2F)</Text>
+                  <Text>📘 열람실(2F)</Text>
+
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={() => handleNavigateToRouteSelection('start')}>
+                      <Text style={styles.buttonText}>출발</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={() => handleNavigateToRouteSelection('end')}>
+                      <Text style={styles.buttonText}>도착</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+
+              <View style={{height: 300}} />
+            </BottomSheetView>
+          </BottomSheetScrollView>
+        </BottomSheet>
+      </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -244,7 +304,7 @@ const styles = StyleSheet.create({
     top: 30,
     left: '5%',
     width: deviceWidth * 0.9,
-    height: deviceHeight * 0.06,
+    height: 50,
     paddingHorizontal: 10,
     backgroundColor: 'white',
     borderRadius: 5,
@@ -264,20 +324,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   map: {flex: 1},
-  bottomSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    padding: 20,
+  title: {fontSize: 20, fontWeight: 'bold'},
+  tags: {color: '#666', marginVertical: 4},
+  section: {marginTop: 20, fontSize: 16, fontWeight: 'bold'},
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
   },
-  title: {fontSize: 24, fontWeight: 'bold'},
-  buttonContainer: {flexDirection: 'row', justifyContent: 'space-around'},
   button: {
     backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 8,
     width: 100,
     alignItems: 'center',
   },
