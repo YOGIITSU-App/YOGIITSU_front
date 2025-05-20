@@ -23,6 +23,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
+import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
+import favoriteApi from '../../api/favoriteApi'; // 🎯 즐겨찾기 API
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -34,6 +36,19 @@ type MapHomeScreenRouteProp = RouteProp<
   MapStackParamList,
   typeof mapNavigation.MAPHOME
 >;
+
+type FavoriteItem = {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+};
+
+declare global {
+  interface Global {
+    openFavoriteBottomSheet?: () => void;
+  }
+}
 
 function MapHomeScreen() {
   const navigation = useNavigation<MapHomeScreenNavigationProp>();
@@ -54,6 +69,9 @@ function MapHomeScreen() {
   const [region, setRegion] = useState<Region | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [sheetIndex, setSheetIndex] = useState(0);
+
+  const [favoriteVisible, setFavoriteVisible] = useState(false); // ✅ 즐겨찾기 바텀시트
+  const [favoriteList, setFavoriteList] = useState<FavoriteItem[]>([]);
 
   const searchOpacity = useRef(new Animated.Value(1)).current;
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -116,6 +134,35 @@ function MapHomeScreen() {
       }
     }
   };
+
+  // ✅ 즐겨찾기 선택 시 지도 이동
+  const handleSelectFavorite = (item: FavoriteItem) => {
+    setRegion({
+      latitude: item.latitude,
+      longitude: item.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+    setBottomSheetVisible(false);
+    setFavoriteVisible(false);
+  };
+
+  // ✅ 즐겨찾기 바텀시트 트리거 등록
+  useEffect(() => {
+    globalThis.openFavoriteBottomSheet = () => {
+      favoriteApi.getFavorites().then(res => {
+        setFavoriteList(
+          res.data.buildings.map((b: any) => ({
+            id: b.buildingId,
+            name: b.buildingName,
+            latitude: 0, // ← 추후에 백엔드에서 좌표도 내려줘야 돼요!
+            longitude: 0,
+          })),
+        );
+        setFavoriteVisible(true);
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedLocation && selectionType) {
@@ -223,7 +270,7 @@ function MapHomeScreen() {
           )}
         </MapView>
 
-        {/* 바텀시트 */}
+        {/* 상세 정보 바텀시트 */}
         <BottomSheet
           ref={bottomSheetRef}
           index={bottomSheetVisible ? 0 : -1}
@@ -234,63 +281,52 @@ function MapHomeScreen() {
           onClose={() => setBottomSheetVisible(false)}>
           <BottomSheetScrollView>
             <BottomSheetView style={{padding: 20}}>
-              {/* 미리보기 UI */}
-              {sheetIndex === 0 ? (
-                <>
-                  <Image
-                    source={require('../../assets/Home.png')}
-                    style={{
-                      width: '100%',
-                      height: 150,
-                      borderRadius: 10,
-                      marginBottom: 10,
-                    }}
-                  />
-                  <Text style={styles.title}>{selectedPlace}</Text>
-                  <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
-                </>
-              ) : (
-                <>
-                  <Image
-                    source={require('../../assets/Home.png')}
-                    style={{
-                      width: '100%',
-                      height: 200,
-                      borderRadius: 10,
-                      marginBottom: 10,
-                    }}
-                  />
-                  <Text style={styles.title}>{selectedPlace}</Text>
-                  <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
-
-                  <Text style={styles.section}>학과정보</Text>
-                  <Text>📍 ICT대학 3층 (304호)</Text>
-                  <Text>📞 031-220-2516</Text>
-                  <Text>🕘 09:00 ~ 15:30</Text>
-
-                  <Text style={styles.section}>시설정보</Text>
-                  <Text>🛗 엘리베이터</Text>
-                  <Text>🖨 프린터기(2F)</Text>
-                  <Text>📘 열람실(2F)</Text>
-
-                  <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                      style={styles.button}
-                      onPress={() => handleNavigateToRouteSelection('start')}>
-                      <Text style={styles.buttonText}>출발</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.button}
-                      onPress={() => handleNavigateToRouteSelection('end')}>
-                      <Text style={styles.buttonText}>도착</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-
+              <Image
+                source={require('../../assets/Home.png')}
+                style={{
+                  width: '100%',
+                  height: 200,
+                  borderRadius: 10,
+                  marginBottom: 10,
+                }}
+              />
+              <Text style={styles.title}>{selectedPlace}</Text>
+              <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
+              <Text style={styles.section}>학과정보</Text>
+              <Text>📍 ICT대학 3층 (304호)</Text>
+              <Text>📞 031-220-2516</Text>
+              <Text>🕘 09:00 ~ 15:30</Text>
+              <Text style={styles.section}>시설정보</Text>
+              <Text>🛗 엘리베이터</Text>
+              <Text>🖨 프린터기(2F)</Text>
+              <Text>📘 열람실(2F)</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handleNavigateToRouteSelection('start')}>
+                  <Text style={styles.buttonText}>출발</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handleNavigateToRouteSelection('end')}>
+                  <Text style={styles.buttonText}>도착</Text>
+                </TouchableOpacity>
+              </View>
               <View style={{height: 300}} />
             </BottomSheetView>
           </BottomSheetScrollView>
+        </BottomSheet>
+
+        {/* 🎯 즐겨찾기 바텀시트 */}
+        <BottomSheet
+          index={favoriteVisible ? 0 : -1}
+          snapPoints={['40%', '90%']}
+          enablePanDownToClose
+          onClose={() => setFavoriteVisible(false)}>
+          <FavoriteBottomSheetContent
+            favorites={favoriteList}
+            onSelect={handleSelectFavorite}
+          />
         </BottomSheet>
       </View>
     </GestureHandlerRootView>
