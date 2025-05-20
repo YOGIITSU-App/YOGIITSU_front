@@ -1,5 +1,5 @@
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Dimensions, Image} from 'react-native';
+import {Dimensions, Image, Text, TouchableOpacity, View} from 'react-native';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import FavoriteHomeScreen from '../../screens/favorite/FavoriteHomeScreen';
 import MypageHomeScreen from '../../screens/mypage/MypageHomeScreen';
@@ -56,7 +56,46 @@ function BottomTabNavigator() {
         },
       })}>
       <BottomTab.Screen name="홈" component={MapStackNavigator} />
-      <BottomTab.Screen name="즐겨찾기" component={FavoriteHomeScreen} />
+      <BottomTab.Screen
+        name="즐겨찾기"
+        component={MapStackNavigator}
+        options={{
+          tabBarButton: props => {
+            const isFocused = props.accessibilityState?.selected;
+
+            return (
+              <TouchableOpacity
+                {...props}
+                style={{
+                  flex: 1,
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  paddingBottom: 15,
+                }}
+                onPress={() => globalThis.openFavoriteBottomSheet?.()}>
+                <Image
+                  source={require('../../assets/Favorite.png')}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    tintColor: isFocused ? 'blue' : 'gray',
+                  }}
+                  resizeMode="contain"
+                />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    marginTop: 2,
+                    color: isFocused ? 'blue' : 'gray',
+                  }}>
+                  즐겨찾기
+                </Text>
+              </TouchableOpacity>
+            );
+          },
+        }}
+      />
+
       <BottomTab.Screen name="MY" component={MypageStackNavigator} />
     </BottomTab.Navigator>
   );
