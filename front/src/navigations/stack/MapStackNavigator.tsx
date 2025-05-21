@@ -10,6 +10,7 @@ import RouteResultScreen from '../../screens/map/RouteResultScreen';
 export type MapStackParamList = {
   [mapNavigation.MAPHOME]:
     | {
+        buildingId?: number;
         selectedPlace?: string;
         selectedLocation?: string; // ✅ 추가
         selectionType?: 'start' | 'end'; // ✅ 추가

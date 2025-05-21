@@ -1,3 +1,4 @@
+// 생략된 import들은 동일
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   StyleSheet,
@@ -24,18 +25,16 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
-import favoriteApi from '../../api/favoriteApi'; // 🎯 즐겨찾기 API
+import favoriteApi from '../../api/favoriteApi';
+import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 
-type MapHomeScreenNavigationProp = StackNavigationProp<
+type NavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.MAPHOME
 >;
-type MapHomeScreenRouteProp = RouteProp<
-  MapStackParamList,
-  typeof mapNavigation.MAPHOME
->;
+type RoutePropType = RouteProp<MapStackParamList, typeof mapNavigation.MAPHOME>;
 
 type FavoriteItem = {
   id: number;
@@ -51,12 +50,8 @@ declare global {
 }
 
 function MapHomeScreen() {
-  const navigation = useNavigation<MapHomeScreenNavigationProp>();
-  const route = useRoute<MapHomeScreenRouteProp>();
-
-  const selectedLocation = route.params?.startLocation;
-  const selectionType = route.params?.selectionType;
-  const selectedPlace = route.params?.selectedPlace || '지능형SW융합대학';
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RoutePropType>();
 
   const [startCoords, setStartCoords] = useState<{
     latitude: number;
@@ -68,9 +63,11 @@ function MapHomeScreen() {
   } | null>(null);
   const [region, setRegion] = useState<Region | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
-  const [sheetIndex, setSheetIndex] = useState(0);
+  const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
+    null,
+  );
 
-  const [favoriteVisible, setFavoriteVisible] = useState(false); // ✅ 즐겨찾기 바텀시트
+  const [favoriteVisible, setFavoriteVisible] = useState(false);
   const [favoriteList, setFavoriteList] = useState<FavoriteItem[]>([]);
 
   const searchOpacity = useRef(new Animated.Value(1)).current;
@@ -84,70 +81,62 @@ function MapHomeScreen() {
     longitudeDelta: 0.01,
   };
 
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    }
-    return true;
-  };
-
   const getCurrentLocation = async () => {
-    const hasPermission = await requestLocationPermission();
-    if (hasPermission) {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
       Geolocation.getCurrentPosition(
         position => {
-          const currentRegion: Region = {
+          setRegion({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
-          };
-          setRegion(currentRegion);
-          if (!startCoords) {
-            setStartCoords({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          }
+          });
         },
-        () => {
-          setRegion(DEFAULT_REGION);
-          if (!startCoords) {
-            setStartCoords({
-              latitude: DEFAULT_REGION.latitude,
-              longitude: DEFAULT_REGION.longitude,
-            });
-          }
-        },
+        () => setRegion(DEFAULT_REGION),
         {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
       );
     } else {
       setRegion(DEFAULT_REGION);
-      if (!startCoords) {
-        setStartCoords({
-          latitude: DEFAULT_REGION.latitude,
-          longitude: DEFAULT_REGION.longitude,
-        });
-      }
     }
   };
 
-  // ✅ 즐겨찾기 선택 시 지도 이동
+  const openBuildingDetailSheet = async (buildingId: number) => {
+    console.log('🚀 요청할 buildingId:', buildingId);
+    try {
+      const res = await buildingApi.getBuildingDetail(buildingId);
+      setBuildingDetail(res.data);
+
+      const lat = res.data.buildingInfo.latitude || DEFAULT_REGION.latitude;
+      const lon = res.data.buildingInfo.longitude || DEFAULT_REGION.longitude;
+
+      setRegion({
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+
+      if (route.params?.selectionType === 'start') {
+        setStartCoords({latitude: lat, longitude: lon});
+      } else {
+        setEndCoords({latitude: lat, longitude: lon});
+      }
+
+      setBottomSheetVisible(true);
+    } catch (err) {
+      console.error('건물 상세 정보 로딩 실패:', err);
+      getCurrentLocation();
+    }
+  };
+
   const handleSelectFavorite = (item: FavoriteItem) => {
-    setRegion({
-      latitude: item.latitude,
-      longitude: item.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    });
-    setBottomSheetVisible(false);
+    openBuildingDetailSheet(item.id);
     setFavoriteVisible(false);
   };
 
-  // ✅ 즐겨찾기 바텀시트 트리거 등록
   useEffect(() => {
     globalThis.openFavoriteBottomSheet = () => {
       favoriteApi.getFavorites().then(res => {
@@ -155,8 +144,8 @@ function MapHomeScreen() {
           res.data.buildings.map((b: any) => ({
             id: b.buildingId,
             name: b.buildingName,
-            latitude: 0, // ← 추후에 백엔드에서 좌표도 내려줘야 돼요!
-            longitude: 0,
+            latitude: b.latitude ?? 0,
+            longitude: b.longitude ?? 0,
           })),
         );
         setFavoriteVisible(true);
@@ -165,41 +154,21 @@ function MapHomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (selectedLocation && selectionType) {
-      const coords = selectedLocation.split(',').map(Number);
-      if (!isNaN(coords[0]) && !isNaN(coords[1])) {
-        const newRegion: Region = {
-          latitude: coords[0],
-          longitude: coords[1],
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        };
-        setRegion(newRegion);
-        if (selectionType === 'start') {
-          setStartCoords({latitude: coords[0], longitude: coords[1]});
-        } else if (selectionType === 'end') {
-          setEndCoords({latitude: coords[0], longitude: coords[1]});
-        }
-        setBottomSheetVisible(true);
-      }
+    console.log('📦 buildingId param:', route.params?.buildingId);
+
+    const buildingId = route.params?.buildingId;
+
+    if (typeof buildingId === 'number' && buildingId > 0) {
+      console.log('✅ buildingId:', buildingId);
+      openBuildingDetailSheet(buildingId);
     } else {
       getCurrentLocation();
     }
-  }, [selectedLocation, selectionType]);
-
-  const handleSheetChange = (index: number) => {
-    setSheetIndex(index);
-    Animated.timing(searchOpacity, {
-      toValue: index === 1 ? 0 : 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  };
+  }, [route.params?.buildingId]);
 
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     if ((type === 'start' && !startCoords) || (type === 'end' && !endCoords))
       return;
-
     navigation.navigate(mapNavigation.ROUTE_SELECTION, {
       startLocation: startCoords
         ? `${startCoords.latitude},${startCoords.longitude}`
@@ -208,20 +177,16 @@ function MapHomeScreen() {
         ? `${endCoords.latitude},${endCoords.longitude}`
         : '',
       startLocationName:
-        route.params?.startLocationName ||
-        (type === 'start' ? selectedPlace : '출발지 선택'),
+        type === 'start' ? buildingDetail?.buildingInfo.name : '출발지 선택',
       endLocationName:
-        route.params?.endLocationName ||
-        (type === 'end' ? selectedPlace : '도착지 선택'),
+        type === 'end' ? buildingDetail?.buildingInfo.name : '도착지 선택',
     });
-
     bottomSheetRef.current?.close();
   };
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <View style={styles.container}>
-        {/* 검색창 */}
         <Animated.View
           style={[
             styles.searchBox,
@@ -257,7 +222,6 @@ function MapHomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* 지도 */}
         <MapView
           style={styles.map}
           provider={PROVIDER_GOOGLE}
@@ -270,54 +234,68 @@ function MapHomeScreen() {
           )}
         </MapView>
 
-        {/* 상세 정보 바텀시트 */}
         <BottomSheet
           ref={bottomSheetRef}
           index={bottomSheetVisible ? 0 : -1}
           snapPoints={snapPoints}
           enablePanDownToClose
-          handleComponent={null}
-          onChange={handleSheetChange}
           onClose={() => setBottomSheetVisible(false)}>
-          <BottomSheetScrollView>
-            <BottomSheetView style={{padding: 20}}>
-              <Image
-                source={require('../../assets/Home.png')}
-                style={{
-                  width: '100%',
-                  height: 200,
-                  borderRadius: 10,
-                  marginBottom: 10,
-                }}
-              />
-              <Text style={styles.title}>{selectedPlace}</Text>
-              <Text style={styles.tags}>#ICT융합대학 #벨칸토 #IT대학</Text>
-              <Text style={styles.section}>학과정보</Text>
-              <Text>📍 ICT대학 3층 (304호)</Text>
-              <Text>📞 031-220-2516</Text>
-              <Text>🕘 09:00 ~ 15:30</Text>
-              <Text style={styles.section}>시설정보</Text>
-              <Text>🛗 엘리베이터</Text>
-              <Text>🖨 프린터기(2F)</Text>
-              <Text>📘 열람실(2F)</Text>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => handleNavigateToRouteSelection('start')}>
-                  <Text style={styles.buttonText}>출발</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => handleNavigateToRouteSelection('end')}>
-                  <Text style={styles.buttonText}>도착</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{height: 300}} />
-            </BottomSheetView>
-          </BottomSheetScrollView>
+          {buildingDetail && (
+            <BottomSheetScrollView>
+              <BottomSheetView style={{padding: 20}}>
+                <Image
+                  source={{uri: buildingDetail.buildingInfo.imageUrl}}
+                  style={{
+                    width: '100%',
+                    height: 200,
+                    borderRadius: 10,
+                    marginBottom: 10,
+                  }}
+                />
+                <Text style={styles.title}>
+                  {buildingDetail.buildingInfo.name}
+                </Text>
+                <Text style={styles.tags}>
+                  {buildingDetail.buildingInfo.tags
+                    .map(tag => `#${tag}`)
+                    .join(' ')}
+                </Text>
+
+                <Text style={styles.section}>학과정보</Text>
+                {buildingDetail.departments.map(dep => (
+                  <View key={dep.id} style={{marginBottom: 10}}>
+                    <Text>📍 {dep.location}</Text>
+                    <Text>📞 {dep.phone}</Text>
+                    <Text>🕘 {dep.officeHours}</Text>
+                  </View>
+                ))}
+
+                <Text style={styles.section}>시설정보</Text>
+                {buildingDetail.buildingInfo.facilities.map((f, i) => (
+                  <Text key={i}>
+                    • {f.name} ({f.floor})
+                  </Text>
+                ))}
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => handleNavigateToRouteSelection('start')}>
+                    <Text style={styles.buttonText}>출발</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => handleNavigateToRouteSelection('end')}>
+                    <Text style={styles.buttonText}>도착</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{height: 300}} />
+              </BottomSheetView>
+            </BottomSheetScrollView>
+          )}
         </BottomSheet>
 
-        {/* 🎯 즐겨찾기 바텀시트 */}
         <BottomSheet
           index={favoriteVisible ? 0 : -1}
           snapPoints={['40%', '90%']}

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   TextInput,
@@ -8,19 +8,17 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {TMAP_API_KEY} from '@env';
 import {mapNavigation} from '../../constants/navigation';
+import searchApi, {SearchSuggestion} from '../../api/searchApi';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.SEARCH
 >;
 
-// 검색 화면의 파라미터 타입을 정의 (selectionType 전달)
 type SearchScreenRouteProp = RouteProp<
   MapStackParamList,
   typeof mapNavigation.SEARCH
@@ -29,39 +27,36 @@ type SearchScreenRouteProp = RouteProp<
 function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-
-  // 전달된 selectionType (없으면 기본 'start')
   const selectionType = route.params?.selectionType || 'start';
 
   const [searchText, setSearchText] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchSearchResults = async (query: string) => {
+  const fetchSuggestions = async (query: string) => {
     if (!query) return;
     setLoading(true);
     try {
-      const response = await axios.get(
-        `https://apis.openapi.sk.com/tmap/pois?version=1&searchKeyword=${query}&resCoordType=WGS84GEO&reqCoordType=WGS84GEO&count=10`,
-        {headers: {appKey: TMAP_API_KEY}},
-      );
-      const pois = response.data?.searchPoiInfo?.pois?.poi || [];
-      setSearchResults(pois);
-    } catch (error) {
-      console.error('Tmap API 호출 오류:', error);
-      setSearchResults([]);
+      const res = await searchApi.getSuggestions(query);
+      console.log('🔍 raw response:', JSON.stringify(res.data, null, 2));
+      setResults(res.data);
+    } catch (err) {
+      console.error('검색 오류:', err);
+      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectPlace = (place: any) => {
-    if (!place.frontLat || !place.frontLon) return;
-    // 전달받은 selectionType을 그대로 사용
+  const handleSelectSuggestion = (item: SearchSuggestion) => {
+    console.log('🔥 선택된 아이템:', item); // 이걸로 콘솔 찍어보자요!
+    console.log('📦 buildingId 확인:', item.buildingId);
+
     navigation.navigate(mapNavigation.MAPHOME, {
-      startLocation: `${place.frontLat},${place.frontLon}`,
-      selectedPlace: place.name,
-      selectionType: selectionType, // 'start' 또는 'end'
+      startLocation: '', // 위치는 buildingDetail API에서 처리
+      selectedPlace: item.keyword,
+      selectionType,
+      buildingId: item.buildingId, // 👈 MapHomeScreen에서 buildingDetail 조회 시 사용
     });
   };
 
@@ -69,26 +64,27 @@ function SearchScreen() {
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="장소 검색"
+        placeholder="건물명 또는 키워드 입력"
         value={searchText}
         onChangeText={text => {
           setSearchText(text);
-          fetchSearchResults(text);
+          fetchSuggestions(text);
         }}
         autoCorrect={false}
       />
       {loading && <ActivityIndicator size="large" color="#007AFF" />}
       <FlatList
-        data={searchResults}
-        keyExtractor={(item, index) => `${item.id || item.name}-${index}`}
+        data={results}
+        keyExtractor={(item, index) => `${item.keyword}-${index}`}
         renderItem={({item}) => (
           <TouchableOpacity
             style={styles.item}
-            onPress={() => handleSelectPlace(item)}>
-            <Text style={styles.itemText}>{item.name}</Text>
-            <Text style={styles.addressText}>
-              {item.newAddressList?.newAddress[0]?.fullAddress ||
-                `${item.upperAddrName} ${item.middleAddrName}`}
+            onPress={() => handleSelectSuggestion(item)}>
+            <Text style={styles.itemText}>{item.keyword}</Text>
+            <Text style={styles.tagText}>
+              {Array.isArray(item.tags)
+                ? item.tags.map(t => `#${t}`).join(' ')
+                : ''}
             </Text>
           </TouchableOpacity>
         )}
@@ -108,7 +104,7 @@ const styles = StyleSheet.create({
   },
   item: {padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee'},
   itemText: {fontSize: 16, fontWeight: 'bold'},
-  addressText: {fontSize: 14, color: '#666'},
+  tagText: {fontSize: 14, color: '#999', marginTop: 4},
 });
 
 export default SearchScreen;
