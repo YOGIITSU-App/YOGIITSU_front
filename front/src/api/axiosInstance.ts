@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
-  baseURL: 'http://15.165.2.118:8080', // 백엔드 주소로 수정해줘요!
+  baseURL: 'http://43.200.10.184:8080',
   headers: {
     'Content-Type': 'application/json',
   },

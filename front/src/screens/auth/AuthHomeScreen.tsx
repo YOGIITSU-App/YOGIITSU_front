@@ -23,6 +23,7 @@ import {useUser} from '../../contexts/UserContext'; // ✅ 유저 컨텍스트 �
 import {Alert} from 'react-native'; // ✅ 알림창 위해 추가
 import authApi from '../../api/authApi'; // ✅ 로그인 API 불러오기
 import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ 토큰 저장용
+import axiosInstance from '../../api/axiosInstance';
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -46,10 +47,14 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     try {
       // 1. 로그인 요청
       const res = await authApi.login(id, password);
-      const {accessToken, user} = res.data;
+      const {accessToken, refreshToken, user} = res.data;
 
       // 2. 토큰 저장
       await AsyncStorage.setItem('accessToken', accessToken);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+
+      // ✅ axiosInstance에 accessToken 직접 등록
+      axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`;
 
       // 3. context에 유저 저장
       login({
