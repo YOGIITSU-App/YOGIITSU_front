@@ -1,4 +1,3 @@
-// 생략된 import들은 동일
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   StyleSheet,
@@ -7,10 +6,10 @@ import {
   TouchableOpacity,
   Dimensions,
   PermissionsAndroid,
-  Platform,
   Text,
   Image,
   Animated,
+  ScrollView,
 } from 'react-native';
 import MapView, {Marker, PROVIDER_GOOGLE, Region} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
@@ -43,6 +42,12 @@ type FavoriteItem = {
   longitude: number;
 };
 
+const facilityIconMap: {[key: string]: any} = {
+  엘리베이터: require('../../assets/elevator-icon.png'),
+  프린터기: require('../../assets/printer-icon.png'),
+  자판기: require('../../assets/vending-icon.png'),
+};
+
 declare global {
   interface Global {
     openFavoriteBottomSheet?: () => void;
@@ -66,7 +71,8 @@ function MapHomeScreen() {
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
     null,
   );
-
+  const [selectedDeptIndex, setSelectedDeptIndex] = useState(0);
+  const [searchVisible, setSearchVisible] = useState(true);
   const [favoriteVisible, setFavoriteVisible] = useState(false);
   const [favoriteList, setFavoriteList] = useState<FavoriteItem[]>([]);
 
@@ -104,7 +110,6 @@ function MapHomeScreen() {
   };
 
   const openBuildingDetailSheet = async (buildingId: number) => {
-    console.log('🚀 요청할 buildingId:', buildingId);
     try {
       const res = await buildingApi.getBuildingDetail(buildingId);
       setBuildingDetail(res.data);
@@ -154,73 +159,90 @@ function MapHomeScreen() {
   }, []);
 
   useEffect(() => {
-    console.log('📦 buildingId param:', route.params?.buildingId);
-
     const buildingId = route.params?.buildingId;
-
     if (typeof buildingId === 'number' && buildingId > 0) {
-      console.log('✅ buildingId:', buildingId);
       openBuildingDetailSheet(buildingId);
     } else {
       getCurrentLocation();
     }
   }, [route.params?.buildingId]);
 
+  const handleSheetChange = (index: number) => {
+    setSearchVisible(index !== 1);
+  };
+
+  const isValidCoords = (
+    coords: {latitude: number; longitude: number} | null | undefined,
+  ): boolean =>
+    !!coords &&
+    typeof coords.latitude === 'number' &&
+    typeof coords.longitude === 'number' &&
+    !isNaN(coords.latitude) &&
+    !isNaN(coords.longitude);
+
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
-    if ((type === 'start' && !startCoords) || (type === 'end' && !endCoords))
-      return;
+    const startValid = isValidCoords(startCoords);
+    const endValid = isValidCoords(endCoords);
+
+    if ((type === 'start' && !startValid) || (type === 'end' && !endValid)) {
+      return; // 유효하지 않으면 아무 것도 안함
+    }
+
     navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      startLocation: startCoords
-        ? `${startCoords.latitude},${startCoords.longitude}`
+      startLocation: startValid
+        ? `${startCoords!.latitude},${startCoords!.longitude}`
         : '',
-      endLocation: endCoords
-        ? `${endCoords.latitude},${endCoords.longitude}`
+      endLocation: endValid
+        ? `${endCoords!.latitude},${endCoords!.longitude}`
         : '',
       startLocationName:
         type === 'start' ? buildingDetail?.buildingInfo.name : '출발지 선택',
       endLocationName:
         type === 'end' ? buildingDetail?.buildingInfo.name : '도착지 선택',
     });
+
     bottomSheetRef.current?.close();
   };
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <View style={styles.container}>
-        <Animated.View
-          style={[
-            styles.searchBox,
-            {
-              opacity: searchOpacity,
-              transform: [
-                {
-                  translateY: searchOpacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0],
-                  }),
-                },
-              ],
-            },
-          ]}>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate(mapNavigation.SEARCH, {
-                selectionType: 'start',
-              })
-            }>
-            <View style={styles.searchBoxInput}>
-              <Image
-                source={require('../../assets/Search-icon.png')}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="어디로 떠나볼까요?"
-                editable={false}
-              />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
+        {searchVisible && (
+          <Animated.View
+            style={[
+              styles.searchBox,
+              {
+                opacity: searchOpacity,
+                transform: [
+                  {
+                    translateY: searchOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate(mapNavigation.SEARCH, {
+                  selectionType: 'start',
+                })
+              }>
+              <View style={styles.searchBoxInput}>
+                <Image
+                  source={require('../../assets/Search-icon.png')}
+                  style={styles.searchIcon}
+                />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="어디로 떠나볼까요?"
+                  editable={false}
+                />
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         <MapView
           style={styles.map}
@@ -239,6 +261,7 @@ function MapHomeScreen() {
           index={bottomSheetVisible ? 0 : -1}
           snapPoints={snapPoints}
           enablePanDownToClose
+          onChange={handleSheetChange}
           onClose={() => setBottomSheetVisible(false)}>
           {buildingDetail && (
             <BottomSheetScrollView>
@@ -252,30 +275,77 @@ function MapHomeScreen() {
                     marginBottom: 10,
                   }}
                 />
-                <Text style={styles.title}>
-                  {buildingDetail.buildingInfo.name}
-                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}>
+                  <Text style={styles.title}>
+                    {buildingDetail.buildingInfo.name}
+                  </Text>
+                  <TouchableOpacity onPress={() => {}}>
+                    <Image
+                      source={require('../../assets/bookmark-icon.png')}
+                      style={{width: 24, height: 24}}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.tags}>
                   {buildingDetail.buildingInfo.tags
                     .map(tag => `#${tag}`)
                     .join(' ')}
                 </Text>
 
-                <Text style={styles.section}>학과정보</Text>
-                {buildingDetail.departments.map(dep => (
-                  <View key={dep.id} style={{marginBottom: 10}}>
-                    <Text>📍 {dep.location}</Text>
-                    <Text>📞 {dep.phone}</Text>
-                    <Text>🕘 {dep.officeHours}</Text>
-                  </View>
-                ))}
+                <View style={styles.facilityContainer}>
+                  {buildingDetail.buildingInfo.facilities.map(facility => {
+                    const name = facility.name.trim();
+                    return (
+                      facilityIconMap[name] && (
+                        <View key={name} style={styles.facilityItem}>
+                          <Image
+                            source={facilityIconMap[name]}
+                            style={styles.facilityIcon}
+                          />
+                        </View>
+                      )
+                    );
+                  })}
+                </View>
 
-                <Text style={styles.section}>시설정보</Text>
-                {buildingDetail.buildingInfo.facilities.map((f, i) => (
-                  <Text key={i}>
-                    • {f.name} ({f.floor})
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.tabContainer}>
+                  {buildingDetail.departments.map((dep, index) => (
+                    <TouchableOpacity
+                      key={dep.id}
+                      style={[
+                        styles.tabItem,
+                        index === selectedDeptIndex && styles.activeTabItem,
+                      ]}
+                      onPress={() => setSelectedDeptIndex(index)}>
+                      <Text
+                        style={[
+                          styles.tabText,
+                          index === selectedDeptIndex && styles.activeTabText,
+                        ]}>
+                        {dep.departmentName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <Text style={styles.section}>학과정보</Text>
+                <View style={{marginTop: 10}}>
+                  <Text style={styles.detailText}>
+                    학과위치:{' '}
+                    {buildingDetail.departments[selectedDeptIndex]?.location}
                   </Text>
-                ))}
+                  <Text style={styles.detailText}>
+                    대표전화:{' '}
+                    {buildingDetail.departments[selectedDeptIndex]?.phone}
+                  </Text>
+                </View>
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
@@ -313,6 +383,7 @@ function MapHomeScreen() {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  map: {flex: 1},
   searchBox: {
     position: 'absolute',
     top: 30,
@@ -337,10 +408,56 @@ const styles = StyleSheet.create({
     color: colors.GRAY_500,
     flex: 1,
   },
-  map: {flex: 1},
   title: {fontSize: 20, fontWeight: 'bold'},
   tags: {color: '#666', marginVertical: 4},
   section: {marginTop: 20, fontSize: 16, fontWeight: 'bold'},
+  facilityContainer: {
+    flexDirection: 'row',
+    gap: 16,
+    marginVertical: 10,
+    flexWrap: 'wrap',
+  },
+  facilityItem: {
+    alignItems: 'center',
+    width: 70,
+  },
+  facilityIcon: {
+    // width: 36,
+    // height: 36,
+    marginBottom: 10,
+  },
+  facilityText: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#555',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    marginVertical: 10,
+  },
+  tabItem: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginRight: 10,
+  },
+  activeTabItem: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
+  },
+  tabText: {
+    color: '#888',
+    fontSize: 14,
+  },
+  activeTabText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  detailText: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
