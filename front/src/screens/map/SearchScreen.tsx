@@ -38,7 +38,6 @@ function SearchScreen() {
     setLoading(true);
     try {
       const res = await searchApi.getSuggestions(query);
-      console.log('🔍 raw response:', JSON.stringify(res.data, null, 2));
       setResults(res.data);
     } catch (err) {
       console.error('검색 오류:', err);
@@ -49,9 +48,6 @@ function SearchScreen() {
   };
 
   const handleSelectSuggestion = (item: SearchSuggestion) => {
-    console.log('🔥 선택된 아이템:', item); // 이걸로 콘솔 찍어보자요!
-    console.log('📦 buildingId 확인:', item.buildingId);
-
     navigation.navigate(mapNavigation.MAPHOME, {
       startLocation: '', // 위치는 buildingDetail API에서 처리
       selectedPlace: item.keyword,
