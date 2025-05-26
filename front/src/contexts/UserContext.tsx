@@ -2,7 +2,8 @@ import React, {createContext, useContext, useState, ReactNode} from 'react';
 
 // ✅ 1. 사용자 타입 정의
 export type User = {
-  id: string;
+  id: number;
+  memberId: string;
   username: string;
   email: string;
   role: 'user' | 'admin';
