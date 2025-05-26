@@ -3,9 +3,9 @@ import axiosInstance from './axiosInstance';
 
 const authApi = {
   // ✅ 1. 로그인 요청
-  login: (id: string, password: string) =>
+  login: (memberId: string, password: string) =>
     axiosInstance.post('/members/login', {
-      memberId: id, // 서버에서 기대하는 key 이름이 'memberId'일 경우
+      memberId,
       password,
     }),
 
@@ -42,13 +42,13 @@ const authApi = {
   },
 
   signup: async (
-    id: string,
+    memberId: string,
     password: string,
     email: string,
     userName: string,
   ) => {
     return axiosInstance.post('/members/signup', {
-      memberId: id,
+      memberId,
       password,
       email,
       userName,

@@ -1,5 +1,4 @@
-import React, {useContext} from 'react';
-
+import React from 'react';
 import {
   KeyboardAvoidingView,
   SafeAreaView,
@@ -19,10 +18,10 @@ import {validateLogin} from '../../utils';
 import {colors} from '../../constants/colors';
 import {RootStackParamList} from '../../navigations/root/Rootnavigator';
 import Yogiitsu from '../../assets/Yogiitsu.svg';
-import {useUser} from '../../contexts/UserContext'; // ✅ 유저 컨텍스트 추가
-import {Alert} from 'react-native'; // ✅ 알림창 위해 추가
-import authApi from '../../api/authApi'; // ✅ 로그인 API 불러오기
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ 토큰 저장용
+import {useUser} from '../../contexts/UserContext';
+import {Alert} from 'react-native';
+import authApi from '../../api/authApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from '../../api/axiosInstance';
 
 type AuthHomeScreenProps = StackScreenProps<
@@ -59,6 +58,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
       // 3. context에 유저 저장
       login({
         id: user.id,
+        memberId: user.memberId,
         username: user.username,
         email: user.email,
         role: user.role,
