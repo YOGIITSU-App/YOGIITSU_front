@@ -1,10 +1,8 @@
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Dimensions, Image, Text, TouchableOpacity, View} from 'react-native';
+import {Dimensions, Image, Text, TouchableOpacity} from 'react-native';
 import MapStackNavigator from '../stack/MapStackNavigator';
-import FavoriteHomeScreen from '../../screens/favorite/FavoriteHomeScreen';
-import MypageHomeScreen from '../../screens/mypage/MypageHomeScreen';
-import {colors} from '../../constants';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
+import {defaultTabOptions} from '../../constants/tabOptions';
 
 const BottomTab = createBottomTabNavigator();
 const deviceHeight = Dimensions.get('screen').height;
@@ -13,23 +11,7 @@ function BottomTabNavigator() {
   return (
     <BottomTab.Navigator
       screenOptions={({route}) => ({
-        headerShown: false,
-
-        // ✅ 탭 바 높이를 적절하게 설정 (기본보다 조금 높게 설정)
-        tabBarStyle: {
-          height: deviceHeight * 0.08,
-          backgroundColor: '#fff',
-          paddingBottom: -10, // ✅ 아이콘과 텍스트가 너무 아래로 가지 않도록 패딩 추가
-        },
-
-        tabBarActiveTintColor: 'blue',
-        tabBarInactiveTintColor: 'gray',
-
-        // ✅ 아이콘과 텍스트 간격을 자연스럽게 조정
-        tabBarLabelStyle: {
-          fontSize: 12, // 글자 크기 유지
-          paddingBottom: 15, // ✅ 텍스트가 너무 아래로 내려가지 않도록 설정
-        },
+        ...defaultTabOptions, // 👉 한 번에 적용!!
 
         tabBarIcon: ({color, size}) => {
           let iconSource;

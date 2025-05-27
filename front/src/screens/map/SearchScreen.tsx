@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useLayoutEffect} from 'react';
 import {
   View,
   TextInput,
@@ -13,6 +13,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import searchApi, {SearchSuggestion} from '../../api/searchApi';
+import {defaultTabOptions} from '../../constants/tabOptions';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -33,6 +34,15 @@ function SearchScreen() {
   const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({tabBarStyle: {display: 'none'}});
+
+    return () => {
+      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+    };
+  }, [navigation]);
+
   const fetchSuggestions = async (query: string) => {
     if (!query) return;
     setLoading(true);
@@ -48,12 +58,23 @@ function SearchScreen() {
   };
 
   const handleSelectSuggestion = (item: SearchSuggestion) => {
-    navigation.navigate(mapNavigation.MAPHOME, {
-      startLocation: '', // 위치는 buildingDetail API에서 처리
-      selectedPlace: item.keyword,
-      selectionType,
-      buildingId: item.buildingId, // 👈 MapHomeScreen에서 buildingDetail 조회 시 사용
-    });
+    const commonParams = {
+      buildingId: item.buildingId,
+    };
+
+    if (selectionType === 'start') {
+      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+        ...commonParams,
+        endLocation: route.params?.previousEndLocation ?? '',
+        endLocationName: route.params?.previousEndLocationName ?? '',
+      });
+    } else {
+      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+        ...commonParams,
+        startLocation: route.params?.previousStartLocation ?? '',
+        startLocationName: route.params?.previousStartLocationName ?? '',
+      });
+    }
   };
 
   return (
@@ -64,6 +85,10 @@ function SearchScreen() {
         value={searchText}
         onChangeText={text => {
           setSearchText(text);
+          if (text.trim() === '') {
+            setResults([]);
+            return;
+          }
           fetchSuggestions(text);
         }}
         autoCorrect={false}

@@ -5,6 +5,8 @@ import SearchScreen from '../../screens/map/SearchScreen';
 import {mapNavigation} from '../../constants';
 import RouteSelectionScreen from '../../screens/map/RouteSelectionScreen';
 import RouteResultScreen from '../../screens/map/RouteResultScreen';
+import BuildingPreviewScreen from '../../screens/map/BuildingPreviewScreen';
+import BuildingDetailScreen from '../../screens/map/BuildingDetailScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -12,14 +14,30 @@ export type MapStackParamList = {
     | {
         buildingId?: number;
         selectedPlace?: string;
-        selectedLocation?: string; // ✅ 추가
-        selectionType?: 'start' | 'end'; // ✅ 추가
+        selectedLocation?: string;
+        selectionType?: 'start' | 'end';
         startLocation?: string;
         startLocationName?: string;
         endLocation?: string;
         endLocationName?: string;
       }
     | undefined;
+  [mapNavigation.BUILDING_PREVIEW]: {
+    buildingId: number;
+    startLocation?: string;
+    startLocationName?: string;
+    endLocation?: string;
+    endLocationName?: string;
+  };
+
+  [mapNavigation.BUILDING_DETAIL]: {
+    buildingId: number;
+    startLocation?: string;
+    startLocationName?: string;
+    endLocation?: string;
+    endLocationName?: string;
+  };
+
   [mapNavigation.SEARCH]: {
     selectionType: 'start' | 'end';
     previousStartLocation?: string;
@@ -47,14 +65,24 @@ function MapStackNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="MapHome"
+        name={mapNavigation.MAPHOME}
         component={MapHomeScreen}
         options={{headerShown: false}}
       />
       <Stack.Screen
-        name="Search"
+        name={mapNavigation.SEARCH}
         component={SearchScreen}
         options={{title: '검색'}}
+      />
+      <Stack.Screen
+        name={mapNavigation.BUILDING_PREVIEW}
+        component={BuildingPreviewScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name={mapNavigation.BUILDING_DETAIL}
+        component={BuildingDetailScreen}
+        options={{title: '건물 상세정보'}}
       />
       <Stack.Screen
         name={mapNavigation.ROUTE_SELECTION}

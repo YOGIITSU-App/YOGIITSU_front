@@ -9,7 +9,8 @@ const authNavigations = {
 const mapNavigation = {
   MAPHOME: 'MapHome',
   SEARCH: 'Search',
-  PLACEDETAIL: 'PlaceDetail',
+  BUILDING_PREVIEW: 'BuildingPreview',
+  BUILDING_DETAIL: 'BuildingDetail',
   ROUTE_SELECTION: 'RouteSelection',
   ROUTE_RESULT: 'RouteResult',
 } as const;
