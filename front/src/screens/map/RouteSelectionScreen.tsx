@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect, useLayoutEffect} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
+import {defaultTabOptions} from '../../constants/tabOptions';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -18,24 +19,34 @@ function RouteSelectionScreen() {
   const navigation = useNavigation<RouteSelectionScreenNavigationProp>();
   const route = useRoute<RouteSelectionScreenRouteProp>();
 
-  const [startLocation, setStartLocation] = useState(
-    route.params?.startLocation || '',
-  );
-  const [startLocationName, setStartLocationName] = useState(
-    route.params?.startLocationName || '출발지 선택',
-  );
-  const [endLocation, setEndLocation] = useState(
-    route.params?.endLocation || '',
-  );
-  const [endLocationName, setEndLocationName] = useState(
-    route.params?.endLocationName || '도착지 선택',
-  );
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({tabBarStyle: {display: 'none'}});
 
-  const handleSearchLocation = (type: 'start' | 'end') => {
-    navigation.navigate(mapNavigation.SEARCH, {selectionType: type});
-  };
+    return () => {
+      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+    };
+  }, [navigation]);
 
-  React.useEffect(() => {
+  const [startLocation, setStartLocation] = useState('');
+  const [startLocationName, setStartLocationName] = useState('출발지 선택');
+  const [endLocation, setEndLocation] = useState('');
+  const [endLocationName, setEndLocationName] = useState('도착지 선택');
+
+  // 🔸 route.params 가 바뀔 때마다 값 갱신 (이전 상태 유지 + 덮어쓰기)
+  useEffect(() => {
+    if (route.params?.startLocation) {
+      setStartLocation(route.params.startLocation);
+      setStartLocationName(route.params.startLocationName || '출발지 선택');
+    }
+    if (route.params?.endLocation) {
+      setEndLocation(route.params.endLocation);
+      setEndLocationName(route.params.endLocationName || '도착지 선택');
+    }
+  }, [route.params]);
+
+  // 🔸 출발+도착 모두 존재 시 자동으로 길찾기 화면으로 이동
+  useEffect(() => {
     if (startLocation && endLocation) {
       navigation.replace(mapNavigation.ROUTE_RESULT, {
         startLocation,
@@ -45,6 +56,16 @@ function RouteSelectionScreen() {
       });
     }
   }, [startLocation, endLocation]);
+
+  const handleSearchLocation = (type: 'start' | 'end') => {
+    navigation.navigate(mapNavigation.SEARCH, {
+      selectionType: type,
+      previousStartLocation: startLocation,
+      previousStartLocationName: startLocationName,
+      previousEndLocation: endLocation,
+      previousEndLocationName: endLocationName,
+    });
+  };
 
   return (
     <View style={styles.container}>
