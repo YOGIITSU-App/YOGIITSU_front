@@ -14,19 +14,18 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../navigations/stack/MypageStackNavigator';
 import CustomBotton from '../../components/CustomButton';
 import {RootStackParamList} from '../../navigations/root/Rootnavigator';
-import {useUser} from '../../contexts/UserContext';
+import {logoutEmitter} from '../../utils/logoutEmitter';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
-// ✅ 두 네비게이터 타입을 합친 Composite 타입 정의
+// 두 네비게이터 타입을 합친 Composite 타입 정의
 type MypageNavigationProp = CompositeNavigationProp<
   StackNavigationProp<MypageStackParamList>,
   StackNavigationProp<RootStackParamList>
 >;
 
 function MypageHomeScreen() {
-  const {logout} = useUser(); // ✅ logout 함수 가져오기
   const navigation = useNavigation<MypageNavigationProp>();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -79,7 +78,7 @@ function MypageHomeScreen() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            setModalVisible(true); // 모달 표시
+            setModalVisible(true);
           }}>
           <Text style={styles.text}>로그아웃</Text>
           <Text style={styles.arrow}>〉</Text>
@@ -100,16 +99,14 @@ function MypageHomeScreen() {
                 <CustomBotton
                   label="아니요"
                   style={[styles.modalButton, styles.cancelButton]}
-                  onPress={
-                    () => setModalVisible(false) // 모달 닫기
-                  }></CustomBotton>
+                  onPress={() => setModalVisible(false)}></CustomBotton>
                 {/* 탈퇴 버튼 */}
                 <CustomBotton
                   label="네"
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={() => {
-                    setModalVisible(false); // 모달 닫기
-                    logout(); // ✅ 유저 정보 초기화
+                    setModalVisible(false);
+                    logoutEmitter.emit('force-logout');
                   }}></CustomBotton>
               </View>
             </View>
@@ -166,8 +163,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderRadius: 6,
     alignItems: 'center',
-    paddingTop: 30, // ✅ 상단 패딩
-    paddingBottom: 0, // ✅ 하단 패딩 제거
+    paddingTop: 30,
+    paddingBottom: 0,
   },
   modalText: {
     fontSize: 16,
@@ -179,22 +176,22 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     width: '100%',
-    height: deviceHeight * 0.07, // ✅ 버튼 높이 설정 (모달 하단을 채우도록)
-    position: 'absolute', // ✅ 모달 하단에 고정
+    height: deviceHeight * 0.07,
+    position: 'absolute',
     bottom: 0,
   },
   modalButton: {
-    flex: 1, // ✅ 버튼을 동일한 크기로 설정
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: colors.GRAY_300,
-    borderBottomLeftRadius: 6, // ✅ 왼쪽 모서리 둥글게
+    borderBottomLeftRadius: 6,
   },
   confirmButton: {
     backgroundColor: colors.BLUE_700,
-    borderBottomRightRadius: 6, // ✅ 오른쪽 모서리 둥글게
+    borderBottomRightRadius: 6,
   },
 });
 

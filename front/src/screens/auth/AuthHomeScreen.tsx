@@ -21,8 +21,7 @@ import Yogiitsu from '../../assets/Yogiitsu.svg';
 import {useUser} from '../../contexts/UserContext';
 import {Alert} from 'react-native';
 import authApi from '../../api/authApi';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axiosInstance from '../../api/axiosInstance';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -30,7 +29,7 @@ type AuthHomeScreenProps = StackScreenProps<
 >;
 
 function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
-  const {login} = useUser(); // ✅ UserContext의 login 함수 가져오기
+  const {login} = useUser(); // UserContext의 login 함수 가져오기
 
   const loginForm = useForm({
     initialValue: {
@@ -46,26 +45,29 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     try {
       // 1. 로그인 요청
       const res = await authApi.login(id, password);
-      const {accessToken, refreshToken, user} = res.data;
+      // 헤더에서 토큰 꺼내기
+      const accessToken = res.headers.authorization?.split(' ')[1];
+      const refreshToken = res.headers['x-refresh-token'];
+
+      if (!accessToken || !refreshToken) {
+        throw new Error('토큰이 존재하지 않아요!');
+      }
+
+      // 바디에서 유저 정보 꺼내기
+      const {userId, role} = res.data;
 
       // 2. 토큰 저장
-      await AsyncStorage.setItem('accessToken', accessToken);
-      await AsyncStorage.setItem('refreshToken', refreshToken);
+      await EncryptedStorage.setItem('accessToken', accessToken);
+      await EncryptedStorage.setItem('refreshToken', refreshToken);
 
-      // ✅ axiosInstance에 accessToken 직접 등록
-      axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`;
-
-      // 3. context에 유저 저장
-      login({
-        id: user.id,
-        memberId: user.memberId,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      });
+      // 3. context에 저장
+      login({userId, role});
 
       // 4. 유저 정보도 AsyncStorage에 저장 (자동 로그인용)
-      await AsyncStorage.setItem('userInfo', JSON.stringify(user));
+      await EncryptedStorage.setItem(
+        'userInfo',
+        JSON.stringify({userId, role}),
+      );
     } catch (err) {
       console.error('로그인 실패:', err);
       Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');

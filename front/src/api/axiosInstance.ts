@@ -1,26 +1,30 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import {logoutEmitter} from '../utils/logoutEmitter';
+import {refreshToken as requestTokenRefresh} from './refreshApi';
+import {API_BASE_URL} from '@env';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
-  baseURL: 'http://43.200.10.184:8080',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 요청 시 토큰 자동 추가
-axiosInstance.interceptors.request.use(async config => {
-  // ❗ accessToken이 필요한 요청만 토큰 붙이기
-  const skipAuthUrls = [
-    '/send-mail/email',
-    '/verify/code',
-    '/members/find-password',
-  ];
+// 인증 제외 URL (ex: 비회원 접근)
+const skipAuthUrls = [
+  '/send-mail/email',
+  '/verify/code',
+  '/members/find-password',
+];
 
+// 요청 인터셉터
+axiosInstance.interceptors.request.use(async config => {
   const shouldSkip = skipAuthUrls.some(url => config.url?.includes(url));
+
   if (!shouldSkip) {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await EncryptedStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,5 +34,57 @@ axiosInstance.interceptors.request.use(async config => {
 
   return config;
 });
+
+// 응답 인터셉터: 재발급 처리
+axiosInstance.interceptors.response.use(
+  res => res,
+  async error => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const accessToken = await EncryptedStorage.getItem('accessToken');
+        const refreshToken = await EncryptedStorage.getItem('refreshToken');
+
+        if (!accessToken || !refreshToken) throw new Error('토큰 없음');
+
+        const res = await requestTokenRefresh(accessToken, refreshToken);
+
+        const rawAuthHeader =
+          res.headers.authorization || res.headers.Authorization;
+        if (!rawAuthHeader || !rawAuthHeader.startsWith('Bearer ')) {
+          throw new Error('유효하지 않은 Authorization 헤더 형식입니다');
+        }
+        const newAccessToken = rawAuthHeader.split(' ')[1];
+        if (!newAccessToken) {
+          throw new Error('Access Token 추출 실패');
+        }
+        const newRefreshToken = res.headers['x-refresh-token'];
+        if (!newRefreshToken) {
+          throw new Error('Refresh Token 누락');
+        }
+        if (!newAccessToken || !newRefreshToken) throw new Error('재발급 실패');
+
+        // 새 토큰 저장
+        await EncryptedStorage.setItem('accessToken', newAccessToken);
+        await EncryptedStorage.setItem('refreshToken', newRefreshToken);
+
+        // 재시도 시 헤더 갱신
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        return axiosInstance(originalRequest);
+      } catch (err) {
+        // 실패 → 로그아웃 처리 (저장소 회원정보 삭제)
+        await EncryptedStorage.clear();
+        logoutEmitter.emit('force-logout'); // 전역 로그아웃 이벤트 발생!
+        return Promise.reject(err);
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default axiosInstance;
