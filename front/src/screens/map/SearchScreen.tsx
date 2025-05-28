@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useLayoutEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   TextInput,
@@ -13,7 +13,6 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import searchApi, {SearchSuggestion} from '../../api/searchApi';
-import {defaultTabOptions} from '../../constants/tabOptions';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -33,15 +32,6 @@ function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
-    };
-  }, [navigation]);
 
   const fetchSuggestions = async (query: string) => {
     if (!query) return;

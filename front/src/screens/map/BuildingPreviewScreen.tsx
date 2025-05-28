@@ -20,7 +20,6 @@ import {mapNavigation} from '../../constants/navigation';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {defaultTabOptions} from '../../constants/tabOptions';
 import {colors} from '../../constants';
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -46,7 +45,6 @@ export default function BuildingPreviewScreen() {
   );
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['55%', '100%'], []);
-  const mapRef = useRef<MapView>(null);
   const mapOffsetLatitude = 0.002;
 
   // 상단 헤더 // 추후에 vector-icon라이브러리로 대체 예정
@@ -74,15 +72,6 @@ export default function BuildingPreviewScreen() {
       });
     }
   }, [navigation, buildingDetail]);
-
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
-    };
-  }, [navigation]);
 
   useEffect(() => {
     const id = route.params?.buildingId;

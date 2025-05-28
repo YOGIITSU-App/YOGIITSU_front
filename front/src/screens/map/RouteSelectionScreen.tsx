@@ -1,10 +1,9 @@
-import React, {useState, useEffect, useLayoutEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
-import {defaultTabOptions} from '../../constants/tabOptions';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -18,15 +17,6 @@ type RouteSelectionScreenRouteProp = RouteProp<
 function RouteSelectionScreen() {
   const navigation = useNavigation<RouteSelectionScreenNavigationProp>();
   const route = useRoute<RouteSelectionScreenRouteProp>();
-
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
-    };
-  }, [navigation]);
 
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('출발지 선택');

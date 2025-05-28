@@ -82,7 +82,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.BUILDING_DETAIL}
         component={BuildingDetailScreen}
-        options={{title: '건물 상세정보'}}
+        options={{headerShown: true}}
       />
       <Stack.Screen
         name={mapNavigation.ROUTE_SELECTION}
