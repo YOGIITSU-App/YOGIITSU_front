@@ -1,12 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, {useLayoutEffect, useState} from 'react';
 import {
   Dimensions,
   Modal,
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import InputField from '../../../components/inputField';
@@ -20,6 +18,7 @@ import MiniInputField from '../../../components/miniInputField';
 import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import {defaultTabOptions} from '../../../constants/tabOptions';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -46,13 +45,12 @@ function ChangePwCodeConfirmScreen() {
 
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
-  useEffect(() => {
-    // ✅ 화면에 들어오면 바텀 탭 숨기기
-    navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      // ✅ 화면을 떠나면 바텀 탭 다시 보이게 설정
-      navigation.getParent()?.setOptions({tabBarStyle: undefined});
+      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
     };
   }, [navigation]);
 

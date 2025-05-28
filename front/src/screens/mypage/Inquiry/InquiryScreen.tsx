@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useLayoutEffect} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,15 +14,18 @@ import {colors} from '../../../constants';
 import {useInquiry} from '../../../contexts/InquiryContext';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {defaultTabOptions} from '../../../constants/tabOptions';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const {inquiries} = useInquiry();
 
-  useEffect(() => {
-    navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({tabBarStyle: {display: 'none'}});
+
     return () => {
-      navigation.getParent()?.setOptions({tabBarStyle: undefined});
+      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
     };
   }, [navigation]);
 

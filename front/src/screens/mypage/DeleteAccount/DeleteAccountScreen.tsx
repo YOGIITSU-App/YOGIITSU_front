@@ -6,15 +6,13 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
-import CustomText from '../../../components/CustomText';
 import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
-import {validateEmail, validatePw} from '../../../utils';
+import {validatePw} from '../../../utils';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
