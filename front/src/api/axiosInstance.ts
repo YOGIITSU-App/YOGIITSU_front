@@ -73,7 +73,6 @@ axiosInstance.interceptors.response.use(
 
         // 재시도 시 헤더 갱신
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return axiosInstance(originalRequest);
       } catch (err) {
