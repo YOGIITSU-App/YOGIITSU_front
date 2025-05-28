@@ -14,7 +14,6 @@ import {mapNavigation} from '../../constants/navigation';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
-import {defaultTabOptions} from '../../constants/tabOptions';
 
 const {width: deviceWidth} = Dimensions.get('window');
 
@@ -64,15 +63,6 @@ export default function BuildingDetailScreen() {
       });
     }
   }, [navigation, buildingDetail]);
-
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
-    };
-  }, [navigation]);
 
   useEffect(() => {
     const id = route.params?.buildingId;

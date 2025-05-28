@@ -3,6 +3,8 @@ import {Dimensions, Image, Text, TouchableOpacity} from 'react-native';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import {defaultTabOptions} from '../../constants/tabOptions';
+import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
+import {mapNavigation} from '../../constants';
 
 const BottomTab = createBottomTabNavigator();
 const deviceHeight = Dimensions.get('screen').height;
@@ -37,7 +39,27 @@ function BottomTabNavigator() {
           );
         },
       })}>
-      <BottomTab.Screen name="홈" component={MapStackNavigator} />
+      <BottomTab.Screen
+        name="홈"
+        component={MapStackNavigator}
+        options={({route}) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+
+          const hiddenScreens = [
+            mapNavigation.SEARCH,
+            mapNavigation.BUILDING_PREVIEW,
+            mapNavigation.BUILDING_DETAIL,
+            mapNavigation.ROUTE_SELECTION,
+            mapNavigation.ROUTE_RESULT,
+          ];
+
+          return {
+            tabBarStyle: hiddenScreens.includes(routeName as any)
+              ? {display: 'none'}
+              : defaultTabOptions.tabBarStyle,
+          };
+        }}
+      />
       <BottomTab.Screen
         name="즐겨찾기"
         component={MapStackNavigator}
