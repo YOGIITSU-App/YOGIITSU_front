@@ -1,6 +1,7 @@
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import authApi from './authApi';
+import {logoutEmitter} from '../utils/logoutEmitter';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
@@ -67,6 +68,7 @@ axiosInstance.interceptors.response.use(
       } catch (err) {
         // 실패 → 로그아웃 처리 (저장소 회원정보 삭제)
         await EncryptedStorage.clear();
+        logoutEmitter.emit('force-logout'); // 전역 로그아웃 이벤트 발생!
         return Promise.reject(err);
       }
     }
