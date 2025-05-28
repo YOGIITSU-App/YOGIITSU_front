@@ -10,14 +10,14 @@ const authApi = {
     }),
 
   // accessToken 재발급
-  refresh: async (accessToken: string, refreshToken: string) => {
-    return axiosInstance.post('/auth/reissue', null, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'X-Refresh-Token': refreshToken,
-      },
-    });
-  },
+  // refresh: async (accessToken: string, refreshToken: string) => {
+  //   return axiosInstance.post('/auth/reissue', null, {
+  //     headers: {
+  //       Authorization: `Bearer ${accessToken}`,
+  //       'X-Refresh-Token': refreshToken,
+  //     },
+  //   });
+  // },
 
   // 인증번호 이메일로 전송
   sendCode: async (email: string) => {

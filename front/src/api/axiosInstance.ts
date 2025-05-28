@@ -2,6 +2,7 @@ import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import authApi from './authApi';
 import {logoutEmitter} from '../utils/logoutEmitter';
+import {refreshToken as requestTokenRefresh} from './refreshApi';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
@@ -49,7 +50,7 @@ axiosInstance.interceptors.response.use(
 
         if (!accessToken || !refreshToken) throw new Error('토큰 없음');
 
-        const res = await authApi.refresh(accessToken, refreshToken);
+        const res = await requestTokenRefresh(accessToken, refreshToken);
 
         const newAccessToken = res.headers.authorization?.split(' ')[1];
         const newRefreshToken = res.headers['x-refresh-token'];
