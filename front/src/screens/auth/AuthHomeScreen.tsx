@@ -21,7 +21,6 @@ import Yogiitsu from '../../assets/Yogiitsu.svg';
 import {useUser} from '../../contexts/UserContext';
 import {Alert} from 'react-native';
 import authApi from '../../api/authApi';
-import axiosInstance from '../../api/axiosInstance';
 import EncryptedStorage from 'react-native-encrypted-storage';
 
 type AuthHomeScreenProps = StackScreenProps<
@@ -30,7 +29,7 @@ type AuthHomeScreenProps = StackScreenProps<
 >;
 
 function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
-  const {login} = useUser(); // ✅ UserContext의 login 함수 가져오기
+  const {login} = useUser(); // UserContext의 login 함수 가져오기
 
   const loginForm = useForm({
     initialValue: {
@@ -60,9 +59,6 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
       // 2. 토큰 저장
       await EncryptedStorage.setItem('accessToken', accessToken);
       await EncryptedStorage.setItem('refreshToken', refreshToken);
-
-      // axiosInstance에 accessToken 직접 등록
-      axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`;
 
       // 3. context에 저장
       login({userId, role});

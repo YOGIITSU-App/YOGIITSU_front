@@ -2,14 +2,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from './axiosInstance';
 
 const authApi = {
-  // ✅ 1. 로그인 요청
+  // 로그인 요청
   login: (memberId: string, password: string) =>
     axiosInstance.post('/members/login', {
       memberId,
       password,
     }),
 
-  // ✅ 인증번호 이메일로 전송
+  // accessToken 재발급
+  refresh: async (accessToken: string, refreshToken: string) => {
+    return axiosInstance.post('/auth/reissue', null, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'X-Refresh-Token': refreshToken,
+      },
+    });
+  },
+
+  // 인증번호 이메일로 전송
   sendCode: async (email: string) => {
     const response = await axiosInstance.post('/send-mail/email', {
       email,
@@ -24,7 +34,7 @@ const authApi = {
     return response;
   },
 
-  // ✅ 인증번호 확인
+  // 인증번호 확인
   verifyCode: async (email: string, code: string) => {
     const token = await AsyncStorage.getItem('emailVerifyToken'); // ✅ 저장한 임시 토큰 불러오기
 
@@ -41,6 +51,7 @@ const authApi = {
     return response;
   },
 
+  // 회원가입
   signup: async (
     memberId: string,
     password: string,
@@ -55,7 +66,7 @@ const authApi = {
     });
   },
 
-  // 🔑 비밀번호 재설정
+  // 비밀번호 재설정
   resetPassword: async (
     newPassword: string,
     confirmPassword: string,
