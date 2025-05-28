@@ -29,7 +29,7 @@ function RootNavigatorContent() {
     return () => {
       logoutEmitter.removeAllListeners('force-logout');
     };
-  }, []);
+  }, [logout]);
 
   return (
     <RootStack.Navigator screenOptions={{headerShown: false}}>

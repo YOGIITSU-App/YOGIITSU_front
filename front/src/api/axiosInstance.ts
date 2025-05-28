@@ -1,12 +1,12 @@
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import authApi from './authApi';
 import {logoutEmitter} from '../utils/logoutEmitter';
 import {refreshToken as requestTokenRefresh} from './refreshApi';
+import {API_BASE_URL} from '@env';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
-  baseURL: 'http://43.200.10.184:8080',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -52,9 +52,19 @@ axiosInstance.interceptors.response.use(
 
         const res = await requestTokenRefresh(accessToken, refreshToken);
 
-        const newAccessToken = res.headers.authorization?.split(' ')[1];
+        const rawAuthHeader =
+          res.headers.authorization || res.headers.Authorization;
+        if (!rawAuthHeader || !rawAuthHeader.startsWith('Bearer ')) {
+          throw new Error('유효하지 않은 Authorization 헤더 형식입니다');
+        }
+        const newAccessToken = rawAuthHeader.split(' ')[1];
+        if (!newAccessToken) {
+          throw new Error('Access Token 추출 실패');
+        }
         const newRefreshToken = res.headers['x-refresh-token'];
-
+        if (!newRefreshToken) {
+          throw new Error('Refresh Token 누락');
+        }
         if (!newAccessToken || !newRefreshToken) throw new Error('재발급 실패');
 
         // 새 토큰 저장
@@ -62,7 +72,7 @@ axiosInstance.interceptors.response.use(
         await EncryptedStorage.setItem('refreshToken', newRefreshToken);
 
         // 재시도 시 헤더 갱신
-        axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return axiosInstance(originalRequest);
