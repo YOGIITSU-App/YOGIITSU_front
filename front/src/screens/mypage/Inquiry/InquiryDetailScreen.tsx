@@ -1,4 +1,4 @@
-import React, {useLayoutEffect, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -7,13 +7,15 @@ import {
   ScrollView,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
-import {useInquiry} from '../../../contexts/InquiryContext';
+import {useInquiry, Inquiry} from '../../../contexts/InquiryContext';
+import {useUser} from '../../../contexts/UserContext';
 
 const deviceWidth = Dimensions.get('window').width;
 const deviceHeight = Dimensions.get('window').height;
@@ -23,38 +25,58 @@ type Route = RouteProp<MypageStackParamList, 'InquiryDetail'>;
 function InquiryDetailScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {getInquiryById, deleteInquiry} = useInquiry();
-  const inquiryId = route.params.inquiryId;
-  const inquiry = getInquiryById(inquiryId);
+  const {getInquiryFromServer, deleteInquiry} = useInquiry();
+  const {user} = useUser();
 
+  const inquiryId = route.params.inquiryId;
+
+  const [inquiry, setInquiry] = useState<Inquiry | null>(null);
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const isAuthor = user?.userId === inquiry?.authorId;
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      const data = await getInquiryFromServer(inquiryId);
+      setInquiry(data);
+      setLoading(false);
+    };
+    fetchDetail();
+  }, [inquiryId]);
+
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Text
-          onPress={() => {
-            if (inquiry) {
-              navigation.navigate('InquiryEdit', {inquiry});
-            }
-          }}
-          style={{
-            marginRight: 20,
-            color: colors.BLUE_700,
-            fontSize: 16,
-            fontWeight: '600',
-          }}>
-          수정
-        </Text>
-      ),
-    });
-  }, [navigation, inquiry]);
+    if (isAuthor && inquiry) {
+      navigation.setOptions({
+        headerRight: () => (
+          <Text
+            onPress={() => navigation.navigate('InquiryEdit', {inquiry})}
+            style={{
+              marginRight: 20,
+              color: colors.BLUE_700,
+              fontSize: 16,
+              fontWeight: '600',
+            }}>
+            수정
+          </Text>
+        ),
+      });
+    }
+  }, [navigation, inquiry, isAuthor]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color={colors.BLUE_700} />
+      </SafeAreaView>
+    );
+  }
 
   if (!inquiry) {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={{textAlign: 'center'}}>
-          문의 데이터를 찾을 수 없어요 🥲
+          문의 데이터를 불러올 수 없어요
         </Text>
       </SafeAreaView>
     );
@@ -70,7 +92,7 @@ function InquiryDetailScreen() {
               styles.statusBadge,
               {
                 backgroundColor:
-                  inquiry.status === 'WAITING'
+                  inquiry.status === 'PROCESSING'
                     ? colors.GRAY_100
                     : colors.BLUE_100,
               },
@@ -80,12 +102,12 @@ function InquiryDetailScreen() {
                 styles.statusText,
                 {
                   color:
-                    inquiry.status === 'WAITING'
+                    inquiry.status === 'PROCESSING'
                       ? colors.GRAY_500
                       : colors.BLUE_700,
                 },
               ]}>
-              {inquiry.status === 'WAITING' ? '답변대기' : '답변완료'}
+              {inquiry.status === 'PROCESSING' ? '답변대기' : '답변완료'}
             </Text>
           </View>
         </View>
@@ -98,29 +120,30 @@ function InquiryDetailScreen() {
           <Text style={styles.contentText}>{inquiry.content}</Text>
         </View>
 
-        {inquiry.status === 'COMPLETE' && (
+        {inquiry.status === 'COMPLETED' && inquiry.response && (
           <>
             <Text style={styles.answerLabel}>답변 드립니다</Text>
             <View style={styles.answerBox}>
-              <Text style={styles.answerText}>
-                안녕하세요.{'\n'}
-                문의 주신 사항은 정상적으로 처리되었습니다.{'\n\n'}더 궁금하신
-                점은 추가로 문의해주세요!
-              </Text>
+              <Text style={styles.answerText}>{inquiry.response}</Text>
+              {inquiry.responseDate && (
+                <Text style={styles.answerDate}>
+                  답변일자: {inquiry.responseDate}
+                </Text>
+              )}
             </View>
           </>
         )}
       </ScrollView>
 
-      {/* ✅ 삭제 버튼 */}
-      <View style={styles.buttonContainer}>
-        <CustomBotton
-          label="문의 삭제하기"
-          onPress={() => setModalVisible(true)}
-        />
-      </View>
+      {isAuthor && (
+        <View style={styles.buttonContainer}>
+          <CustomBotton
+            label="문의 삭제하기"
+            onPress={() => setModalVisible(true)}
+          />
+        </View>
+      )}
 
-      {/* ✅ 삭제 확인 모달 */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -138,10 +161,10 @@ function InquiryDetailScreen() {
               <CustomBotton
                 label="네"
                 style={[styles.modalButton, styles.confirmButton]}
-                onPress={() => {
-                  deleteInquiry(inquiry.id); // ✅ 삭제
+                onPress={async () => {
+                  await deleteInquiry(inquiry.id);
                   setModalVisible(false);
-                  navigation.navigate('Inquiry'); // ✅ 리스트로 이동
+                  navigation.navigate('Inquiry');
                 }}
               />
             </View>
@@ -209,17 +232,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.GRAY_800,
   },
+  answerDate: {
+    fontSize: 12,
+    color: colors.GRAY_500,
+    marginTop: 10,
+  },
   buttonContainer: {
     paddingBottom: 20,
     alignItems: 'center',
   },
-
-  // ✅ 모달 스타일
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // 반투명 배경
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalBox: {
     width: deviceWidth * 0.844,
@@ -227,8 +253,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderRadius: 6,
     alignItems: 'center',
-    paddingTop: 30, // ✅ 상단 패딩
-    paddingBottom: 0, // ✅ 하단 패딩 제거
+    paddingTop: 30,
+    paddingBottom: 0,
   },
   modalText: {
     fontSize: 16,
@@ -240,22 +266,22 @@ const styles = StyleSheet.create({
   modalbuttonContainer: {
     flexDirection: 'row',
     width: '100%',
-    height: deviceHeight * 0.07, // ✅ 버튼 높이 설정 (모달 하단을 채우도록)
-    position: 'absolute', // ✅ 모달 하단에 고정
+    height: deviceHeight * 0.07,
+    position: 'absolute',
     bottom: 0,
   },
   modalButton: {
-    flex: 1, // ✅ 버튼을 동일한 크기로 설정
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: colors.GRAY_300,
-    borderBottomLeftRadius: 6, // ✅ 왼쪽 모서리 둥글게
+    borderBottomLeftRadius: 6,
   },
   confirmButton: {
     backgroundColor: colors.BLUE_700,
-    borderBottomRightRadius: 6, // ✅ 오른쪽 모서리 둥글게
+    borderBottomRightRadius: 6,
   },
 });
 

@@ -14,7 +14,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import CustomButton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
-import {useInquiry} from '../../../contexts/InquiryContext'; // ✅ 전역상태 사용!
+import {useInquiry} from '../../../contexts/InquiryContext';
 import CustomBotton from '../../../components/CustomButton';
 
 type Navigation = StackNavigationProp<MypageStackParamList, 'InquiryEdit'>;
@@ -31,17 +31,16 @@ function InquiryEditScreen() {
   const [content, setContent] = useState(inquiry.content);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const {editInquiry} = useInquiry(); // ✅ 전역 상태 수정 함수 가져오기
+  const {editInquiry} = useInquiry();
 
-  const handleSave = () => {
-    // ✅ 상태 수정
-    editInquiry({
-      ...inquiry,
-      title,
-      content,
-    });
-    setModalVisible(false);
-    navigation.goBack(); // ✅ InquiryDetail로 돌아가기
+  const handleConfirmEdit = async () => {
+    try {
+      await editInquiry(inquiry.id, title, content);
+      setModalVisible(false);
+      navigation.goBack();
+    } catch (err) {
+      Alert.alert('오류', '수정에 실패했어요');
+    }
   };
 
   return (
@@ -66,10 +65,15 @@ function InquiryEditScreen() {
       <CustomButton
         label="저장하기"
         onPress={() => {
-          setModalVisible(true); // 모달 표시
+          if (!title || !content) {
+            Alert.alert('알림', '제목과 내용을 입력해주세요!');
+            return;
+          }
+          setModalVisible(true);
         }}
       />
 
+      {/* ✅ 저장 확인 모달 */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -77,11 +81,12 @@ function InquiryEditScreen() {
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalText}>문의가 수정되었습니다</Text>
+            <Text style={styles.modalText}>이대로 수정할까요?</Text>
             <CustomBotton
               label="확인"
               style={styles.confirmButton}
-              onPress={handleSave}></CustomBotton>
+              onPress={handleConfirmEdit}
+            />
           </View>
         </View>
       </Modal>
@@ -104,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalBox: {
     width: deviceWidth * 0.85,
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
+    marginTop: 15,
   },
 });
 

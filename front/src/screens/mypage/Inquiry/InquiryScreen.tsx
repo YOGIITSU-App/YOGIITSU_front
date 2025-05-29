@@ -1,4 +1,4 @@
-import React, {useLayoutEffect} from 'react';
+import React, {useCallback, useLayoutEffect} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useInquiry} from '../../../contexts/InquiryContext';
@@ -18,7 +18,7 @@ import {defaultTabOptions} from '../../../constants/tabOptions';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {inquiries} = useInquiry();
+  const {inquiries, fetchInquiries} = useInquiry();
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
@@ -28,6 +28,12 @@ function InquiryScreen() {
       parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
     };
   }, [navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchInquiries();
+    }, []),
+  );
 
   const maskName = (name: string) => {
     return name.length > 1 ? name[0] + '**' : name;
@@ -58,23 +64,22 @@ function InquiryScreen() {
           </View>
 
           <FlatList
-            data={[...inquiries].reverse()} // ✅ 최신순
+            data={[...inquiries].reverse()}
             keyExtractor={item => item.id.toString()}
             renderItem={({item}) => (
               <TouchableOpacity
                 style={styles.itemRow}
-                onPress={
-                  () =>
-                    navigation.navigate('InquiryDetail', {inquiryId: item.id}) // ✅ id만 넘겨요!
+                onPress={() =>
+                  navigation.navigate('InquiryDetail', {inquiryId: item.id})
                 }>
                 <View
                   style={[
                     styles.statusBadge,
                     {
                       backgroundColor:
-                        item.status === 'WAITING'
-                          ? '#eee'
-                          : 'rgba(110,135,255,0.1)',
+                        item.status === 'PROCESSING'
+                          ? colors.GRAY_100
+                          : colors.BLUE_100,
                     },
                   ]}>
                   <Text
@@ -82,12 +87,12 @@ function InquiryScreen() {
                       styles.statusText,
                       {
                         color:
-                          item.status === 'WAITING'
+                          item.status === 'PROCESSING'
                             ? colors.GRAY_500
                             : colors.BLUE_700,
                       },
                     ]}>
-                    {item.status === 'WAITING' ? '답변대기' : '답변완료'}
+                    {item.status === 'PROCESSING' ? '답변대기' : '답변완료'}
                   </Text>
                 </View>
 
