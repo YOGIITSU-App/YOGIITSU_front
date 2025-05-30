@@ -5,7 +5,6 @@ import BottomTabNavigator from '../tab/BottomTabNavigator';
 import {UserProvider, useUser} from '../../contexts/UserContext';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import {logoutEmitter} from '../../utils/logoutEmitter';
-import {InquiryProvider} from '../../contexts/InquiryContext';
 
 // 네비게이터에서 사용할 타입 정의
 export type RootStackParamList = {
@@ -45,11 +44,9 @@ function RootNavigatorContent() {
 
 function RootNavigator() {
   return (
-    <InquiryProvider>
-      <UserProvider>
-        <RootNavigatorContent />
-      </UserProvider>
-    </InquiryProvider>
+    <UserProvider>
+      <RootNavigatorContent />
+    </UserProvider>
   );
 }
 

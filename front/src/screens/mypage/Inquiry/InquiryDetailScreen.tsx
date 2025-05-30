@@ -14,8 +14,8 @@ import {MypageStackParamList} from '../../../navigations/stack/MypageStackNaviga
 import {StackNavigationProp} from '@react-navigation/stack';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
-import {useInquiry, Inquiry} from '../../../contexts/InquiryContext';
 import {useUser} from '../../../contexts/UserContext';
+import inquiryApi, {Inquiry, mapToInquiry} from '../../../api/inquiryApi';
 
 const deviceWidth = Dimensions.get('window').width;
 const deviceHeight = Dimensions.get('window').height;
@@ -25,7 +25,6 @@ type Route = RouteProp<MypageStackParamList, 'InquiryDetail'>;
 function InquiryDetailScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {getInquiryFromServer, deleteInquiry} = useInquiry();
   const {user} = useUser();
 
   const {inquiryId, updated} = route.params;
@@ -40,18 +39,20 @@ function InquiryDetailScreen() {
     return name[0] + '*'.repeat(name.length - 1);
   };
 
+  const fetchDetail = async () => {
+    try {
+      const res = await inquiryApi.getById(inquiryId);
+      const mapped = mapToInquiry(res.data);
+      setInquiry(mapped);
+    } catch (error) {
+      console.error('문의 상세 조회 실패:', error);
+      setInquiry(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const data = await getInquiryFromServer(inquiryId);
-        setInquiry(data);
-      } catch (error) {
-        console.error('문의 상세 조회 실패:', error);
-        setInquiry(null);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDetail();
   }, [inquiryId, updated]);
 
@@ -176,7 +177,7 @@ function InquiryDetailScreen() {
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={async () => {
                   try {
-                    await deleteInquiry(inquiry.id);
+                    await inquiryApi.remove(inquiry.id);
                     setModalVisible(false);
                     navigation.navigate('Inquiry');
                   } catch (error) {
@@ -194,6 +195,7 @@ function InquiryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 🎨 스타일은 동일하게 유지
   container: {flex: 1, backgroundColor: colors.WHITE},
   scrollContent: {padding: 20},
   headerRow: {
