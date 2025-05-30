@@ -12,18 +12,17 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {useInquiry} from '../../../contexts/InquiryContext';
 import CustomBotton from '../../../components/CustomButton';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {colors} from '../../../constants';
+import inquiryApi from '../../../api/inquiryApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
 function InquiryWriteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {addInquiry} = useInquiry();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState('');
@@ -34,13 +33,12 @@ function InquiryWriteScreen() {
       Alert.alert('알림', '제목과 내용을 입력하세요!');
       return;
     }
-
     setModalVisible(true);
   };
 
   const handleConfirm = async () => {
     try {
-      await addInquiry(title, content);
+      await inquiryApi.create(title, content);
       setModalVisible(false);
       navigation.navigate('InquiryComplete');
     } catch (error) {
@@ -126,24 +124,6 @@ const styles = StyleSheet.create({
   textAreaContainer: {
     marginTop: 10,
     marginBottom: 30,
-  },
-  tipText: {
-    fontSize: 13,
-    color: colors.GRAY_400,
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 5,
   },
   textArea: {
     textAlignVertical: 'top',

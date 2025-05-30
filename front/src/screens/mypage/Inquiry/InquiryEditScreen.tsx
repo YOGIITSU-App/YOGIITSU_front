@@ -15,8 +15,8 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {colors} from '../../../constants';
-import {useInquiry} from '../../../contexts/InquiryContext';
 import CustomButton from '../../../components/CustomButton';
+import inquiryApi, {mapToInquiry} from '../../../api/inquiryApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -32,14 +32,14 @@ function InquiryEditScreen() {
   const [content, setContent] = useState(inquiry.content);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const {editInquiry, getInquiryFromServer} = useInquiry();
-
   const handleConfirmEdit = async () => {
     try {
-      await editInquiry(inquiry.id, title, content);
-      const updatedInquiry = await getInquiryFromServer(inquiry.id);
+      await inquiryApi.update(inquiry.id, title, content);
 
-      const updated = new Date(updatedInquiry?.date || Date.now()).getTime();
+      const res = await inquiryApi.getById(inquiry.id);
+      const updatedInquiry = mapToInquiry(res.data);
+      const updated = new Date(updatedInquiry.date).getTime();
+
       setModalVisible(false);
       navigation.navigate('InquiryDetail', {
         inquiryId: inquiry.id,

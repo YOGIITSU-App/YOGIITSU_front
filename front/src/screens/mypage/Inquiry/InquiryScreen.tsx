@@ -1,4 +1,4 @@
-import React, {useCallback, useLayoutEffect} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -9,16 +9,16 @@ import {
   Image,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import CustomBotton from '../../../components/CustomButton';
+import CustomButton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
-import {useInquiry} from '../../../contexts/InquiryContext';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {defaultTabOptions} from '../../../constants/tabOptions';
+import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {inquiries, fetchInquiries} = useInquiry();
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
@@ -29,10 +29,20 @@ function InquiryScreen() {
     };
   }, [navigation]);
 
+  const fetchInquiries = async () => {
+    try {
+      const res = await inquiryApi.getAll();
+      const mapped = res.data.map(mapToInquiry);
+      setInquiries(mapped);
+    } catch (e) {
+      console.error('문의 리스트 불러오기 실패', e);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchInquiries();
-    }, [fetchInquiries]),
+    }, []),
   );
 
   const maskName = (name: string) => {
@@ -64,7 +74,7 @@ function InquiryScreen() {
           </View>
 
           <FlatList
-            data={[...inquiries]}
+            data={inquiries}
             keyExtractor={item => item.id.toString()}
             renderItem={({item}) => (
               <TouchableOpacity
@@ -111,7 +121,7 @@ function InquiryScreen() {
       )}
 
       <View style={styles.buttonContainer}>
-        <CustomBotton
+        <CustomButton
           label="문의 등록하기"
           onPress={() => navigation.navigate('InquiryWrite')}
         />

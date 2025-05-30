@@ -31,7 +31,7 @@ axiosInstance.interceptors.request.use(async config => {
   } else {
     delete config.headers.Authorization;
   }
-
+  console.log('[axios 요청]', config.method?.toUpperCase(), config.url);
   return config;
 });
 

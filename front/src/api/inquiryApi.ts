@@ -1,5 +1,31 @@
 import axiosInstance from './axiosInstance';
 
+export type Inquiry = {
+  id: number;
+  title: string;
+  content: string;
+  date: string;
+  status: 'PROCESSING' | 'COMPLETED';
+  author: string;
+  authorId: number;
+  response?: string;
+  responseDate?: string;
+};
+
+export const mapToInquiry = (item: any): Inquiry => ({
+  id: item.inquiryId,
+  title: item.inquiryTitle,
+  content: item.inquiryContent,
+  date: item.inquiryAt.split('T')[0].replace(/-/g, '.'),
+  status: item.inquiryState,
+  author: item.authorName,
+  authorId: item.authorId,
+  response: item.response ?? undefined,
+  responseDate: item.responseAt
+    ? item.responseAt.split('T')[0].replace(/-/g, '.')
+    : undefined,
+});
+
 const inquiryApi = {
   // 전체 문의 목록 조회
   getAll: () => {
