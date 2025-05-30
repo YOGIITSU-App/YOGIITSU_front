@@ -1,4 +1,4 @@
-import React, {useLayoutEffect} from 'react';
+import React, {useCallback, useLayoutEffect} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useInquiry} from '../../../contexts/InquiryContext';
@@ -18,7 +18,7 @@ import {defaultTabOptions} from '../../../constants/tabOptions';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {inquiries} = useInquiry();
+  const {inquiries, fetchInquiries} = useInquiry();
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
@@ -29,8 +29,14 @@ function InquiryScreen() {
     };
   }, [navigation]);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchInquiries();
+    }, [fetchInquiries]),
+  );
+
   const maskName = (name: string) => {
-    return name.length > 1 ? name[0] + '**' : name;
+    return name[0] + '*'.repeat(name.length - 1);
   };
 
   return (
@@ -58,23 +64,22 @@ function InquiryScreen() {
           </View>
 
           <FlatList
-            data={[...inquiries].reverse()} // ✅ 최신순
+            data={[...inquiries]}
             keyExtractor={item => item.id.toString()}
             renderItem={({item}) => (
               <TouchableOpacity
                 style={styles.itemRow}
-                onPress={
-                  () =>
-                    navigation.navigate('InquiryDetail', {inquiryId: item.id}) // ✅ id만 넘겨요!
+                onPress={() =>
+                  navigation.navigate('InquiryDetail', {inquiryId: item.id})
                 }>
                 <View
                   style={[
                     styles.statusBadge,
                     {
                       backgroundColor:
-                        item.status === 'WAITING'
-                          ? '#eee'
-                          : 'rgba(110,135,255,0.1)',
+                        item.status === 'PROCESSING'
+                          ? colors.GRAY_100
+                          : colors.BLUE_100,
                     },
                   ]}>
                   <Text
@@ -82,18 +87,18 @@ function InquiryScreen() {
                       styles.statusText,
                       {
                         color:
-                          item.status === 'WAITING'
+                          item.status === 'PROCESSING'
                             ? colors.GRAY_500
                             : colors.BLUE_700,
                       },
                     ]}>
-                    {item.status === 'WAITING' ? '답변대기' : '답변완료'}
+                    {item.status === 'PROCESSING' ? '답변대기' : '답변완료'}
                   </Text>
                 </View>
 
                 <View style={styles.titleDateContainer}>
                   <Text numberOfLines={1} style={styles.titleText}>
-                    🔒 {item.title}
+                    {item.title}
                   </Text>
                   <Text style={styles.dateText}>{item.date}</Text>
                 </View>
@@ -121,14 +126,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#F6F6F6',
+    backgroundColor: colors.GRAY_100,
     borderBottomWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.GRAY_200,
   },
   headerText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.BLACK_700,
+    color: colors.BLACK_600,
     textAlign: 'center',
   },
   itemRow: {
@@ -160,16 +165,18 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.BLACK_700,
+    color: colors.BLACK_600,
     flexShrink: 1,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.GRAY_500,
   },
   authorText: {
-    fontSize: 13,
-    color: colors.BLACK_700,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.BLACK_600,
     textAlign: 'center',
     flex: 1,
   },
@@ -201,7 +208,7 @@ const styles = StyleSheet.create({
     height: 38,
   },
   buttonContainer: {
-    paddingBottom: 20,
+    padding: 15,
     alignItems: 'center',
   },
 });

@@ -32,7 +32,7 @@ export type MypageStackParamList = {
   Inquiry: undefined;
   InquiryWrite: undefined;
   InquiryComplete: undefined;
-  InquiryDetail: {inquiryId: number};
+  InquiryDetail: {inquiryId: number; updated?: number};
   InquiryEdit: {inquiry: Inquiry};
   DeleteAccountWarning: undefined;
   DeleteAccount: undefined;

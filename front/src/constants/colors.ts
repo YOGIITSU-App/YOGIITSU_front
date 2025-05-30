@@ -1,5 +1,6 @@
 const colors = {
   WHITE: '#fff',
+  GRAY_50: '#F9F9F9',
   GRAY_100: '#F7F7F7',
   GRAY_200: '#EBEDF0',
   GRAY_300: '#D0D0D0',
@@ -20,6 +21,7 @@ const colors = {
   RED_300: '#F66060',
   RED_100: 'rgba(246, 96, 96, 0.08)', // RED_300의 투명도 8%
   YELLOW_700: '#FFD833',
+  TRANSLUCENT: 'rgba(0, 0, 0, 0.5)', // 반투명
 };
 
 export {colors};
