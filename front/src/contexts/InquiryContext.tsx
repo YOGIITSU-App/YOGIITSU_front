@@ -59,6 +59,7 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
       setInquiries(mapped);
     } catch (error) {
       console.error('문의 불러오기 실패:', error);
+      throw error;
     }
   };
 
@@ -69,7 +70,7 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
       return mapToInquiry(res.data);
     } catch (error) {
       console.error('서버 문의 조회 실패:', error);
-      return null;
+      throw error;
     }
   };
 
@@ -80,6 +81,7 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
       await fetchInquiries();
     } catch (error) {
       console.error('문의 등록 실패:', error);
+      throw error;
     }
   };
 
@@ -90,6 +92,7 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
       await fetchInquiries();
     } catch (error) {
       console.error('문의 수정 실패:', error);
+      throw error;
     }
   };
 
@@ -98,7 +101,6 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
     try {
       await inquiryApi.remove(id);
       setInquiries(prev => prev.filter(item => item.id !== id));
-      0;
     } catch (error) {
       console.error('문의 삭제 실패:', error);
     }

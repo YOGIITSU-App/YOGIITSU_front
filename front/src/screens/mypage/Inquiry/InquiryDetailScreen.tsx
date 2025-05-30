@@ -28,7 +28,7 @@ function InquiryDetailScreen() {
   const {getInquiryFromServer, deleteInquiry} = useInquiry();
   const {user} = useUser();
 
-  const inquiryId = route.params.inquiryId;
+  const {inquiryId, updated} = route.params;
 
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,14 +36,24 @@ function InquiryDetailScreen() {
 
   const isAuthor = user?.userId === inquiry?.authorId;
 
+  const maskName = (name: string) => {
+    return name[0] + '*'.repeat(name.length - 1);
+  };
+
   useEffect(() => {
     const fetchDetail = async () => {
-      const data = await getInquiryFromServer(inquiryId);
-      setInquiry(data);
-      setLoading(false);
+      try {
+        const data = await getInquiryFromServer(inquiryId);
+        setInquiry(data);
+      } catch (error) {
+        console.error('문의 상세 조회 실패:', error);
+        setInquiry(null);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchDetail();
-  }, [inquiryId]);
+  }, [inquiryId, updated]);
 
   useLayoutEffect(() => {
     if (isAuthor && inquiry) {
@@ -113,7 +123,10 @@ function InquiryDetailScreen() {
         </View>
 
         <Text style={styles.meta}>
-          {inquiry.date.replace(/-/g, '.')} | 작성자: {inquiry.author}
+          {inquiry.date.replace(/-/g, '.')} | 작성자:{' '}
+          {inquiry.authorId === user?.userId
+            ? inquiry.author
+            : maskName(inquiry.author)}
         </Text>
 
         <View style={styles.contentBox}>
@@ -162,9 +175,14 @@ function InquiryDetailScreen() {
                 label="네"
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={async () => {
-                  await deleteInquiry(inquiry.id);
-                  setModalVisible(false);
-                  navigation.navigate('Inquiry');
+                  try {
+                    await deleteInquiry(inquiry.id);
+                    setModalVisible(false);
+                    navigation.navigate('Inquiry');
+                  } catch (error) {
+                    console.error('문의 삭제 실패:', error);
+                    setModalVisible(false);
+                  }
                 }}
               />
             </View>
@@ -185,10 +203,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     marginBottom: 1,
-    color: colors.BLACK_700,
+    color: colors.BLACK_900,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -205,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   contentBox: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: colors.GRAY_50,
     borderRadius: 6,
     padding: 16,
     marginBottom: 30,
@@ -213,27 +231,27 @@ const styles = StyleSheet.create({
   contentText: {
     fontSize: 16,
     lineHeight: 24,
-    color: colors.BLACK_700,
+    color: colors.BLACK_500,
   },
   answerLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.BLACK_700,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.BLACK_900,
     marginBottom: 10,
   },
   answerBox: {
-    backgroundColor: '#F6F6F6',
-    padding: 16,
+    backgroundColor: colors.GRAY_50,
     borderRadius: 6,
+    padding: 16,
     marginBottom: 30,
   },
   answerText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.GRAY_800,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.BLACK_500,
   },
   answerDate: {
-    fontSize: 12,
+    fontSize: 14,
     color: colors.GRAY_500,
     marginTop: 10,
   },
@@ -245,7 +263,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.TRANSLUCENT,
   },
   modalBox: {
     width: deviceWidth * 0.844,

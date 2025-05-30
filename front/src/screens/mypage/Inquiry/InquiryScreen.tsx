@@ -32,11 +32,11 @@ function InquiryScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchInquiries();
-    }, []),
+    }, [fetchInquiries]),
   );
 
   const maskName = (name: string) => {
-    return name.length > 1 ? name[0] + '**' : name;
+    return name[0] + '*'.repeat(name.length - 1);
   };
 
   return (
@@ -64,7 +64,7 @@ function InquiryScreen() {
           </View>
 
           <FlatList
-            data={[...inquiries].reverse()}
+            data={[...inquiries]}
             keyExtractor={item => item.id.toString()}
             renderItem={({item}) => (
               <TouchableOpacity
@@ -98,7 +98,7 @@ function InquiryScreen() {
 
                 <View style={styles.titleDateContainer}>
                   <Text numberOfLines={1} style={styles.titleText}>
-                    🔒 {item.title}
+                    {item.title}
                   </Text>
                   <Text style={styles.dateText}>{item.date}</Text>
                 </View>
@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#F6F6F6',
+    backgroundColor: colors.GRAY_100,
     borderBottomWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.GRAY_200,
   },
   headerText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.BLACK_700,
+    color: colors.BLACK_600,
     textAlign: 'center',
   },
   itemRow: {
@@ -165,16 +165,18 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.BLACK_700,
+    color: colors.BLACK_600,
     flexShrink: 1,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.GRAY_500,
   },
   authorText: {
-    fontSize: 13,
-    color: colors.BLACK_700,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.BLACK_600,
     textAlign: 'center',
     flex: 1,
   },
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     height: 38,
   },
   buttonContainer: {
-    paddingBottom: 20,
+    padding: 15,
     alignItems: 'center',
   },
 });

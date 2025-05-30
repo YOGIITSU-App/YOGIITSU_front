@@ -2,25 +2,26 @@ import React, {useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
-  TextInput,
   Text,
+  TextInput,
   View,
   Alert,
   Modal,
   Dimensions,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import CustomButton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useInquiry} from '../../../contexts/InquiryContext';
-import CustomBotton from '../../../components/CustomButton';
-
-type Navigation = StackNavigationProp<MypageStackParamList, 'InquiryEdit'>;
+import CustomButton from '../../../components/CustomButton';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
+
+type Navigation = StackNavigationProp<MypageStackParamList, 'InquiryEdit'>;
 
 function InquiryEditScreen() {
   const navigation = useNavigation<Navigation>();
@@ -31,93 +32,139 @@ function InquiryEditScreen() {
   const [content, setContent] = useState(inquiry.content);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const {editInquiry} = useInquiry();
+  const {editInquiry, getInquiryFromServer} = useInquiry();
 
   const handleConfirmEdit = async () => {
     try {
       await editInquiry(inquiry.id, title, content);
+      const updatedInquiry = await getInquiryFromServer(inquiry.id);
+
+      const updated = new Date(updatedInquiry?.date || Date.now()).getTime();
       setModalVisible(false);
-      navigation.goBack();
+      navigation.navigate('InquiryDetail', {
+        inquiryId: inquiry.id,
+        updated,
+      });
     } catch (err) {
       Alert.alert('오류', '수정에 실패했어요');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.label}>제목</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="제목을 입력하세요"
-      />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        <TextInput
+          style={styles.titleInput}
+          placeholder="제목을 입력하세요"
+          placeholderTextColor={colors.GRAY_500}
+          value={title}
+          onChangeText={setTitle}
+        />
 
-      <Text style={styles.label}>내용</Text>
-      <TextInput
-        style={[styles.input, {height: 200, textAlignVertical: 'top'}]}
-        value={content}
-        onChangeText={setContent}
-        multiline
-        placeholder="내용을 입력하세요"
-      />
+        <Text style={styles.dateText}>{inquiry.date.replace(/-/g, '.')}</Text>
 
-      <CustomButton
-        label="저장하기"
-        onPress={() => {
-          if (!title || !content) {
-            Alert.alert('알림', '제목과 내용을 입력해주세요!');
-            return;
-          }
-          setModalVisible(true);
-        }}
-      />
-
-      {/* ✅ 저장 확인 모달 */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalBackground}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalText}>이대로 수정할까요?</Text>
-            <CustomBotton
-              label="확인"
-              style={styles.confirmButton}
-              onPress={handleConfirmEdit}
-            />
-          </View>
+        <View style={styles.textAreaContainer}>
+          <TextInput
+            style={styles.textArea}
+            multiline
+            placeholder={`내용 입력\n(tip. 내용을 구체적으로 작성할수록 빠르고 원활한 답변이 가능해요)`}
+            placeholderTextColor={colors.GRAY_500}
+            value={content}
+            onChangeText={setContent}
+          />
         </View>
-      </Modal>
-    </SafeAreaView>
+
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            label="수정 완료하기"
+            onPress={() => {
+              if (!title || !content) {
+                Alert.alert('알림', '제목과 내용을 입력해주세요!');
+                return;
+              }
+              setModalVisible(true);
+            }}
+          />
+        </View>
+
+        <Modal
+          animationType="fade"
+          transparent
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalBackground}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalText}>수정 내용을 저장할까요?</Text>
+              <View style={styles.modalbuttonContainer}>
+                <CustomButton
+                  label="아니요"
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setModalVisible(false)}
+                />
+                <CustomButton
+                  label="네"
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmEdit}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, padding: 20, backgroundColor: colors.WHITE},
-  label: {fontSize: 16, fontWeight: '600', marginBottom: 8},
-  input: {
-    borderWidth: 1,
-    borderColor: colors.GRAY_300,
-    borderRadius: 8,
-    padding: 12,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: colors.WHITE,
+  },
+  titleInput: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.BLACK_700,
+    paddingVertical: 10,
+  },
+  dateText: {
+    fontSize: 14,
+    color: colors.GRAY_500,
+    marginHorizontal: 5,
     marginBottom: 20,
-    fontSize: 16,
+    borderBottomWidth: 1,
+    borderColor: colors.GRAY_100,
+    paddingBottom: 15,
+  },
+  textAreaContainer: {
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  textArea: {
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    padding: 15,
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    backgroundColor: colors.WHITE,
   },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.TRANSLUCENT,
   },
   modalBox: {
-    width: deviceWidth * 0.85,
+    width: deviceWidth * 0.844,
     height: deviceHeight * 0.19375,
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: colors.WHITE,
+    borderRadius: 6,
     alignItems: 'center',
+    paddingTop: 30,
   },
   modalText: {
     fontSize: 16,
@@ -126,14 +173,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 10,
   },
-  confirmButton: {
-    width: deviceWidth * 0.7277,
-    height: deviceHeight * 0.06125,
-    backgroundColor: colors.BLUE_700,
-    paddingVertical: 12,
-    borderRadius: 5,
+  modalbuttonContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    height: deviceHeight * 0.07,
+    position: 'absolute',
+    bottom: 0,
+  },
+  modalButton: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 15,
+  },
+  cancelButton: {
+    backgroundColor: colors.GRAY_300,
+    borderBottomLeftRadius: 6,
+  },
+  confirmButton: {
+    backgroundColor: colors.BLUE_700,
+    borderBottomRightRadius: 6,
   },
 });
 
