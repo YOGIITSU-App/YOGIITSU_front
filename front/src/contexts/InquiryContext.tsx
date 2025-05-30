@@ -103,6 +103,7 @@ export const InquiryProvider = ({children}: {children: ReactNode}) => {
       setInquiries(prev => prev.filter(item => item.id !== id));
     } catch (error) {
       console.error('문의 삭제 실패:', error);
+      throw error;
     }
   };
 

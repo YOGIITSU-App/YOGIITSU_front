@@ -13,6 +13,10 @@ const inquiryApi = {
 
   // 문의 등록
   create: (inquiryTitle: string, inquiryContent: string) => {
+    if (!inquiryTitle.trim() || !inquiryContent.trim()) {
+      throw new Error('제목과 내용은 필수 입력값입니다.');
+    }
+
     return axiosInstance.post('/inquiries', {
       inquiryTitle,
       inquiryContent,
@@ -21,6 +25,12 @@ const inquiryApi = {
 
   // 문의 수정
   update: (inquiryId: number, inquiryTitle: string, inquiryContent: string) => {
+    if (!inquiryTitle.trim() || !inquiryContent.trim()) {
+      throw new Error('제목과 내용은 필수 입력값입니다.');
+    }
+    if (inquiryId <= 0) {
+      throw new Error('유효하지 않은 문의 ID입니다.');
+    }
     return axiosInstance.put(`/inquiries/${inquiryId}`, {
       inquiryTitle,
       inquiryContent,
