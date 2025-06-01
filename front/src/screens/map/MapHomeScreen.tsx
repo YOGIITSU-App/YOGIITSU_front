@@ -1,25 +1,33 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
-  StyleSheet,
   View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
   Dimensions,
   PermissionsAndroid,
   Image,
-  Text,
   Platform,
 } from 'react-native';
-import MapView, {Marker, PROVIDER_GOOGLE, Region} from 'react-native-maps';
+import MapView, {Region, PROVIDER_GOOGLE} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
+import {
+  FavoriteItem,
+  useFavoriteBottomSheet,
+} from '../../hooks/useFavoriteBottomSheet';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
-import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
-import favoriteApi from '../../api/favoriteApi';
+import {StackNavigationProp} from '@react-navigation/stack';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -29,25 +37,12 @@ type NavigationProp = StackNavigationProp<
 >;
 type RoutePropType = RouteProp<MapStackParamList, typeof mapNavigation.MAPHOME>;
 
-type FavoriteItem = {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-};
-
-declare global {
-  interface Global {
-    openFavoriteBottomSheet?: () => void;
-  }
-}
-
 function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
+
   const [region, setRegion] = useState<Region | null>(null);
-  const [favoriteVisible, setFavoriteVisible] = useState(false);
-  const [favoriteList, setFavoriteList] = useState<FavoriteItem[]>([]);
+  const {visible, open, close, favorites} = useFavoriteBottomSheet();
 
   const DEFAULT_REGION: Region = {
     latitude: 37.2983,
@@ -80,39 +75,24 @@ function MapHomeScreen() {
     );
   };
 
-  const openBuildingDetailSheet = (buildingId: number) => {
-    navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
-  };
-
   const handleSelectFavorite = (item: FavoriteItem) => {
-    openBuildingDetailSheet(item.id);
-    setFavoriteVisible(false);
+    navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+      endLocation: item.id.toString(),
+      endLocationName: item.name,
+    });
+    close();
   };
-
-  useEffect(() => {
-    globalThis.openFavoriteBottomSheet = () => {
-      favoriteApi.getFavorites().then(res => {
-        setFavoriteList(
-          res.data.buildings.map((b: any) => ({
-            id: b.buildingId,
-            name: b.buildingName,
-            latitude: b.latitude ?? 0,
-            longitude: b.longitude ?? 0,
-          })),
-        );
-        setFavoriteVisible(true);
-      });
-    };
-  }, []);
 
   useEffect(() => {
     const buildingId = route.params?.buildingId;
-    if (typeof buildingId === 'number' && buildingId > 0) {
-      openBuildingDetailSheet(buildingId);
+    if (typeof buildingId === 'number') {
+      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
     } else {
       getCurrentLocation();
     }
-  }, [route.params?.buildingId]);
+
+    globalThis.openFavoriteBottomSheet = open;
+  }, []);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
@@ -140,12 +120,13 @@ function MapHomeScreen() {
         />
 
         <BottomSheet
-          index={favoriteVisible ? 0 : -1}
+          index={visible ? 0 : -1}
           snapPoints={['40%', '90%']}
           enablePanDownToClose
-          onClose={() => setFavoriteVisible(false)}>
+          onClose={close}>
           <FavoriteBottomSheetContent
-            favorites={favoriteList}
+            favorites={favorites}
+            onRefresh={open}
             onSelect={handleSelectFavorite}
           />
         </BottomSheet>

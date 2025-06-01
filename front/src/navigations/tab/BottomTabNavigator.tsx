@@ -1,50 +1,118 @@
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {
+  BottomTabNavigationProp,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
 import {Dimensions, Image, Text, TouchableOpacity} from 'react-native';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import {defaultTabOptions} from '../../constants/tabOptions';
-import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
+import {
+  getFocusedRouteNameFromRoute,
+  useNavigation,
+  useNavigationState,
+} from '@react-navigation/native';
 import {mapNavigation} from '../../constants';
+import React, {useEffect, useState} from 'react';
 
-const BottomTab = createBottomTabNavigator();
-const deviceHeight = Dimensions.get('screen').height;
+export type BottomTabParamList = {
+  홈: undefined;
+  즐겨찾기: undefined;
+  MY: undefined;
+};
+
+const BottomTab = createBottomTabNavigator<BottomTabParamList>();
 
 function BottomTabNavigator() {
-  return (
-    <BottomTab.Navigator
-      screenOptions={({route}) => ({
-        ...defaultTabOptions, // 👉 한 번에 적용!!
+  const [selectedTab, setSelectedTab] = useState<
+    '홈' | 'MY' | '즐겨찾기' | null
+  >('홈');
+  const navigation =
+    useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
+  const navState = useNavigationState(state => state); // ✅ 현재 탭 감지
 
-        tabBarIcon: ({color, size}) => {
-          let iconSource;
+  // ✅ 탭 변경 감지해서 즐겨찾기 바텀시트 닫기
+  useEffect(() => {
+    const currentRoute = navState.routes[navState.index]?.name;
 
-          if (route.name === '홈') {
-            iconSource = require('../../assets/Home.png');
-          } else if (route.name === '즐겨찾기') {
-            iconSource = require('../../assets/Favorite.png');
-          } else if (route.name === 'MY') {
-            iconSource = require('../../assets/MyPage.png');
+    if (currentRoute !== '즐겨찾기') {
+      // setTimeout으로 보장
+      setTimeout(() => {
+        globalThis.closeFavoriteBottomSheet?.();
+      }, 0);
+    }
+
+    // ✅ 그냥 selectedTab이 currentRoute와 다르면 무조건 동기화!
+    if (
+      selectedTab !== currentRoute &&
+      (currentRoute === '홈' || currentRoute === 'MY')
+    ) {
+      setSelectedTab(currentRoute as '홈' | 'MY');
+    }
+  }, [navState]);
+
+  const createTabButton = (props: any, label: '홈' | 'MY' | '즐겨찾기') => {
+    const isFocused = selectedTab === label;
+
+    const handlePress = () => {
+      if (label === '즐겨찾기') {
+        navigation.navigate('홈'); // 👉 먼저 홈으로 이동하고
+
+        // 🔧 setSelectedTab은 살짝 늦게 실행해서 state 동기화 보장!
+        setTimeout(() => {
+          setSelectedTab('즐겨찾기');
+          globalThis.openFavoriteBottomSheet?.();
+        }, 10);
+      } else {
+        setSelectedTab(label);
+        globalThis.closeFavoriteBottomSheet?.();
+        props.onPress?.();
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        {...props}
+        onPress={handlePress}
+        style={{
+          flex: 1,
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          paddingBottom: 15,
+        }}>
+        <Image
+          source={
+            label === '홈'
+              ? require('../../assets/Home.png')
+              : label === '즐겨찾기'
+              ? require('../../assets/Favorite.png')
+              : require('../../assets/MyPage.png')
           }
+          style={{
+            width: 24,
+            height: 24,
+            tintColor: isFocused ? 'blue' : 'gray',
+          }}
+          resizeMode="contain"
+        />
+        <Text
+          style={{
+            fontSize: 12,
+            marginTop: 2,
+            color: isFocused ? 'blue' : 'gray',
+          }}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
-          return (
-            <Image
-              source={iconSource}
-              style={{
-                width: size * 0.8,
-                height: size * 0.85,
-                tintColor: color,
-              }}
-              resizeMode="contain"
-            />
-          );
-        },
-      })}>
+  return (
+    <BottomTab.Navigator screenOptions={{...defaultTabOptions}}>
       <BottomTab.Screen
         name="홈"
         component={MapStackNavigator}
         options={({route}) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-
           const hiddenScreens = [
             mapNavigation.SEARCH,
             mapNavigation.BUILDING_PREVIEW,
@@ -52,8 +120,8 @@ function BottomTabNavigator() {
             mapNavigation.ROUTE_SELECTION,
             mapNavigation.ROUTE_RESULT,
           ];
-
           return {
+            tabBarButton: props => createTabButton(props, '홈'),
             tabBarStyle: hiddenScreens.includes(routeName as any)
               ? {display: 'none'}
               : defaultTabOptions.tabBarStyle,
@@ -64,43 +132,16 @@ function BottomTabNavigator() {
         name="즐겨찾기"
         component={MapStackNavigator}
         options={{
-          tabBarButton: props => {
-            const isFocused = props.accessibilityState?.selected;
-
-            return (
-              <TouchableOpacity
-                {...props}
-                style={{
-                  flex: 1,
-                  justifyContent: 'flex-end',
-                  alignItems: 'center',
-                  paddingBottom: 15,
-                }}
-                onPress={() => globalThis.openFavoriteBottomSheet?.()}>
-                <Image
-                  source={require('../../assets/Favorite.png')}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    tintColor: isFocused ? 'blue' : 'gray',
-                  }}
-                  resizeMode="contain"
-                />
-                <Text
-                  style={{
-                    fontSize: 12,
-                    marginTop: 2,
-                    color: isFocused ? 'blue' : 'gray',
-                  }}>
-                  즐겨찾기
-                </Text>
-              </TouchableOpacity>
-            );
-          },
+          tabBarButton: props => createTabButton(props, '즐겨찾기'),
         }}
       />
-
-      <BottomTab.Screen name="MY" component={MypageStackNavigator} />
+      <BottomTab.Screen
+        name="MY"
+        component={MypageStackNavigator}
+        options={{
+          tabBarButton: props => createTabButton(props, 'MY'),
+        }}
+      />
     </BottomTab.Navigator>
   );
 }

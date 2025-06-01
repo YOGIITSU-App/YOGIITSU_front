@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
@@ -14,6 +15,7 @@ import {mapNavigation} from '../../constants/navigation';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
+import favoriteApi from '../../api/favoriteApi';
 
 const {width: deviceWidth} = Dimensions.get('window');
 
@@ -37,6 +39,7 @@ export default function BuildingDetailScreen() {
   );
   const [selectedDeptIndex, setSelectedDeptIndex] = useState(0); // 학과 배열
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0); // 층별 배열
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // 상단 헤더 // 추후에 vector-icon라이브러리로 대체 예정
   useLayoutEffect(() => {
@@ -69,9 +72,26 @@ export default function BuildingDetailScreen() {
     if (id) {
       buildingApi.getBuildingDetail(id).then(res => {
         setBuildingDetail(res.data);
+        setIsFavorite(res.data.favorite ?? false);
       });
     }
   }, [route.params?.buildingId]);
+
+  const toggleFavorite = async () => {
+    if (!buildingDetail) return;
+
+    const id = route.params?.buildingId;
+    try {
+      if (isFavorite) {
+        await favoriteApi.removeFavorite(id);
+      } else {
+        await favoriteApi.addFavorite(id);
+      }
+      setIsFavorite(prev => !prev);
+    } catch (err) {
+      Alert.alert('에러', '즐겨찾기 처리 중 문제 발생');
+    }
+  };
 
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     const lat = buildingDetail?.buildingInfo.latitude;
