@@ -2,7 +2,7 @@ import {
   BottomTabNavigationProp,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import {Dimensions, Image, Text, TouchableOpacity} from 'react-native';
+import {Image, Text, TouchableOpacity} from 'react-native';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import {defaultTabOptions} from '../../constants/tabOptions';
@@ -28,9 +28,9 @@ function BottomTabNavigator() {
   >('홈');
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
-  const navState = useNavigationState(state => state); // ✅ 현재 탭 감지
+  const navState = useNavigationState(state => state); // 현재 탭 감지
 
-  // ✅ 탭 변경 감지해서 즐겨찾기 바텀시트 닫기
+  // 탭 변경 감지해서 즐겨찾기 바텀시트 닫기
   useEffect(() => {
     const currentRoute = navState.routes[navState.index]?.name;
 
@@ -40,8 +40,6 @@ function BottomTabNavigator() {
         globalThis.closeFavoriteBottomSheet?.();
       }, 0);
     }
-
-    // ✅ 그냥 selectedTab이 currentRoute와 다르면 무조건 동기화!
     if (
       selectedTab !== currentRoute &&
       (currentRoute === '홈' || currentRoute === 'MY')
@@ -55,13 +53,11 @@ function BottomTabNavigator() {
 
     const handlePress = () => {
       if (label === '즐겨찾기') {
-        navigation.navigate('홈'); // 👉 먼저 홈으로 이동하고
-
-        // 🔧 setSelectedTab은 살짝 늦게 실행해서 state 동기화 보장!
-        setTimeout(() => {
+        navigation.navigate('홈');
+        requestAnimationFrame(() => {
           setSelectedTab('즐겨찾기');
           globalThis.openFavoriteBottomSheet?.();
-        }, 10);
+        });
       } else {
         setSelectedTab(label);
         globalThis.closeFavoriteBottomSheet?.();

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,7 @@ import MapView, {Region, PROVIDER_GOOGLE} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {
-  useNavigation,
-  useRoute,
-  RouteProp,
-  useFocusEffect,
-} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
 import {
   FavoriteItem,
@@ -90,9 +85,11 @@ function MapHomeScreen() {
     } else {
       getCurrentLocation();
     }
-
     globalThis.openFavoriteBottomSheet = open;
-  }, []);
+    return () => {
+      globalThis.openFavoriteBottomSheet = undefined;
+    };
+  }, [open]);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
