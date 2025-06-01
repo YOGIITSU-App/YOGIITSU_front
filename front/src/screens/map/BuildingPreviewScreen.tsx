@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
@@ -21,6 +22,7 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
+import favoriteApi from '../../api/favoriteApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -46,6 +48,7 @@ export default function BuildingPreviewScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['55%', '100%'], []);
   const mapOffsetLatitude = 0.002;
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // 상단 헤더 // 추후에 vector-icon라이브러리로 대체 예정
   useLayoutEffect(() => {
@@ -78,9 +81,26 @@ export default function BuildingPreviewScreen() {
     if (id) {
       buildingApi.getBuildingDetail(id).then(res => {
         setBuildingDetail(res.data);
+        setIsFavorite(res.data.favorite ?? false);
       });
     }
   }, [route.params?.buildingId]);
+
+  const toggleFavorite = async () => {
+    if (!buildingDetail) return;
+
+    const id = route.params?.buildingId;
+    try {
+      if (isFavorite) {
+        await favoriteApi.removeFavorite(id);
+      } else {
+        await favoriteApi.addFavorite(id);
+      }
+      setIsFavorite(prev => !prev);
+    } catch (err) {
+      Alert.alert('에러', '즐겨찾기 처리 중 문제 발생');
+    }
+  };
 
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     const lat = buildingDetail?.buildingInfo.latitude;
@@ -129,7 +149,7 @@ export default function BuildingPreviewScreen() {
           style={StyleSheet.absoluteFillObject}
           initialCamera={{
             center: {
-              latitude: buildingInfo.latitude - mapOffsetLatitude, // 중심을 위로 이동!
+              latitude: buildingInfo.latitude - mapOffsetLatitude, // 중심을 위로 이동
               longitude: buildingInfo.longitude,
             },
             zoom: 17,
@@ -163,11 +183,13 @@ export default function BuildingPreviewScreen() {
           <View style={styles.cardContent}>
             <View style={styles.cardTitleRow}>
               <Text style={styles.cardTitle}>{buildingInfo.name}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log('북마크');
-                }}>
-                <Image source={require('../../assets/bookmark-icon.png')} />
+              <TouchableOpacity onPress={toggleFavorite}>
+                <Image
+                  source={require('../../assets/bookmark-icon.png')}
+                  style={{
+                    tintColor: isFavorite ? undefined : colors.GRAY_700,
+                  }}
+                />
               </TouchableOpacity>
             </View>
             <Text style={styles.tags}>
