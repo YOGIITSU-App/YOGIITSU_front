@@ -37,11 +37,38 @@ export default function BuildingDetailScreen() {
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
     null,
   );
-  const [selectedDeptIndex, setSelectedDeptIndex] = useState(0); // 학과 배열
-  const [selectedFloorIndex, setSelectedFloorIndex] = useState(0); // 층별 배열
+  const [selectedDeptIndex, setSelectedDeptIndex] = useState(0);
+  const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // 상단 헤더 // 추후에 vector-icon라이브러리로 대체 예정
+  // 출발/도착 상태값
+  const [startLocation, setStartLocation] = useState('');
+  const [startLocationName, setStartLocationName] = useState('');
+  const [startBuildingId, setStartBuildingId] = useState<number | undefined>();
+  const [endLocation, setEndLocation] = useState('');
+  const [endLocationName, setEndLocationName] = useState('');
+  const [endBuildingId, setEndBuildingId] = useState<number | undefined>();
+
+  // route.params 갱신되면 상태 업데이트
+  useEffect(() => {
+    const {
+      startLocation,
+      startLocationName,
+      startBuildingId,
+      endLocation,
+      endLocationName,
+      endBuildingId,
+    } = route.params ?? {};
+
+    if (startLocation) setStartLocation(startLocation);
+    if (startLocationName) setStartLocationName(startLocationName);
+    if (startBuildingId !== undefined) setStartBuildingId(startBuildingId);
+
+    if (endLocation) setEndLocation(endLocation);
+    if (endLocationName) setEndLocationName(endLocationName);
+    if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
+  }, [route.params]);
+
   useLayoutEffect(() => {
     if (buildingDetail?.buildingInfo?.name) {
       navigation.setOptions({
@@ -51,10 +78,7 @@ export default function BuildingDetailScreen() {
             <Text style={{fontSize: 22}}>{'←'}</Text>
           </TouchableOpacity>
         ),
-        headerLeftContainerStyle: {
-          paddingLeft: 15, // 왼쪽 여백만 주고 기본 넓이 제거
-          marginRight: 5, // ➡️ title 과의 간격 좁히기
-        },
+        headerLeftContainerStyle: {paddingLeft: 15, marginRight: 5},
         headerRight: () => (
           <TouchableOpacity
             onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
@@ -78,17 +102,14 @@ export default function BuildingDetailScreen() {
   }, [route.params?.buildingId]);
 
   const toggleFavorite = async () => {
-    if (!buildingDetail) return;
-
     const id = route.params?.buildingId;
+    if (!buildingDetail || !id) return;
+
     try {
-      if (isFavorite) {
-        await favoriteApi.removeFavorite(id);
-      } else {
-        await favoriteApi.addFavorite(id);
-      }
+      if (isFavorite) await favoriteApi.removeFavorite(id);
+      else await favoriteApi.addFavorite(id);
       setIsFavorite(prev => !prev);
-    } catch (err) {
+    } catch {
       Alert.alert('에러', '즐겨찾기 처리 중 문제 발생');
     }
   };
@@ -97,26 +118,30 @@ export default function BuildingDetailScreen() {
     const lat = buildingDetail?.buildingInfo.latitude;
     const lon = buildingDetail?.buildingInfo.longitude;
     const name = buildingDetail?.buildingInfo.name;
-
-    if (!lat || !lon || !name) return;
-
+    const currentId = route.params?.buildingId;
     const locationStr = `${lat},${lon}`;
 
-    navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      startLocation:
-        type === 'start' ? locationStr : route.params?.startLocation || '',
+    if (!lat || !lon || !name || !currentId) return;
 
-      startLocationName:
-        type === 'start'
-          ? name
-          : route.params?.startLocationName || '출발지 선택',
-
-      endLocation:
-        type === 'end' ? locationStr : route.params?.endLocation || '',
-
-      endLocationName:
-        type === 'end' ? name : route.params?.endLocationName || '도착지 선택',
-    });
+    if (type === 'start') {
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        startLocation: locationStr,
+        startLocationName: name,
+        startBuildingId: currentId,
+        endLocation,
+        endLocationName,
+        endBuildingId,
+      });
+    } else {
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        endLocation: locationStr,
+        endLocationName: name,
+        endBuildingId: currentId,
+        startLocation,
+        startLocationName,
+        startBuildingId,
+      });
+    }
   };
 
   if (!buildingDetail) return null;
@@ -130,11 +155,13 @@ export default function BuildingDetailScreen() {
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{buildingInfo.name}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              console.log('북마크');
-            }}>
-            <Image source={require('../../assets/bookmark-icon.png')} />
+          <TouchableOpacity onPress={toggleFavorite}>
+            <Image
+              source={require('../../assets/bookmark-icon.png')}
+              style={{
+                tintColor: isFavorite ? undefined : colors.GRAY_700,
+              }}
+            />
           </TouchableOpacity>
         </View>
 
@@ -142,7 +169,6 @@ export default function BuildingDetailScreen() {
           {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
         </Text>
 
-        {/* 시설 아이콘 */}
         <View style={styles.facilityRow}>
           {buildingInfo.facilities.map(fac => {
             const icon = facilityIconMap[fac.name.trim()];
@@ -152,7 +178,7 @@ export default function BuildingDetailScreen() {
           })}
         </View>
       </View>
-      {/* 학과 탭 */}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -177,7 +203,6 @@ export default function BuildingDetailScreen() {
       </ScrollView>
 
       <View style={styles.content}>
-        {/* 학과 정보 */}
         <Text style={styles.sectionTitle}>학과정보</Text>
         <View style={styles.departmentBox}>
           <View style={styles.departmentRow}>
@@ -212,7 +237,6 @@ export default function BuildingDetailScreen() {
           )}
         </View>
 
-        {/* 층별 안내 */}
         {buildingDetail.floorPlans.length > 0 &&
           buildingDetail.floorPlans[selectedFloorIndex] && (
             <>
@@ -242,7 +266,6 @@ export default function BuildingDetailScreen() {
                 ))}
               </ScrollView>
 
-              {/* 선택된 층 도면 */}
               <Image
                 source={{
                   uri: buildingDetail.floorPlans[selectedFloorIndex].imageUrl,
@@ -253,7 +276,6 @@ export default function BuildingDetailScreen() {
             </>
           )}
 
-        {/* 출발 / 도착 버튼 */}
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={styles.button}
@@ -299,8 +321,6 @@ const styles = StyleSheet.create({
   facilityRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
     gap: 16,
     marginBottom: 5,
   },

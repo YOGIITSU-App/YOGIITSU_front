@@ -22,38 +22,65 @@ function RouteSelectionScreen() {
   const [startLocationName, setStartLocationName] = useState('출발지 선택');
   const [endLocation, setEndLocation] = useState('');
   const [endLocationName, setEndLocationName] = useState('도착지 선택');
+  const [startBuildingId, setStartBuildingId] = useState<number | null>(null);
+  const [endBuildingId, setEndBuildingId] = useState<number | null>(null);
 
-  // 🔸 route.params 가 바뀔 때마다 값 갱신 (이전 상태 유지 + 덮어쓰기)
+  // 전달받은 route.params 값으로 출발지/도착지 정보 초기화
   useEffect(() => {
-    if (route.params?.startLocation) {
-      setStartLocation(route.params.startLocation);
-      setStartLocationName(route.params.startLocationName || '출발지 선택');
+    const {
+      startLocation,
+      startLocationName,
+      startBuildingId,
+      endLocation,
+      endLocationName,
+      endBuildingId,
+    } = route.params ?? {};
+
+    if (startLocation !== undefined) {
+      setStartLocation(startLocation);
+      setStartLocationName(startLocationName || '출발지 선택');
     }
-    if (route.params?.endLocation) {
-      setEndLocation(route.params.endLocation);
-      setEndLocationName(route.params.endLocationName || '도착지 선택');
+
+    if (startBuildingId !== undefined) {
+      setStartBuildingId(startBuildingId);
+    }
+
+    if (endLocation !== undefined) {
+      setEndLocation(endLocation);
+      setEndLocationName(endLocationName || '도착지 선택');
+    }
+
+    if (endBuildingId !== undefined) {
+      setEndBuildingId(endBuildingId);
     }
   }, [route.params]);
 
-  // 🔸 출발+도착 모두 존재 시 자동으로 길찾기 화면으로 이동
+  // 출발+도착 모두 존재하고 편집했을 때 결과화면으로 이동
   useEffect(() => {
     if (startLocation && endLocation) {
-      navigation.replace(mapNavigation.ROUTE_RESULT, {
-        startLocation,
-        startLocationName,
-        endLocation,
-        endLocationName,
+      requestAnimationFrame(() => {
+        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+          startLocation,
+          startLocationName,
+          endLocation,
+          endLocationName,
+          startBuildingId: startBuildingId ?? undefined,
+          endBuildingId: endBuildingId ?? undefined,
+        });
       });
     }
   }, [startLocation, endLocation]);
 
   const handleSearchLocation = (type: 'start' | 'end') => {
-    navigation.navigate(mapNavigation.SEARCH, {
+    navigation.push(mapNavigation.SEARCH, {
       selectionType: type,
+      fromResultScreen: false,
       previousStartLocation: startLocation,
       previousStartLocationName: startLocationName,
       previousEndLocation: endLocation,
       previousEndLocationName: endLocationName,
+      startBuildingId: startBuildingId ?? undefined,
+      endBuildingId: endBuildingId ?? undefined,
     });
   };
 
@@ -65,6 +92,7 @@ function RouteSelectionScreen() {
         onPress={() => handleSearchLocation('start')}>
         <Text>{startLocationName}</Text>
       </TouchableOpacity>
+
       <Text style={styles.label}>도착지</Text>
       <TouchableOpacity
         style={styles.input}
