@@ -99,6 +99,7 @@ function MapHomeScreen() {
           onPress={() =>
             navigation.navigate(mapNavigation.SEARCH, {
               selectionType: 'start',
+              fromResultScreen: false,
             })
           }>
           <View style={styles.searchBoxInput}>

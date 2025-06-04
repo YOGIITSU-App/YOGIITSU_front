@@ -40,10 +40,13 @@ export type MapStackParamList = {
 
   [mapNavigation.SEARCH]: {
     selectionType: 'start' | 'end';
+    fromResultScreen: boolean;
     previousStartLocation?: string;
     previousStartLocationName?: string;
     previousEndLocation?: string;
     previousEndLocationName?: string;
+    startBuildingId?: number;
+    endBuildingId?: number;
   };
   [mapNavigation.ROUTE_SELECTION]: {
     startLocation?: string;

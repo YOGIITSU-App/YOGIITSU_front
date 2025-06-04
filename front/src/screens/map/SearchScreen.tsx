@@ -7,12 +7,14 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import searchApi, {SearchSuggestion} from '../../api/searchApi';
+import buildingApi from '../../api/buildingApi';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -28,6 +30,7 @@ function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
   const selectionType = route.params?.selectionType || 'start';
+  const fromResultScreen = route.params?.fromResultScreen || false;
 
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchSuggestion[]>([]);
@@ -47,23 +50,53 @@ function SearchScreen() {
     }
   };
 
-  const handleSelectSuggestion = (item: SearchSuggestion) => {
-    const commonParams = {
-      buildingId: item.buildingId,
-    };
+  const handleSelectSuggestion = async (item: SearchSuggestion) => {
+    try {
+      const buildingId = item.buildingId;
+      const detailRes = await buildingApi.getBuildingDetail(buildingId);
+      const info = detailRes.data.buildingInfo;
+      const location = `${info.latitude},${info.longitude}`;
+      const name = info.name;
 
-    if (selectionType === 'start') {
-      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-        ...commonParams,
-        endLocation: route.params?.previousEndLocation ?? '',
-        endLocationName: route.params?.previousEndLocationName ?? '',
-      });
-    } else {
-      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-        ...commonParams,
-        startLocation: route.params?.previousStartLocation ?? '',
-        startLocationName: route.params?.previousStartLocationName ?? '',
-      });
+      if (fromResultScreen) {
+        // 결과 화면에서 왔을 경우: replace로 갱신
+        if (selectionType === 'start') {
+          navigation.replace(mapNavigation.ROUTE_RESULT, {
+            startLocation: location,
+            startLocationName: name,
+            startBuildingId: buildingId,
+            endLocation: route.params?.previousEndLocation ?? '',
+            endLocationName: route.params?.previousEndLocationName ?? '',
+            endBuildingId: route.params?.endBuildingId,
+          });
+        } else {
+          navigation.replace(mapNavigation.ROUTE_RESULT, {
+            endLocation: location,
+            endLocationName: name,
+            endBuildingId: buildingId,
+            startLocation: route.params?.previousStartLocation ?? '',
+            startLocationName: route.params?.previousStartLocationName ?? '',
+            startBuildingId: route.params?.startBuildingId,
+          });
+        }
+      } else {
+        // 일반 흐름: 프리뷰로 이동
+        if (selectionType === 'start') {
+          navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+            buildingId,
+            endLocation: route.params?.previousEndLocation ?? '',
+            endLocationName: route.params?.previousEndLocationName ?? '',
+          });
+        } else {
+          navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+            buildingId,
+            startLocation: route.params?.previousStartLocation ?? '',
+            startLocationName: route.params?.previousStartLocationName ?? '',
+          });
+        }
+      }
+    } catch (error) {
+      Alert.alert('오류', '건물 정보를 불러오는 데 실패했습니다');
     }
   };
 

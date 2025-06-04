@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useLayoutEffect} from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,26 @@ import {
   Alert,
   Dimensions,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import MapView, {Marker, Polyline} from 'react-native-maps';
 import axios from 'axios';
 import {TMAP_API_KEY} from '@env';
-import {RouteProp, useRoute} from '@react-navigation/native';
+import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 
-const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
 type RouteResultScreenRouteProp = RouteProp<
+  MapStackParamList,
+  typeof mapNavigation.ROUTE_RESULT
+>;
+
+type RouteResultScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.ROUTE_RESULT
 >;
@@ -30,25 +36,26 @@ interface Coordinate {
   longitude: number;
 }
 
-const GoogleMapWalkingRouteScreen: React.FC = () => {
+const RouteResultScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
+  const navigation = useNavigation<RouteResultScreenNavigationProp>();
   const mapRef = useRef<MapView>(null);
-  const [startBuildingDetail, setStartBuildingDetail] =
-    useState<BuildingDetail | null>(null);
-  const [endBuildingDetail, setEndBuildingDetail] =
-    useState<BuildingDetail | null>(null);
 
   const {
     startLocation,
     endLocation,
     startLocationName = '출발지',
     endLocationName = '도착지',
+    startBuildingId,
+    endBuildingId,
   } = route.params;
 
+  const [startBuildingDetail, setStartBuildingDetail] =
+    useState<BuildingDetail | null>(null);
+  const [endBuildingDetail, setEndBuildingDetail] =
+    useState<BuildingDetail | null>(null);
   const [routePath, setRoutePath] = useState<Coordinate[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // 소요 시간 상태
   const [travelTime, setTravelTime] = useState<number | null>(null);
 
   const parseCoord = (coordStr?: string): [number, number] | null => {
@@ -70,6 +77,27 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
   const [startLat, startLon] = startCoord;
   const [endLat, endLon] = endCoord;
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: '길찾기 결과',
+
+      // 뒤로가기 버튼 제거
+      headerLeft: () => null,
+
+      // 우측 상단 X 버튼
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+          <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>✕</Text>
+        </TouchableOpacity>
+      ),
+
+      headerRightContainerStyle: {
+        paddingRight: 10,
+      },
+    });
+  }, [navigation]);
+
   const fetchWalkingRoute = async () => {
     setLoading(true);
     const url = `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${TMAP_API_KEY}`;
@@ -84,8 +112,6 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
       endName: endLocationName,
       searchOption: '0',
       sort: 'index',
-      angle: 20,
-      speed: 4,
     };
 
     try {
@@ -98,7 +124,7 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
 
       if (response.data?.features) {
         const props = response.data.features[0].properties;
-        setTravelTime(Math.ceil(props.totalTime / 60)); // 분 단위
+        setTravelTime(Math.ceil(props.totalTime / 60));
 
         const lineStrings = response.data.features.filter(
           (feature: any) => feature.geometry.type === 'LineString',
@@ -124,23 +150,22 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    const startBuildingId = route.params?.startBuildingId;
-    const endBuildingId = route.params?.endBuildingId;
-
     if (startBuildingId) {
-      buildingApi.getBuildingDetail(startBuildingId).then(res => {
-        setStartBuildingDetail(res.data);
-      });
+      buildingApi
+        .getBuildingDetail(startBuildingId)
+        .then(res => setStartBuildingDetail(res.data))
+        .catch(() => console.log('출발지 건물 정보 불러오기 실패'));
     }
 
     if (endBuildingId) {
-      buildingApi.getBuildingDetail(endBuildingId).then(res => {
-        setEndBuildingDetail(res.data);
-      });
+      buildingApi
+        .getBuildingDetail(endBuildingId)
+        .then(res => setEndBuildingDetail(res.data))
+        .catch(() => console.log('도착지 건물 정보 불러오기 실패'));
     }
 
     fetchWalkingRoute();
-  }, []);
+  }, [startLocation, endLocation]);
 
   const handleMapReady = () => {
     if (mapRef.current) {
@@ -150,11 +175,24 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
           {latitude: endLat, longitude: endLon},
         ],
         {
-          edgePadding: {top: 80, right: 80, bottom: 160, left: 80}, // 아래 padding 여유
+          edgePadding: {top: 80, right: 80, bottom: 220, left: 80},
           animated: true,
         },
       );
     }
+  };
+
+  const navigateToSearch = (type: 'start' | 'end') => {
+    navigation.push(mapNavigation.SEARCH, {
+      selectionType: type,
+      fromResultScreen: true,
+      previousStartLocation: startLocation,
+      previousStartLocationName: startLocationName,
+      previousEndLocation: endLocation,
+      previousEndLocationName: endLocationName,
+      startBuildingId,
+      endBuildingId,
+    });
   };
 
   return (
@@ -165,7 +203,9 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
       <MapView ref={mapRef} style={styles.map} onMapReady={handleMapReady}>
         {/* 출발 마커 */}
         {startBuildingDetail ? (
-          <Marker coordinate={{latitude: startLat, longitude: startLon}}>
+          <Marker
+            key="startMarker"
+            coordinate={{latitude: startLat, longitude: startLon}}>
             <View style={styles.imageMarker}>
               <Image
                 source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
@@ -175,13 +215,17 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
           </Marker>
         ) : (
           <Marker
+            key="startMarkerDefault"
             coordinate={{latitude: startLat, longitude: startLon}}
             title="출발지"
           />
         )}
+
         {/* 도착 마커 */}
         {endBuildingDetail ? (
-          <Marker coordinate={{latitude: endLat, longitude: endLon}}>
+          <Marker
+            key="endMarker"
+            coordinate={{latitude: endLat, longitude: endLon}}>
             <View style={styles.imageMarker}>
               <Image
                 source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
@@ -191,10 +235,12 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
           </Marker>
         ) : (
           <Marker
+            key="endMarkerDefault"
             coordinate={{latitude: endLat, longitude: endLon}}
             title="도착지"
           />
         )}
+
         {/* 경로 */}
         {routePath.length > 0 && (
           <Polyline
@@ -204,17 +250,22 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
           />
         )}
       </MapView>
-      {/* 하단 출발/도착지 정보 + 소요 시간 */}
+
+      {/* 하단 박스 */}
       <View style={styles.bottomBox}>
-        <View style={styles.locationRow}>
+        <TouchableOpacity
+          style={styles.locationRow}
+          onPress={() => navigateToSearch('start')}>
           <Text style={styles.pointLabel}>🚩</Text>
           <Text style={styles.locationName}>{startLocationName}</Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.separator} />
-        <View style={styles.locationRow}>
+        <TouchableOpacity
+          style={styles.locationRow}
+          onPress={() => navigateToSearch('end')}>
           <Text style={styles.pointLabel}>🎯</Text>
           <Text style={styles.locationName}>{endLocationName}</Text>
-        </View>
+        </TouchableOpacity>
 
         {travelTime !== null && (
           <Text style={styles.timeText}>⏱ 예상 소요 시간: {travelTime}분</Text>
@@ -224,7 +275,7 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
   );
 };
 
-export default GoogleMapWalkingRouteScreen;
+export default RouteResultScreen;
 
 const styles = StyleSheet.create({
   container: {flex: 1},
@@ -232,7 +283,7 @@ const styles = StyleSheet.create({
   loader: {position: 'absolute', top: '50%', left: '50%'},
   imageMarker: {
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: colors.WHITE,
     borderRadius: 30,
     overflow: 'hidden',
     width: 56,
