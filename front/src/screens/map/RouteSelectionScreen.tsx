@@ -38,6 +38,8 @@ function RouteSelectionScreen() {
   // 🔸 출발+도착 모두 존재 시 자동으로 길찾기 화면으로 이동
   useEffect(() => {
     if (startLocation && endLocation) {
+      console.log('✅ 출발 좌표:', startLocation);
+      console.log('✅ 도착 좌표:', endLocation);
       navigation.replace(mapNavigation.ROUTE_RESULT, {
         startLocation,
         startLocationName,
