@@ -1,11 +1,24 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {View, ActivityIndicator, StyleSheet, Alert} from 'react-native';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+  Dimensions,
+  Image,
+} from 'react-native';
 import MapView, {Marker, Polyline} from 'react-native-maps';
 import axios from 'axios';
 import {TMAP_API_KEY} from '@env';
 import {RouteProp, useRoute} from '@react-navigation/native';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
+import {colors} from '../../constants';
+import buildingApi, {BuildingDetail} from '../../api/buildingApi';
+
+const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
@@ -20,6 +33,10 @@ interface Coordinate {
 const GoogleMapWalkingRouteScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
   const mapRef = useRef<MapView>(null);
+  const [startBuildingDetail, setStartBuildingDetail] =
+    useState<BuildingDetail | null>(null);
+  const [endBuildingDetail, setEndBuildingDetail] =
+    useState<BuildingDetail | null>(null);
 
   const {
     startLocation,
@@ -30,6 +47,9 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
 
   const [routePath, setRoutePath] = useState<Coordinate[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 소요 시간 상태
+  const [travelTime, setTravelTime] = useState<number | null>(null);
 
   const parseCoord = (coordStr?: string): [number, number] | null => {
     if (!coordStr) return null;
@@ -77,6 +97,9 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
       });
 
       if (response.data?.features) {
+        const props = response.data.features[0].properties;
+        setTravelTime(Math.ceil(props.totalTime / 60)); // 분 단위
+
         const lineStrings = response.data.features.filter(
           (feature: any) => feature.geometry.type === 'LineString',
         );
@@ -101,10 +124,24 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    const startBuildingId = route.params?.startBuildingId;
+    const endBuildingId = route.params?.endBuildingId;
+
+    if (startBuildingId) {
+      buildingApi.getBuildingDetail(startBuildingId).then(res => {
+        setStartBuildingDetail(res.data);
+      });
+    }
+
+    if (endBuildingId) {
+      buildingApi.getBuildingDetail(endBuildingId).then(res => {
+        setEndBuildingDetail(res.data);
+      });
+    }
+
     fetchWalkingRoute();
   }, []);
 
-  // ✅ 자동 줌
   const handleMapReady = () => {
     if (mapRef.current) {
       mapRef.current.fitToCoordinates(
@@ -113,7 +150,7 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
           {latitude: endLat, longitude: endLon},
         ],
         {
-          edgePadding: {top: 80, right: 80, bottom: 80, left: 80},
+          edgePadding: {top: 80, right: 80, bottom: 160, left: 80}, // 아래 padding 여유
           animated: true,
         },
       );
@@ -126,22 +163,63 @@ const GoogleMapWalkingRouteScreen: React.FC = () => {
         <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />
       )}
       <MapView ref={mapRef} style={styles.map} onMapReady={handleMapReady}>
-        <Marker
-          coordinate={{latitude: startLat, longitude: startLon}}
-          title="출발지"
-        />
-        <Marker
-          coordinate={{latitude: endLat, longitude: endLon}}
-          title="도착지"
-        />
+        {/* 출발 마커 */}
+        {startBuildingDetail ? (
+          <Marker coordinate={{latitude: startLat, longitude: startLon}}>
+            <View style={styles.imageMarker}>
+              <Image
+                source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
+                style={styles.image}
+              />
+            </View>
+          </Marker>
+        ) : (
+          <Marker
+            coordinate={{latitude: startLat, longitude: startLon}}
+            title="출발지"
+          />
+        )}
+        {/* 도착 마커 */}
+        {endBuildingDetail ? (
+          <Marker coordinate={{latitude: endLat, longitude: endLon}}>
+            <View style={styles.imageMarker}>
+              <Image
+                source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
+                style={styles.image}
+              />
+            </View>
+          </Marker>
+        ) : (
+          <Marker
+            coordinate={{latitude: endLat, longitude: endLon}}
+            title="도착지"
+          />
+        )}
+        {/* 경로 */}
         {routePath.length > 0 && (
           <Polyline
             coordinates={routePath}
             strokeWidth={5}
-            strokeColor="blue"
+            strokeColor={colors.BLUE_500}
           />
         )}
       </MapView>
+      {/* 하단 출발/도착지 정보 + 소요 시간 */}
+      <View style={styles.bottomBox}>
+        <View style={styles.locationRow}>
+          <Text style={styles.pointLabel}>🚩</Text>
+          <Text style={styles.locationName}>{startLocationName}</Text>
+        </View>
+        <View style={styles.separator} />
+        <View style={styles.locationRow}>
+          <Text style={styles.pointLabel}>🎯</Text>
+          <Text style={styles.locationName}>{endLocationName}</Text>
+        </View>
+
+        {travelTime !== null && (
+          <Text style={styles.timeText}>⏱ 예상 소요 시간: {travelTime}분</Text>
+        )}
+      </View>
     </View>
   );
 };
@@ -152,4 +230,53 @@ const styles = StyleSheet.create({
   container: {flex: 1},
   map: {flex: 1},
   loader: {position: 'absolute', top: '50%', left: '50%'},
+  imageMarker: {
+    borderWidth: 3,
+    borderColor: '#fff',
+    borderRadius: 30,
+    overflow: 'hidden',
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: 48,
+    height: 48,
+    borderRadius: 27,
+  },
+  bottomBox: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: colors.WHITE,
+    padding: 16,
+    borderRadius: 12,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    height: deviceHeight * 0.065,
+  },
+  pointLabel: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  locationName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.BLACK_900,
+    flexShrink: 1,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.GRAY_400,
+    marginBottom: 8,
+  },
+  timeText: {
+    fontSize: 13,
+    color: colors.BLACK_500,
+    marginTop: 4,
+  },
 });

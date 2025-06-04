@@ -50,12 +50,16 @@ export type MapStackParamList = {
     startLocationName?: string;
     endLocation?: string;
     endLocationName?: string;
+    startBuildingId?: number;
+    endBuildingId?: number;
   };
   [mapNavigation.ROUTE_RESULT]: {
     startLocation: string;
     startLocationName: string;
     endLocation: string;
     endLocationName: string;
+    startBuildingId?: number;
+    endBuildingId?: number;
   };
 };
 

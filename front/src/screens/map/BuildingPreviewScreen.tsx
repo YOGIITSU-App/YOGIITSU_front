@@ -125,6 +125,9 @@ export default function BuildingPreviewScreen() {
 
       endLocationName:
         type === 'end' ? name : route.params?.endLocationName || '도착지 선택',
+
+      startBuildingId: type === 'start' ? route.params.buildingId : undefined,
+      endBuildingId: type === 'end' ? route.params.buildingId : undefined,
     });
   };
 
@@ -158,16 +161,30 @@ export default function BuildingPreviewScreen() {
             altitude: 1000,
           }}
           pointerEvents="none">
-          <Marker
-            coordinate={{
-              latitude: buildingInfo.latitude,
-              longitude: buildingInfo.longitude,
-            }}
-            title={buildingInfo.name}
-          />
+          {buildingInfo.imageUrl ? (
+            <Marker
+              coordinate={{
+                latitude: buildingInfo.latitude,
+                longitude: buildingInfo.longitude,
+              }}>
+              <View style={styles.imageMarker}>
+                <Image
+                  source={{uri: buildingInfo.imageUrl}}
+                  style={styles.image}
+                />
+              </View>
+            </Marker>
+          ) : (
+            <Marker
+              coordinate={{
+                latitude: buildingInfo.latitude,
+                longitude: buildingInfo.longitude,
+              }}
+              title={buildingInfo.name}
+            />
+          )}
         </MapView>
       </View>
-
       {/* 바텀시트 */}
       <BottomSheet
         ref={bottomSheetRef}
@@ -207,7 +224,6 @@ export default function BuildingPreviewScreen() {
                 ) : null;
               })}
             </View>
-
             <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={styles.button}
@@ -243,6 +259,21 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 250,
     width: '100%',
+  },
+  imageMarker: {
+    borderWidth: 3,
+    borderColor: '#fff',
+    borderRadius: 30,
+    overflow: 'hidden',
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: 48,
+    height: 48,
+    borderRadius: 27,
   },
   sheetContent: {
     paddingBottom: 30,

@@ -116,6 +116,9 @@ export default function BuildingDetailScreen() {
 
       endLocationName:
         type === 'end' ? name : route.params?.endLocationName || '도착지 선택',
+
+      startBuildingId: type === 'start' ? route.params.buildingId : undefined,
+      endBuildingId: type === 'end' ? route.params.buildingId : undefined,
     });
   };
 
