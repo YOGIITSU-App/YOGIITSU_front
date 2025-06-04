@@ -151,21 +151,19 @@ const RouteResultScreen: React.FC = () => {
 
   useEffect(() => {
     if (startBuildingId) {
-      buildingApi
-        .getBuildingDetail(startBuildingId)
-        .then(res => setStartBuildingDetail(res.data))
-        .catch(() => console.log('출발지 건물 정보 불러오기 실패'));
+      buildingApi.getBuildingDetail(startBuildingId).then(res => {
+        setStartBuildingDetail(res.data);
+      });
     }
 
     if (endBuildingId) {
-      buildingApi
-        .getBuildingDetail(endBuildingId)
-        .then(res => setEndBuildingDetail(res.data))
-        .catch(() => console.log('도착지 건물 정보 불러오기 실패'));
+      buildingApi.getBuildingDetail(endBuildingId).then(res => {
+        setEndBuildingDetail(res.data);
+      });
     }
 
     fetchWalkingRoute();
-  }, [startLocation, endLocation]);
+  }, [startLocation, endLocation, startBuildingId, endBuildingId]);
 
   const handleMapReady = () => {
     if (mapRef.current) {
@@ -202,9 +200,9 @@ const RouteResultScreen: React.FC = () => {
       )}
       <MapView ref={mapRef} style={styles.map} onMapReady={handleMapReady}>
         {/* 출발 마커 */}
-        {startBuildingDetail ? (
+        {startBuildingDetail?.buildingInfo.imageUrl ? (
           <Marker
-            key="startMarker"
+            key={`startMarker-${startBuildingId}`}
             coordinate={{latitude: startLat, longitude: startLon}}>
             <View style={styles.imageMarker}>
               <Image
@@ -215,16 +213,16 @@ const RouteResultScreen: React.FC = () => {
           </Marker>
         ) : (
           <Marker
-            key="startMarkerDefault"
+            key="startMarker-default"
             coordinate={{latitude: startLat, longitude: startLon}}
             title="출발지"
           />
         )}
 
         {/* 도착 마커 */}
-        {endBuildingDetail ? (
+        {endBuildingDetail?.buildingInfo.imageUrl ? (
           <Marker
-            key="endMarker"
+            key={`endMarker-${endBuildingId}`}
             coordinate={{latitude: endLat, longitude: endLon}}>
             <View style={styles.imageMarker}>
               <Image
@@ -235,7 +233,7 @@ const RouteResultScreen: React.FC = () => {
           </Marker>
         ) : (
           <Marker
-            key="endMarkerDefault"
+            key="endMarker-default"
             coordinate={{latitude: endLat, longitude: endLon}}
             title="도착지"
           />

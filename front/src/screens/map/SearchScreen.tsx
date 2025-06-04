@@ -80,18 +80,26 @@ function SearchScreen() {
           });
         }
       } else {
-        // 일반 흐름: 프리뷰로 이동
+        // 일반 흐름: 프리뷰로 이동 + 고유 key
         if (selectionType === 'start') {
-          navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-            buildingId,
-            endLocation: route.params?.previousEndLocation ?? '',
-            endLocationName: route.params?.previousEndLocationName ?? '',
+          navigation.navigate({
+            name: mapNavigation.BUILDING_PREVIEW,
+            key: `preview-${buildingId}`,
+            params: {
+              buildingId,
+              endLocation: route.params?.previousEndLocation ?? '',
+              endLocationName: route.params?.previousEndLocationName ?? '',
+            },
           });
         } else {
-          navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-            buildingId,
-            startLocation: route.params?.previousStartLocation ?? '',
-            startLocationName: route.params?.previousStartLocationName ?? '',
+          navigation.navigate({
+            name: mapNavigation.BUILDING_PREVIEW,
+            key: `preview-${buildingId}`,
+            params: {
+              buildingId,
+              startLocation: route.params?.previousStartLocation ?? '',
+              startLocationName: route.params?.previousStartLocationName ?? '',
+            },
           });
         }
       }

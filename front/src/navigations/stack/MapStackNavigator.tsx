@@ -28,6 +28,8 @@ export type MapStackParamList = {
     startLocationName?: string;
     endLocation?: string;
     endLocationName?: string;
+    startBuildingId?: number;
+    endBuildingId?: number;
   };
 
   [mapNavigation.BUILDING_DETAIL]: {
@@ -36,6 +38,8 @@ export type MapStackParamList = {
     startLocationName?: string;
     endLocation?: string;
     endLocationName?: string;
+    startBuildingId?: number;
+    endBuildingId?: number;
   };
 
   [mapNavigation.SEARCH]: {

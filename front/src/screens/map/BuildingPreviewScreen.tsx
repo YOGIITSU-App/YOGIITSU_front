@@ -50,7 +50,33 @@ export default function BuildingPreviewScreen() {
   const mapOffsetLatitude = 0.002;
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // 상단 헤더 // 추후에 vector-icon라이브러리로 대체 예정
+  // 출발/도착 관련 상태값 저장 (params로부터 초기화)
+  const [startLocation, setStartLocation] = useState('');
+  const [startLocationName, setStartLocationName] = useState('');
+  const [startBuildingId, setStartBuildingId] = useState<number | undefined>();
+  const [endLocation, setEndLocation] = useState('');
+  const [endLocationName, setEndLocationName] = useState('');
+  const [endBuildingId, setEndBuildingId] = useState<number | undefined>();
+
+  useEffect(() => {
+    const {
+      startLocation,
+      startLocationName,
+      startBuildingId,
+      endLocation,
+      endLocationName,
+      endBuildingId,
+    } = route.params ?? {};
+
+    if (startLocation) setStartLocation(startLocation);
+    if (startLocationName) setStartLocationName(startLocationName);
+    if (startBuildingId !== undefined) setStartBuildingId(startBuildingId);
+
+    if (endLocation) setEndLocation(endLocation);
+    if (endLocationName) setEndLocationName(endLocationName);
+    if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
+  }, [route.params]);
+
   useLayoutEffect(() => {
     if (buildingDetail?.buildingInfo?.name) {
       navigation.setOptions({
@@ -61,8 +87,8 @@ export default function BuildingPreviewScreen() {
           </TouchableOpacity>
         ),
         headerLeftContainerStyle: {
-          paddingLeft: 15, // 왼쪽 여백만 주고 기본 넓이 제거
-          marginRight: 5, // ➡️ title 과의 간격 좁히기
+          paddingLeft: 15,
+          marginRight: 5,
         },
         headerRight: () => (
           <TouchableOpacity
@@ -87,9 +113,9 @@ export default function BuildingPreviewScreen() {
   }, [route.params?.buildingId]);
 
   const toggleFavorite = async () => {
-    if (!buildingDetail) return;
-
     const id = route.params?.buildingId;
+    if (!buildingDetail || !id) return;
+
     try {
       if (isFavorite) {
         await favoriteApi.removeFavorite(id);
@@ -102,57 +128,67 @@ export default function BuildingPreviewScreen() {
     }
   };
 
+  // 출발/도착 navigation (기존 값 함께 넘김)
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     const lat = buildingDetail?.buildingInfo.latitude;
     const lon = buildingDetail?.buildingInfo.longitude;
     const name = buildingDetail?.buildingInfo.name;
-
-    if (!lat || !lon || !name) return;
-
     const locationStr = `${lat},${lon}`;
+    const currentId = route.params?.buildingId;
 
-    navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      startLocation:
-        type === 'start' ? locationStr : route.params?.startLocation || '',
+    if (!lat || !lon || !name || !currentId) return;
 
-      startLocationName:
-        type === 'start'
-          ? name
-          : route.params?.startLocationName || '출발지 선택',
+    if (type === 'start') {
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        startLocation: locationStr,
+        startLocationName: name,
+        startBuildingId: currentId,
 
-      endLocation:
-        type === 'end' ? locationStr : route.params?.endLocation || '',
+        // 기존 도착지 값 유지
+        endLocation,
+        endLocationName,
+        endBuildingId,
+      });
+    } else {
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        endLocation: locationStr,
+        endLocationName: name,
+        endBuildingId: currentId,
 
-      endLocationName:
-        type === 'end' ? name : route.params?.endLocationName || '도착지 선택',
-
-      startBuildingId: type === 'start' ? route.params.buildingId : undefined,
-      endBuildingId: type === 'end' ? route.params.buildingId : undefined,
-    });
+        // 기존 출발지 값 유지
+        startLocation,
+        startLocationName,
+        startBuildingId,
+      });
+    }
   };
 
   const handleSheetChange = (index: number) => {
     if (index === 1 && buildingDetail) {
       navigation.replace(mapNavigation.BUILDING_DETAIL, {
         buildingId: route.params.buildingId,
+        startLocation: route.params.startLocation,
+        startLocationName: route.params.startLocationName,
+        startBuildingId: route.params.startBuildingId,
+        endLocation: route.params.endLocation,
+        endLocationName: route.params.endLocationName,
+        endBuildingId: route.params.endBuildingId,
       });
     }
   };
 
   if (!buildingDetail) return null;
-
   const {buildingInfo} = buildingDetail;
 
   return (
     <View style={styles.container}>
-      {/* 지도 */}
       <View style={styles.mapContainer}>
         <MapView
           provider={PROVIDER_GOOGLE}
           style={StyleSheet.absoluteFillObject}
           initialCamera={{
             center: {
-              latitude: buildingInfo.latitude - mapOffsetLatitude, // 중심을 위로 이동
+              latitude: buildingInfo.latitude - mapOffsetLatitude,
               longitude: buildingInfo.longitude,
             },
             zoom: 17,
@@ -161,36 +197,26 @@ export default function BuildingPreviewScreen() {
             altitude: 1000,
           }}
           pointerEvents="none">
-          {buildingInfo.imageUrl ? (
-            <Marker
-              coordinate={{
-                latitude: buildingInfo.latitude,
-                longitude: buildingInfo.longitude,
-              }}>
-              <View style={styles.imageMarker}>
-                <Image
-                  source={{uri: buildingInfo.imageUrl}}
-                  style={styles.image}
-                />
-              </View>
-            </Marker>
-          ) : (
-            <Marker
-              coordinate={{
-                latitude: buildingInfo.latitude,
-                longitude: buildingInfo.longitude,
-              }}
-              title={buildingInfo.name}
-            />
-          )}
+          <Marker
+            coordinate={{
+              latitude: buildingInfo.latitude,
+              longitude: buildingInfo.longitude,
+            }}>
+            <View style={styles.imageMarker}>
+              <Image
+                source={{uri: buildingInfo.imageUrl}}
+                style={styles.image}
+              />
+            </View>
+          </Marker>
         </MapView>
       </View>
-      {/* 바텀시트 */}
+
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
         snapPoints={snapPoints}
-        enablePanDownToClose={false} // 바텀시트 하단끌기 막기
+        enablePanDownToClose={false}
         onChange={handleSheetChange}>
         <BottomSheetView style={styles.sheetContent}>
           <Image
@@ -203,15 +229,15 @@ export default function BuildingPreviewScreen() {
               <TouchableOpacity onPress={toggleFavorite}>
                 <Image
                   source={require('../../assets/bookmark-icon.png')}
-                  style={{
-                    tintColor: isFavorite ? undefined : colors.GRAY_700,
-                  }}
+                  style={{tintColor: isFavorite ? undefined : colors.GRAY_700}}
                 />
               </TouchableOpacity>
             </View>
+
             <Text style={styles.tags}>
               {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
             </Text>
+
             <View style={styles.facilityRow}>
               {buildingInfo.facilities.map(fac => {
                 const icon = facilityIconMap[fac.name.trim()];
@@ -224,6 +250,7 @@ export default function BuildingPreviewScreen() {
                 ) : null;
               })}
             </View>
+
             <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={styles.button}
@@ -244,22 +271,8 @@ export default function BuildingPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backBtn: {
-    fontSize: 30,
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  mapContainer: {
-    flex: 1,
-    height: 250,
-    width: '100%',
-  },
+  container: {flex: 1},
+  mapContainer: {flex: 1, height: 250, width: '100%'},
   imageMarker: {
     borderWidth: 3,
     borderColor: '#fff',
@@ -270,14 +283,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  image: {
-    width: 48,
-    height: 48,
-    borderRadius: 27,
-  },
-  sheetContent: {
-    paddingBottom: 30,
-  },
+  image: {width: 48, height: 48, borderRadius: 27},
+  sheetContent: {paddingBottom: 30},
   cardImage: {
     width: deviceWidth * 0.92,
     height: deviceHeight * 0.2,

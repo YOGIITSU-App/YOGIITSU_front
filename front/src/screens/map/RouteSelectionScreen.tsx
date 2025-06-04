@@ -25,17 +25,33 @@ function RouteSelectionScreen() {
   const [startBuildingId, setStartBuildingId] = useState<number | null>(null);
   const [endBuildingId, setEndBuildingId] = useState<number | null>(null);
 
-  // route.params 가 바뀔 때마다 값 갱신
+  // 전달받은 route.params 값으로 출발지/도착지 정보 초기화
   useEffect(() => {
-    if (route.params?.startLocation) {
-      setStartLocation(route.params.startLocation);
-      setStartLocationName(route.params.startLocationName || '출발지 선택');
-      setStartBuildingId(route.params.startBuildingId ?? null);
+    const {
+      startLocation,
+      startLocationName,
+      startBuildingId,
+      endLocation,
+      endLocationName,
+      endBuildingId,
+    } = route.params ?? {};
+
+    if (startLocation !== undefined) {
+      setStartLocation(startLocation);
+      setStartLocationName(startLocationName || '출발지 선택');
     }
-    if (route.params?.endLocation) {
-      setEndLocation(route.params.endLocation);
-      setEndLocationName(route.params.endLocationName || '도착지 선택');
-      setEndBuildingId(route.params.endBuildingId ?? null);
+
+    if (startBuildingId !== undefined) {
+      setStartBuildingId(startBuildingId);
+    }
+
+    if (endLocation !== undefined) {
+      setEndLocation(endLocation);
+      setEndLocationName(endLocationName || '도착지 선택');
+    }
+
+    if (endBuildingId !== undefined) {
+      setEndBuildingId(endBuildingId);
     }
   }, [route.params]);
 
