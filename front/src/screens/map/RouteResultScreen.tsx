@@ -151,15 +151,25 @@ const RouteResultScreen: React.FC = () => {
 
   useEffect(() => {
     if (startBuildingId) {
-      buildingApi.getBuildingDetail(startBuildingId).then(res => {
-        setStartBuildingDetail(res.data);
-      });
+      buildingApi
+        .getBuildingDetail(startBuildingId)
+        .then(res => {
+          setStartBuildingDetail(res.data);
+        })
+        .catch(err => {
+          console.error('출발지 건물 정보 로드 실패:', err);
+        });
     }
 
     if (endBuildingId) {
-      buildingApi.getBuildingDetail(endBuildingId).then(res => {
-        setEndBuildingDetail(res.data);
-      });
+      buildingApi
+        .getBuildingDetail(endBuildingId)
+        .then(res => {
+          setEndBuildingDetail(res.data);
+        })
+        .catch(err => {
+          console.error('도착지 건물 정보 로드 실패:', err);
+        });
     }
 
     fetchWalkingRoute();
