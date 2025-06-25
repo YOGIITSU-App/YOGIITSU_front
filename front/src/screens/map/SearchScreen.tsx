@@ -67,59 +67,74 @@ function SearchScreen() {
 
   const handleSelectSuggestion = async (item: SearchSuggestion) => {
     try {
+      // 선택된 키워드를 최근 검색어로 저장
       await searchApi.saveKeyword(item.keyword);
 
+      // 건물 상세 정보 요청
       const buildingId = item.buildingId;
       const detailRes = await buildingApi.getBuildingDetail(buildingId);
       const info = detailRes.data.buildingInfo;
       const location = `${info.latitude},${info.longitude}`;
       const name = info.name;
 
+      // route.params 값 안전하게 디폴트 처리
+      const {
+        previousStartLocation = '',
+        previousStartLocationName = '',
+        previousEndLocation = '',
+        previousEndLocationName = '',
+        startBuildingId: prevStartBuildingId,
+        endBuildingId: prevEndBuildingId,
+      } = route.params ?? {};
+
+      // 길찾기 결과 화면으로 이동하는 함수 정의
+      const goToRouteResult = (start: boolean) => {
+        navigation.replace(mapNavigation.ROUTE_RESULT, {
+          startLocation: start ? location : previousStartLocation,
+          startLocationName: start ? name : previousStartLocationName,
+          startBuildingId: start ? buildingId : prevStartBuildingId,
+
+          endLocation: start ? previousEndLocation : location,
+          endLocationName: start ? previousEndLocationName : name,
+          endBuildingId: start ? prevEndBuildingId : buildingId,
+        });
+      };
+
+      // 셀렉션 화면에서 진입한 경우
+      // (출발지 or 도착지만 선택되어 있는 상태에서 반대편을 고른 상황)
+      const isFromSelection =
+        !fromResultScreen && (previousStartLocation || previousEndLocation);
+      if (isFromSelection) {
+        goToRouteResult(selectionType === 'start');
+        return;
+      }
+
+      // 결과 화면에서 재검색으로 진입한 경우
       if (fromResultScreen) {
-        if (selectionType === 'start') {
-          navigation.replace(mapNavigation.ROUTE_RESULT, {
-            startLocation: location,
-            startLocationName: name,
-            startBuildingId: buildingId,
-            endLocation: route.params?.previousEndLocation ?? '',
-            endLocationName: route.params?.previousEndLocationName ?? '',
-            endBuildingId: route.params?.endBuildingId,
-          });
-        } else {
-          navigation.replace(mapNavigation.ROUTE_RESULT, {
-            endLocation: location,
-            endLocationName: name,
-            endBuildingId: buildingId,
-            startLocation: route.params?.previousStartLocation ?? '',
-            startLocationName: route.params?.previousStartLocationName ?? '',
-            startBuildingId: route.params?.startBuildingId,
-          });
-        }
+        goToRouteResult(selectionType === 'start');
       } else {
-        if (selectionType === 'start') {
-          navigation.navigate({
-            name: mapNavigation.BUILDING_PREVIEW,
-            key: `preview-${buildingId}`,
-            params: {
-              buildingId,
-              endLocation: route.params?.previousEndLocation ?? '',
-              endLocationName: route.params?.previousEndLocationName ?? '',
-            },
-          });
-        } else {
-          navigation.navigate({
-            name: mapNavigation.BUILDING_PREVIEW,
-            key: `preview-${buildingId}`,
-            params: {
-              buildingId,
-              startLocation: route.params?.previousStartLocation ?? '',
-              startLocationName: route.params?.previousStartLocationName ?? '',
-            },
-          });
-        }
+        // 출발/도착 아무것도 없는 초기 검색 상태인 경우 → 프리뷰 화면으로 이동
+        const previewParams =
+          selectionType === 'start'
+            ? {
+                buildingId,
+                endLocation: previousEndLocation,
+                endLocationName: previousEndLocationName,
+              }
+            : {
+                buildingId,
+                startLocation: previousStartLocation,
+                startLocationName: previousStartLocationName,
+              };
+
+        navigation.navigate({
+          name: mapNavigation.BUILDING_PREVIEW,
+          key: `preview-${buildingId}`,
+          params: previewParams,
+        });
       }
     } catch (error) {
-      Alert.alert('오류', '건물 정보를 불러오는 데 실패했어요 😢');
+      Alert.alert('오류', '건물 정보를 불러오는 데 실패');
     }
   };
 
