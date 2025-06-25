@@ -83,7 +83,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.SEARCH}
         component={SearchScreen}
-        options={{title: '검색'}}
+        options={{headerShown: false}}
       />
       <Stack.Screen
         name={mapNavigation.BUILDING_PREVIEW}

@@ -12,6 +12,13 @@ const searchApi = {
     axiosInstance.get<SearchSuggestion[]>('/search/suggestions', {
       params: {query},
     }),
+  getRecentKeywords: () =>
+    axiosInstance.get<{keyword: string; searchedAt: string}[]>(
+      '/search/recent',
+    ),
+
+  saveKeyword: (keyword: string) =>
+    axiosInstance.post('/search/save', {keyword}),
 };
 
 export default searchApi;
