@@ -16,6 +16,7 @@ const colors = {
   BLACK_600: '#676767',
   BLACK_500: '#717171',
   BLUE_700: '#3E6DEF',
+  BLUE_600: '#517CF1',
   BLUE_500: '#5480F7',
   BLUE_300: 'rgba(62, 109, 239, 0.25)', // BLUE_700의 투명도 25%
   BLUE_100: '#EEF4FF',

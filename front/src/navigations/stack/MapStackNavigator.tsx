@@ -103,7 +103,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.ROUTE_RESULT}
         component={RouteResultScreen}
-        options={{title: '길찾기 결과'}}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );
