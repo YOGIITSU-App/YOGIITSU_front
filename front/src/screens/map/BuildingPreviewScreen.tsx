@@ -253,14 +253,14 @@ export default function BuildingPreviewScreen() {
 
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={styles.button}
+                style={styles.startbutton}
                 onPress={() => handleNavigateToRouteSelection('start')}>
-                <Text style={styles.buttonText}>출발</Text>
+                <Text style={styles.startbuttonText}>출발</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.button}
+                style={styles.finishbutton}
                 onPress={() => handleNavigateToRouteSelection('end')}>
-                <Text style={styles.buttonText}>도착</Text>
+                <Text style={styles.finishbuttonText}>도착</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -329,15 +329,30 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
-  button: {
-    backgroundColor: colors.BLUE_700,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
+  startbutton: {
+    backgroundColor: colors.BLUE_400,
+    width: '48%',
+    height: deviceHeight * 0.0625,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  buttonText: {
+  finishbutton: {
+    backgroundColor: colors.BLUE_700,
+    width: '48%',
+    height: deviceHeight * 0.0625,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  startbuttonText: {
+    color: colors.BLUE_700,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  finishbuttonText: {
     color: colors.WHITE,
     fontSize: 16,
     fontWeight: 'bold',

@@ -17,7 +17,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 
-const {width: deviceWidth} = Dimensions.get('window');
+const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
 
 const facilityIconMap: {[key: string]: any} = {
   엘리베이터: require('../../assets/elevator-icon.png'),
@@ -278,14 +279,14 @@ export default function BuildingDetailScreen() {
 
         <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={styles.button}
+            style={styles.startbutton}
             onPress={() => handleNavigateToRouteSelection('start')}>
-            <Text style={styles.buttonText}>출발</Text>
+            <Text style={styles.startbuttonText}>출발</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.button}
+            style={styles.finishbutton}
             onPress={() => handleNavigateToRouteSelection('end')}>
-            <Text style={styles.buttonText}>도착</Text>
+            <Text style={styles.finishbuttonText}>도착</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -413,15 +414,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: 24,
   },
-  button: {
-    backgroundColor: colors.BLUE_700,
-    paddingVertical: 12,
-    paddingHorizontal: 40,
+  startbutton: {
+    backgroundColor: colors.BLUE_400,
+    width: '48%',
+    height: deviceHeight * 0.0625,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  finishbutton: {
+    backgroundColor: colors.BLUE_700,
+    width: '48%',
+    height: deviceHeight * 0.0625,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  startbuttonText: {
+    color: colors.BLUE_700,
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  finishbuttonText: {
+    color: colors.WHITE,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
