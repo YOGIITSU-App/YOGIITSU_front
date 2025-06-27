@@ -7,15 +7,19 @@ export type SearchSuggestion = {
   bookmarked: boolean;
 };
 
+export type RecentKeyword = {
+  keyword: string;
+  searchedAt: string;
+  buildingId: number;
+};
+
 const searchApi = {
   getSuggestions: (query: string) =>
     axiosInstance.get<SearchSuggestion[]>('/search/suggestions', {
       params: {query},
     }),
-  getRecentKeywords: () =>
-    axiosInstance.get<{keyword: string; searchedAt: string}[]>(
-      '/search/recent',
-    ),
+
+  getRecentKeywords: () => axiosInstance.get<RecentKeyword[]>('/search/recent'),
 
   saveKeyword: (keyword: string) =>
     axiosInstance.post('/search/save', {keyword}),

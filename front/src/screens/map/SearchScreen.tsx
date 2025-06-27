@@ -14,7 +14,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
-import searchApi, {SearchSuggestion} from '../../api/searchApi';
+import searchApi, {RecentKeyword, SearchSuggestion} from '../../api/searchApi';
 import buildingApi from '../../api/buildingApi';
 import {colors} from '../../constants/colors';
 
@@ -36,7 +36,7 @@ function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
-  const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
+  const [recentKeywords, setRecentKeywords] = useState<RecentKeyword[]>([]);
 
   useEffect(() => {
     loadRecent();
@@ -45,7 +45,7 @@ function SearchScreen() {
   const loadRecent = async () => {
     try {
       const res = await searchApi.getRecentKeywords();
-      setRecentKeywords(res.data.map(item => item.keyword));
+      setRecentKeywords(res.data);
     } catch (err) {
       console.warn('최근 검색어 로드 실패', err);
     }
@@ -67,15 +67,15 @@ function SearchScreen() {
 
   const handleSelectSuggestion = async (item: SearchSuggestion) => {
     try {
-      // 선택된 키워드를 최근 검색어로 저장
-      await searchApi.saveKeyword(item.keyword);
-
       // 건물 상세 정보 요청
       const buildingId = item.buildingId;
       const detailRes = await buildingApi.getBuildingDetail(buildingId);
       const info = detailRes.data.buildingInfo;
       const location = `${info.latitude},${info.longitude}`;
       const name = info.name;
+
+      // 선택된 키워드를 최근 검색어로 저장
+      await searchApi.saveKeyword(name);
 
       // route.params 값 안전하게 디폴트 처리
       const {
@@ -138,13 +138,25 @@ function SearchScreen() {
     }
   };
 
+  const handlePressRecent = (item: RecentKeyword) => {
+    if (!item.buildingId) {
+      Alert.alert('건물 정보가 없는 검색어예요!');
+      return;
+    }
+
+    setSearchText(item.keyword); // 입력창에 표시
+    navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+      buildingId: item.buildingId,
+    });
+  };
+
   const handleClearAll = () => {
     setRecentKeywords([]);
     // 서버에도 삭제 요청이 필요한 경우 API 추가예정
   };
 
   const handleClearOne = (keyword: string) => {
-    setRecentKeywords(prev => prev.filter(item => item !== keyword));
+    setRecentKeywords(prev => prev.filter(item => item.keyword !== keyword));
     // 삭제 요청이 필요한 경우 API 추가예정
   };
 
@@ -176,7 +188,6 @@ function SearchScreen() {
             }}
             onSubmitEditing={() => {
               if (searchText.trim()) {
-                searchApi.saveKeyword(searchText);
                 fetchSuggestions(searchText);
               }
             }}
@@ -192,7 +203,7 @@ function SearchScreen() {
           recentKeywords.length > 0 ? (
             <FlatList
               data={recentKeywords}
-              keyExtractor={(item, index) => `${item}-${index}`}
+              keyExtractor={(item, index) => `${item.keyword}-${index}`}
               ListHeaderComponent={
                 <View style={styles.recentHeader}>
                   <Text style={styles.recentTitle}>최근검색</Text>
@@ -205,13 +216,11 @@ function SearchScreen() {
                 <View style={styles.recentItem}>
                   <TouchableOpacity
                     style={styles.recentKeyword}
-                    onPress={() => {
-                      setSearchText(item);
-                      fetchSuggestions(item);
-                    }}>
-                    <Text style={styles.itemText}>{item}</Text>
+                    onPress={() => handlePressRecent(item)}>
+                    <Text style={styles.itemText}>{item.keyword}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleClearOne(item)}>
+                  <TouchableOpacity
+                    onPress={() => handleClearOne(item.keyword)}>
                     <Text style={styles.clearIcon}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -332,22 +341,22 @@ const styles = StyleSheet.create({
   recentKeyword: {
     flex: 1,
   },
-
   // 비어있을 때
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingBottom: 400,
   },
   warningIcon: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
   },
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#ccc',
+    fontWeight: '600',
+    color: colors.GRAY_450,
   },
 });
 
