@@ -230,6 +230,21 @@ function RouteSelectionScreen() {
                 }}>
                 <Text style={styles.recentText}>{item.keyword}</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    await searchApi.deleteRecentKeywordByBuildingId(
+                      item.buildingId,
+                    );
+                    setRecentKeywords(prev =>
+                      prev.filter(k => k.buildingId !== item.buildingId),
+                    );
+                  } catch (err) {
+                    Alert.alert('삭제 실패');
+                  }
+                }}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -286,7 +301,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
-    color: colors.GRAY_800,
+    color: colors.BLACK_700,
   },
   recentItem: {
     flexDirection: 'row',

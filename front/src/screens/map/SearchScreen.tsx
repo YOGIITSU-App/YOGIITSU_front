@@ -119,7 +119,15 @@ function SearchScreen() {
               ListHeaderComponent={
                 <View style={styles.recentHeader}>
                   <Text style={styles.recentTitle}>최근검색</Text>
-                  <TouchableOpacity onPress={() => setRecentKeywords([])}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        await searchApi.deleteAllRecentKeywords();
+                        setRecentKeywords([]);
+                      } catch (err) {
+                        Alert.alert('전체 삭제 실패');
+                      }
+                    }}>
                     <Text style={styles.clearText}>전체삭제</Text>
                   </TouchableOpacity>
                 </View>
@@ -135,10 +143,17 @@ function SearchScreen() {
                     <Text style={styles.itemText}>{item.keyword}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => {
-                      setRecentKeywords(prev =>
-                        prev.filter(k => k.keyword !== item.keyword),
-                      );
+                    onPress={async () => {
+                      try {
+                        await searchApi.deleteRecentKeywordByBuildingId(
+                          item.buildingId,
+                        );
+                        setRecentKeywords(prev =>
+                          prev.filter(k => k.buildingId !== item.buildingId),
+                        );
+                      } catch (err) {
+                        Alert.alert('삭제 실패');
+                      }
                     }}>
                     <Text style={styles.clearIcon}>✕</Text>
                   </TouchableOpacity>
