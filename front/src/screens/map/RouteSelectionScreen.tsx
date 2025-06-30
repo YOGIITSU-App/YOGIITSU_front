@@ -11,8 +11,9 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
-import searchApi from '../../api/searchApi';
+import searchApi, {RecentKeyword} from '../../api/searchApi';
 import {colors} from '../../constants/colors';
+import buildingApi from '../../api/buildingApi';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -33,8 +34,7 @@ function RouteSelectionScreen() {
   const [endLocationName, setEndLocationName] = useState('도착지 선택');
   const [startBuildingId, setStartBuildingId] = useState<number | null>(null);
   const [endBuildingId, setEndBuildingId] = useState<number | null>(null);
-
-  const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
+  const [recentKeywords, setRecentKeywords] = useState<RecentKeyword[]>([]);
 
   // 초기 파라미터 세팅
   useEffect(() => {
@@ -64,7 +64,7 @@ function RouteSelectionScreen() {
   useEffect(() => {
     if (startLocation && endLocation) {
       requestAnimationFrame(() => {
-        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+        navigation.replace(mapNavigation.ROUTE_RESULT, {
           startLocation,
           startLocationName,
           endLocation,
@@ -81,7 +81,7 @@ function RouteSelectionScreen() {
     const loadRecent = async () => {
       try {
         const res = await searchApi.getRecentKeywords();
-        setRecentKeywords(res.data.map(item => item.keyword));
+        setRecentKeywords(res.data);
       } catch (err) {
         console.warn('최근 검색어 로드 실패', err);
       }
@@ -187,24 +187,48 @@ function RouteSelectionScreen() {
             <View key={`${item}-${index}`} style={styles.recentItem}>
               <TouchableOpacity
                 style={styles.recentKeyword}
-                onPress={() => {
-                  if (!startLocation) {
-                    setStartLocation(item);
-                    setStartLocationName(item);
-                  } else if (!endLocation) {
-                    setEndLocation(item);
-                    setEndLocationName(item);
+                onPress={async () => {
+                  if (!item.buildingId) {
+                    Alert.alert('건물 정보가 없는 검색어예요!');
+                    return;
+                  }
+
+                  try {
+                    const detailRes = await buildingApi.getBuildingDetail(
+                      item.buildingId,
+                    );
+                    const info = detailRes.data.buildingInfo;
+                    const location = `${info.latitude},${info.longitude}`;
+                    const name = info.name;
+
+                    if (!startLocation) {
+                      navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        startLocation: location,
+                        startLocationName: name,
+                        startBuildingId: item.buildingId,
+                        endLocation,
+                        endLocationName,
+                        endBuildingId: endBuildingId ?? undefined,
+                      });
+                    } else if (!endLocation) {
+                      navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        startLocation,
+                        startLocationName,
+                        startBuildingId: startBuildingId ?? undefined,
+                        endLocation: location,
+                        endLocationName: name,
+                        endBuildingId: item.buildingId,
+                      });
+                    } else {
+                      Alert.alert(
+                        '이미 출발지와 도착지가 모두 선택되어 있어요!',
+                      );
+                    }
+                  } catch (err) {
+                    Alert.alert('건물 정보를 불러오는 데 실패했습니다');
                   }
                 }}>
-                <Text style={styles.recentText}>{item}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  setRecentKeywords(prev =>
-                    prev.filter(keyword => keyword !== item),
-                  )
-                }>
-                <Text style={styles.clearIcon}>✕</Text>
+                <Text style={styles.recentText}>{item.keyword}</Text>
               </TouchableOpacity>
             </View>
           ))}
