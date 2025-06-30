@@ -22,7 +22,10 @@ export function useSelectBuilding() {
     selectBuilding(buildingId, {
       selectionType: route.params?.selectionType ?? 'start',
       fromResultScreen: route.params?.fromResultScreen ?? false,
-      routeParams: route.params!,
+      routeParams: route.params ?? {
+        selectionType: 'start',
+        fromResultScreen: false,
+      },
       navigation,
     });
   };
