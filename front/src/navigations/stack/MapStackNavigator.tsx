@@ -83,7 +83,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.SEARCH}
         component={SearchScreen}
-        options={{title: '검색'}}
+        options={{headerShown: false}}
       />
       <Stack.Screen
         name={mapNavigation.BUILDING_PREVIEW}
@@ -103,7 +103,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.ROUTE_RESULT}
         component={RouteResultScreen}
-        options={{title: '길찾기 결과'}}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );

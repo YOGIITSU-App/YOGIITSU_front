@@ -5,6 +5,7 @@ const colors = {
   GRAY_200: '#EBEDF0',
   GRAY_300: '#D0D0D0',
   GRAY_400: '#D9D9D9',
+  GRAY_450: '#C9C9C9',
   GRAY_500: '#ADADAD',
   GRAY_700: '#ACACAC',
   GRAY_800: '#868686',
@@ -15,7 +16,9 @@ const colors = {
   BLACK_600: '#676767',
   BLACK_500: '#717171',
   BLUE_700: '#3E6DEF',
+  BLUE_600: '#517CF1',
   BLUE_500: '#5480F7',
+  BLUE_400: 'rgba(169, 192, 255, 0.38)',
   BLUE_300: 'rgba(62, 109, 239, 0.25)', // BLUE_700의 투명도 25%
   BLUE_100: '#EEF4FF',
   RED_300: '#F66060',
