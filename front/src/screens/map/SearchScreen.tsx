@@ -9,6 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -73,123 +77,131 @@ function SearchScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchBoxWrapper}>
-        <View style={styles.searchBar}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}>
-            <Image
-              source={require('../../assets/back-icon.png')}
-              style={styles.backIcon}
-            />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="단과대 검색"
-            placeholderTextColor="#999"
-            value={searchText}
-            onChangeText={text => {
-              setSearchText(text);
-              if (text.trim()) {
-                fetchSuggestionsDebounced(text);
-              } else {
-                setResults([]);
-              }
-            }}
-            onSubmitEditing={() => {
-              if (searchText.trim()) fetchSuggestions(searchText);
-            }}
-            autoFocus
-            autoCorrect={false}
-          />
-        </View>
-      </View>
-      <View style={styles.divider} />
-
-      {loading && <ActivityIndicator size="large" color="#007AFF" />}
-
-      <View style={styles.content}>
-        {searchText.trim() === '' ? (
-          // 검색어가 비어 있으면 '최근 검색어' 리스트
-          recentKeywords.length ? (
-            <FlatList
-              data={recentKeywords}
-              keyExtractor={(item, i) => `${item.keyword}-${i}`}
-              ListHeaderComponent={
-                <View style={styles.recentHeader}>
-                  <Text style={styles.recentTitle}>최근검색</Text>
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await searchApi.deleteAllRecentKeywords();
-                        setRecentKeywords([]);
-                      } catch (err) {
-                        Alert.alert('전체 삭제 실패');
-                      }
-                    }}>
-                    <Text style={styles.clearText}>전체삭제</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-              renderItem={({item}) => (
-                <View style={styles.recentItem}>
-                  <TouchableOpacity
-                    style={styles.recentKeyword}
-                    onPress={() => {
-                      setSearchText(item.keyword);
-                      onSelect(item.buildingId);
-                    }}>
-                    <Text style={styles.itemText}>{item.keyword}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await searchApi.deleteRecentKeywordByBuildingId(
-                          item.buildingId,
-                        );
-                        setRecentKeywords(prev =>
-                          prev.filter(k => k.buildingId !== item.buildingId),
-                        );
-                      } catch (err) {
-                        Alert.alert('삭제 실패');
-                      }
-                    }}>
-                    <Text style={styles.clearIcon}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Image
-                source={require('../../assets/Warning-icon-gray.png')}
-                style={styles.warningIcon}
-              />
-              <Text style={styles.emptyText}>최근 검색어가 없습니다</Text>
-            </View>
-          )
-        ) : (
-          // 검색 텍스트가 있을 때는 추천 결과
-          <FlatList
-            data={results}
-            keyExtractor={(item, i) => `${item.keyword}-${i}`}
-            renderItem={({item}) => (
+    <KeyboardAvoidingView
+      style={{flex: 1}}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <View style={styles.searchBoxWrapper}>
+            <View style={styles.searchBar}>
               <TouchableOpacity
-                style={styles.item}
-                onPress={() => onSelect(item.buildingId)}>
-                <Text style={styles.itemText}>{item.keyword}</Text>
-                <Text style={styles.tagText}>
-                  {Array.isArray(item.tags)
-                    ? item.tags.map(t => `#${t}`).join(' ')
-                    : ''}
-                </Text>
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}>
+                <Image
+                  source={require('../../assets/back-icon.png')}
+                  style={styles.backIcon}
+                />
               </TouchableOpacity>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="단과대 검색"
+                placeholderTextColor="#999"
+                value={searchText}
+                onChangeText={text => {
+                  setSearchText(text);
+                  if (text.trim()) {
+                    fetchSuggestionsDebounced(text);
+                  } else {
+                    setResults([]);
+                  }
+                }}
+                onSubmitEditing={() => {
+                  if (searchText.trim()) fetchSuggestions(searchText);
+                }}
+                autoFocus
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+          <View style={styles.divider} />
+
+          {loading && <ActivityIndicator size="large" color="#007AFF" />}
+
+          <View style={styles.content}>
+            {searchText.trim() === '' ? (
+              // 검색어가 비어 있으면 '최근 검색어' 리스트
+              recentKeywords.length ? (
+                <FlatList
+                  data={recentKeywords}
+                  keyExtractor={(item, i) => `${item.keyword}-${i}`}
+                  ListHeaderComponent={
+                    <View style={styles.recentHeader}>
+                      <Text style={styles.recentTitle}>최근검색</Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await searchApi.deleteAllRecentKeywords();
+                            setRecentKeywords([]);
+                          } catch (err) {
+                            Alert.alert('전체 삭제 실패');
+                          }
+                        }}>
+                        <Text style={styles.clearText}>전체삭제</Text>
+                      </TouchableOpacity>
+                    </View>
+                  }
+                  renderItem={({item}) => (
+                    <View style={styles.recentItem}>
+                      <TouchableOpacity
+                        style={styles.recentKeyword}
+                        onPress={() => {
+                          setSearchText(item.keyword);
+                          onSelect(item.buildingId);
+                        }}>
+                        <Text style={styles.itemText}>{item.keyword}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await searchApi.deleteRecentKeywordByBuildingId(
+                              item.buildingId,
+                            );
+                            setRecentKeywords(prev =>
+                              prev.filter(
+                                k => k.buildingId !== item.buildingId,
+                              ),
+                            );
+                          } catch (err) {
+                            Alert.alert('삭제 실패');
+                          }
+                        }}>
+                        <Text style={styles.clearIcon}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                />
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Image
+                    source={require('../../assets/Warning-icon-gray.png')}
+                    style={styles.warningIcon}
+                  />
+                  <Text style={styles.emptyText}>최근 검색어가 없습니다</Text>
+                </View>
+              )
+            ) : (
+              // 검색 텍스트가 있을 때는 추천 결과
+              <FlatList
+                data={results}
+                keyExtractor={(item, i) => `${item.keyword}-${i}`}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    style={styles.item}
+                    onPress={() => onSelect(item.buildingId)}>
+                    <Text style={styles.itemText}>{item.keyword}</Text>
+                    <Text style={styles.tagText}>
+                      {Array.isArray(item.tags)
+                        ? item.tags.map(t => `#${t}`).join(' ')
+                        : ''}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
             )}
-          />
-        )}
-      </View>
-    </View>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -276,10 +288,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyContainer: {
-    flex: 1,
+    flex: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 400,
+    // paddingBottom: 100,
   },
   warningIcon: {
     width: 32,
