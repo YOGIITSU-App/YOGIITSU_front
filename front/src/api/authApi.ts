@@ -9,16 +9,6 @@ const authApi = {
       password,
     }),
 
-  // accessToken 재발급
-  // refresh: async (accessToken: string, refreshToken: string) => {
-  //   return axiosInstance.post('/auth/reissue', null, {
-  //     headers: {
-  //       Authorization: `Bearer ${accessToken}`,
-  //       'X-Refresh-Token': refreshToken,
-  //     },
-  //   });
-  // },
-
   // 인증번호 이메일로 전송
   sendCode: async (email: string) => {
     const response = await axiosInstance.post('/send-mail/email', {
@@ -36,14 +26,14 @@ const authApi = {
 
   // 인증번호 확인
   verifyCode: async (email: string, code: string) => {
-    const token = await AsyncStorage.getItem('emailVerifyToken'); // ✅ 저장한 임시 토큰 불러오기
+    const token = await AsyncStorage.getItem('emailVerifyToken'); // 저장한 임시 토큰 불러오기
 
     const response = await axiosInstance.post(
       '/verify/code',
       {email, code},
       {
         headers: {
-          'X-Email-Verification-Token': token ?? '', // ❗null 방지
+          'X-Email-Verification-Token': token ?? '',
         },
       },
     );

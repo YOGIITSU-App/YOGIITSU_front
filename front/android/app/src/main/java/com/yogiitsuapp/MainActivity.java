@@ -2,6 +2,7 @@ package com.yogiitsuapp;
 
 import com.facebook.react.ReactActivity;
 import android.os.Bundle;
+import com.zoontek.rnbootsplash.RNBootSplash;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactActivityDelegate;
@@ -32,6 +33,8 @@ public class MainActivity extends ReactActivity {
   }
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    // Splash 화면을 표시하기 위한 초기화
+    RNBootSplash.init(this, R.style.BootTheme);
     super.onCreate(null);
   }
 }
