@@ -43,7 +43,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     const {id, password} = loginForm.values;
 
     try {
-      // 1. 로그인 요청
+      // 로그인 요청
       const res = await authApi.login(id, password);
       // 헤더에서 토큰 꺼내기
       const accessToken = res.headers.authorization?.split(' ')[1];
@@ -56,18 +56,16 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
       // 바디에서 유저 정보 꺼내기
       const {userId, role} = res.data;
 
-      // 2. 토큰 저장
+      // 토큰 저장
       await EncryptedStorage.setItem('accessToken', accessToken);
       await EncryptedStorage.setItem('refreshToken', refreshToken);
 
-      // 3. context에 저장
-      login({userId, role});
+      // 유저 정보도 EncryptedStorage에 저장 (자동 로그인용)
+      await EncryptedStorage.setItem('userId', String(userId));
+      await EncryptedStorage.setItem('role', role);
 
-      // 4. 유저 정보도 AsyncStorage에 저장 (자동 로그인용)
-      await EncryptedStorage.setItem(
-        'userInfo',
-        JSON.stringify({userId, role}),
-      );
+      // context에 저장
+      login({userId, role});
     } catch (err) {
       console.error('로그인 실패:', err);
       Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');
