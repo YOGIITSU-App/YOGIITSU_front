@@ -1,5 +1,3 @@
-// src/navigations/root/Rootnavigator.tsx
-
 import React, {useEffect} from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
 import AuthStackNavigator from '../stack/AuthStackNavigator';
@@ -61,8 +59,13 @@ function RootNavigatorContent() {
             throw new Error('토큰 재발급 실패');
           }
 
+          const parsedUserId = parseInt(userId, 10);
+          if (isNaN(parsedUserId) || parsedUserId <= 0) {
+            throw new Error(`유효하지 않은 userId: ${userId}`);
+          }
+
           // Context에 로그인 처리
-          login({userId: Number(userId), role: role as 'USER' | 'ADMIN'});
+          login({userId: parsedUserId, role: role as 'USER' | 'ADMIN'});
         }
       } catch (e) {
         console.warn('앱 시작 토큰 리프레시 실패, 로그아웃 처리', e);
