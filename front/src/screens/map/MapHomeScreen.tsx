@@ -9,7 +9,7 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import MapView, {Region, PROVIDER_GOOGLE} from 'react-native-maps';
+import MapView, {Region, PROVIDER_GOOGLE, Marker} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -23,8 +23,17 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {FacilityFilterButtons} from '../../components/FacilityFilterButtons';
+import {useFacilities} from '../../hooks/useFacilities';
 
 const deviceWidth = Dimensions.get('screen').width;
+
+const markerIconMap: {[key: string]: any} = {
+  SHUTTLE_BUS: require('../../assets/category-tabs/shuttle-bus-marker.png'),
+  PARKING: require('../../assets/category-tabs/parking-marker.png'),
+  RESTAURANT: require('../../assets/category-tabs/restaurant-marker.png'),
+  CONVENIENCE_CAFE: require('../../assets/category-tabs/cafe-marker.png'),
+};
 
 type NavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -38,10 +47,12 @@ function MapHomeScreen() {
 
   const [region, setRegion] = useState<Region | null>(null);
   const {visible, open, close, favorites} = useFavoriteBottomSheet();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const facilities = useFacilities(selectedCategory);
 
   const DEFAULT_REGION: Region = {
-    latitude: 37.2983,
-    longitude: 127.0047,
+    latitude: 37.2087,
+    longitude: 126.976,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
@@ -111,11 +122,40 @@ function MapHomeScreen() {
           </View>
         </TouchableOpacity>
 
+        <FacilityFilterButtons
+          selected={selectedCategory}
+          onSelect={category =>
+            setSelectedCategory(category === selectedCategory ? null : category)
+          }
+        />
+
+        {/* 지도 */}
         <MapView
           style={styles.map}
           provider={PROVIDER_GOOGLE}
-          region={region || DEFAULT_REGION}
-        />
+          region={region || DEFAULT_REGION}>
+          {/* 마커 렌더링 */}
+          {facilities.map((facility, idx) => (
+            <Marker
+              key={idx}
+              coordinate={{
+                latitude: facility.latitude,
+                longitude: facility.longitude,
+              }}
+              // 카테고리 기반 아이콘 설정!
+              // image={markerIconMap[facility.category]}
+              onPress={() =>
+                navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+                  buildingId: facility.buildingId,
+                })
+              }>
+              <Image
+                source={require('../../assets/category-tabs/parking-marker.png')}
+                style={styles.marker}
+              />
+            </Marker>
+          ))}
+        </MapView>
 
         <BottomSheet
           index={visible ? 0 : -1}
@@ -159,6 +199,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.GRAY_500,
+  },
+  marker: {
+    width: 32,
+    height: 32,
   },
 });
 
