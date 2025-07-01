@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from './axiosInstance';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 const authApi = {
   // 로그인 요청
@@ -18,7 +19,7 @@ const authApi = {
     const token = response.data?.token;
 
     if (token) {
-      await AsyncStorage.setItem('emailVerifyToken', token);
+      await EncryptedStorage.setItem('emailVerifyToken', token);
     }
 
     return response;
@@ -26,7 +27,7 @@ const authApi = {
 
   // 인증번호 확인
   verifyCode: async (email: string, code: string) => {
-    const token = await AsyncStorage.getItem('emailVerifyToken'); // 저장한 임시 토큰 불러오기
+    const token = await EncryptedStorage.getItem('emailVerifyToken'); // 저장한 임시 토큰 불러오기
 
     const response = await axiosInstance.post(
       '/verify/code',
