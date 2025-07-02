@@ -96,15 +96,20 @@ function MapHomeScreen() {
     } else {
       getCurrentLocation();
     }
+
     globalThis.openFavoriteBottomSheet = open;
+    globalThis.closeFavoriteBottomSheet = close;
+
     return () => {
       globalThis.openFavoriteBottomSheet = undefined;
+      globalThis.closeFavoriteBottomSheet = undefined;
     };
-  }, [open]);
+  }, [open, close]);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <View style={styles.container}>
+        {/* 검색창 */}
         <TouchableOpacity
           style={styles.searchBox}
           onPress={() =>
@@ -122,6 +127,7 @@ function MapHomeScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* 카테고리 탭 */}
         <FacilityFilterButtons
           selected={selectedCategory}
           onSelect={category =>
@@ -134,7 +140,6 @@ function MapHomeScreen() {
           style={styles.map}
           provider={PROVIDER_GOOGLE}
           region={region || DEFAULT_REGION}>
-          {/* 마커 렌더링 */}
           {facilities.map((facility, idx) => (
             <Marker
               key={idx}
@@ -142,8 +147,6 @@ function MapHomeScreen() {
                 latitude: facility.latitude,
                 longitude: facility.longitude,
               }}
-              // 카테고리 기반 아이콘 설정!
-              // image={markerIconMap[facility.category]}
               onPress={() =>
                 navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
                   buildingId: facility.buildingId,
@@ -157,17 +160,20 @@ function MapHomeScreen() {
           ))}
         </MapView>
 
-        <BottomSheet
-          index={visible ? 0 : -1}
-          snapPoints={['40%', '90%']}
-          enablePanDownToClose
-          onClose={close}>
-          <FavoriteBottomSheetContent
-            favorites={favorites}
-            onRefresh={open}
-            onSelect={handleSelectFavorite}
-          />
-        </BottomSheet>
+        {/* 즐겨찾기 바텀시트 */}
+        {visible && (
+          <BottomSheet
+            index={0}
+            snapPoints={['40%', '90%']}
+            enablePanDownToClose
+            onClose={close}>
+            <FavoriteBottomSheetContent
+              favorites={favorites}
+              onRefresh={open}
+              onSelect={handleSelectFavorite}
+            />
+          </BottomSheet>
+        )}
       </View>
     </GestureHandlerRootView>
   );
