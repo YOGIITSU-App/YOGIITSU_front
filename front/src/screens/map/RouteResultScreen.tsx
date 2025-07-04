@@ -28,6 +28,7 @@ import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {getBoundingBox} from '../../utils/geoUtils';
+import WebView from 'react-native-webview';
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
@@ -48,8 +49,10 @@ const RouteResultScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
   const navigation = useNavigation<RouteResultScreenNavigationProp>();
   const mapRef = useRef<MapView>(null);
+  const webRef = useRef<WebView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const flatListRef = useRef<BottomSheetFlatListMethods>(null);
+  const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   const {
     startLocation,
@@ -262,6 +265,54 @@ const RouteResultScreen: React.FC = () => {
     });
   };
 
+  const handleWebViewReady = () => {
+    if (!webRef.current || routePath.length === 0) return;
+
+    // 출발 마커
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'customMarker',
+        lat: startLat,
+        lng: startLon,
+        imageUrl: startBuildingDetail?.buildingInfo?.imageUrl,
+        zoom: 2,
+        offsetY: 150,
+      }),
+    );
+
+    // 도착 마커
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'customMarker',
+        lat: endLat,
+        lng: endLon,
+        imageUrl: endBuildingDetail?.buildingInfo?.imageUrl,
+        zoom: 2,
+        offsetY: 150,
+      }),
+    );
+
+    // 경로
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'drawRoute',
+        path: routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
+      }),
+    );
+
+    // 확대 및 중심이동
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'fitBounds',
+        path: [
+          {lat: startLat, lng: startLon},
+          {lat: endLat, lng: endLon},
+          ...routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
+        ],
+      }),
+    );
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -313,44 +364,24 @@ const RouteResultScreen: React.FC = () => {
         </View>
       </View>
 
-      <MapView ref={mapRef} style={styles.map} onMapReady={handleMapReady}>
-        {/* 출발 마커 */}
-        {startBuildingDetail?.buildingInfo.imageUrl ? (
-          <Marker coordinate={{latitude: startLat, longitude: startLon}}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        ) : (
-          <Marker coordinate={{latitude: startLat, longitude: startLon}} />
-        )}
-
-        {/* 도착 마커 */}
-        {endBuildingDetail?.buildingInfo.imageUrl ? (
-          <Marker coordinate={{latitude: endLat, longitude: endLon}}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        ) : (
-          <Marker coordinate={{latitude: endLat, longitude: endLon}} />
-        )}
-
-        {/* 경로 */}
-        {routePath.length > 0 && (
-          <Polyline
-            coordinates={routePath}
-            strokeWidth={5}
-            strokeColor={colors.BLUE_500}
-          />
-        )}
-      </MapView>
+      <WebView
+        ref={webRef}
+        source={{
+          uri: `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html?ts=${Date.now()}`,
+        }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        originWhitelist={['*']}
+        injectedJavaScriptBeforeContentLoaded={`
+    (function() {
+      document.addEventListener("message", function(e) {
+        window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+      });
+    })();
+    true;
+  `}
+        onLoadEnd={handleWebViewReady}
+      />
 
       {/* 하단 바텀시트 */}
       <BottomSheet

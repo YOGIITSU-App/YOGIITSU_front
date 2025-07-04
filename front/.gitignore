@@ -67,3 +67,6 @@ yarn-error.log
 
 # .env 파일 깃허브에서 제외
 .env
+
+# html
+*.html

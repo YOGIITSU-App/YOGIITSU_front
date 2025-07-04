@@ -15,8 +15,8 @@ import {
   Alert,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import WebView from 'react-native-webview';
 import {mapNavigation} from '../../constants/navigation';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
@@ -46,11 +46,13 @@ export default function BuildingPreviewScreen() {
     null,
   );
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const mapWebViewRef = useRef<WebView>(null);
   const snapPoints = useMemo(() => ['55%', '100%'], []);
-  const mapOffsetLatitude = 0.002;
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // 출발/도착 관련 상태값 저장 (params로부터 초기화)
+  const mapHtmlUrl =
+    'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map.html';
+
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('');
   const [startBuildingId, setStartBuildingId] = useState<number | undefined>();
@@ -71,7 +73,6 @@ export default function BuildingPreviewScreen() {
     if (startLocation) setStartLocation(startLocation);
     if (startLocationName) setStartLocationName(startLocationName);
     if (startBuildingId !== undefined) setStartBuildingId(startBuildingId);
-
     if (endLocation) setEndLocation(endLocation);
     if (endLocationName) setEndLocationName(endLocationName);
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
@@ -112,6 +113,26 @@ export default function BuildingPreviewScreen() {
     }
   }, [route.params?.buildingId]);
 
+  useEffect(() => {
+    if (buildingDetail && mapWebViewRef.current) {
+      const {latitude, longitude, imageUrl} = buildingDetail.buildingInfo;
+
+      const zoomLevel = 2; // 적절한 줌 값 (1~5 권장)
+      const offsetY = 90 + deviceHeight * 0.55 + 20; // 바텀시트 높이에 따라 조정!
+
+      const markerMsg = JSON.stringify({
+        type: 'customMarker',
+        lat: latitude,
+        lng: longitude,
+        imageUrl: imageUrl,
+        zoom: zoomLevel,
+        offsetY: offsetY,
+      });
+
+      mapWebViewRef.current.postMessage(markerMsg);
+    }
+  }, [buildingDetail]);
+
   const toggleFavorite = async () => {
     const id = route.params?.buildingId;
     if (!buildingDetail || !id) return;
@@ -128,7 +149,24 @@ export default function BuildingPreviewScreen() {
     }
   };
 
-  // 출발/도착 navigation (기존 값 함께 넘김)
+  const handleMapLoaded = () => {
+    if (buildingDetail && mapWebViewRef.current) {
+      const {latitude, longitude, imageUrl} = buildingDetail.buildingInfo;
+      const zoomLevel = 0;
+      const offsetY = -500;
+
+      const markerMsg = JSON.stringify({
+        type: 'customMarker',
+        lat: latitude,
+        lng: longitude,
+        imageUrl: imageUrl,
+        zoom: zoomLevel,
+        offsetY: offsetY,
+      });
+      mapWebViewRef.current.postMessage(markerMsg);
+    }
+  };
+
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     const lat = buildingDetail?.buildingInfo.latitude;
     const lon = buildingDetail?.buildingInfo.longitude;
@@ -143,8 +181,6 @@ export default function BuildingPreviewScreen() {
         startLocation: locationStr,
         startLocationName: name,
         startBuildingId: currentId,
-
-        // 기존 도착지 값 유지
         endLocation,
         endLocationName,
         endBuildingId,
@@ -154,8 +190,6 @@ export default function BuildingPreviewScreen() {
         endLocation: locationStr,
         endLocationName: name,
         endBuildingId: currentId,
-
-        // 기존 출발지 값 유지
         startLocation,
         startLocationName,
         startBuildingId,
@@ -183,33 +217,23 @@ export default function BuildingPreviewScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={StyleSheet.absoluteFillObject}
-          initialCamera={{
-            center: {
-              latitude: buildingInfo.latitude - mapOffsetLatitude,
-              longitude: buildingInfo.longitude,
-            },
-            zoom: 17,
-            pitch: 0,
-            heading: 0,
-            altitude: 1000,
-          }}
-          pointerEvents="none">
-          <Marker
-            coordinate={{
-              latitude: buildingInfo.latitude,
-              longitude: buildingInfo.longitude,
-            }}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        </MapView>
+        <WebView
+          ref={mapWebViewRef}
+          source={{uri: mapHtmlUrl}}
+          originWhitelist={['*']}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          style={{flex: 1}}
+          injectedJavaScriptBeforeContentLoaded={`
+    (function() {
+      document.addEventListener("message", function(e) {
+        window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+      });
+    })();
+    true;
+  `}
+          onLoadEnd={handleMapLoaded}
+        />
       </View>
 
       <BottomSheet
@@ -273,17 +297,6 @@ export default function BuildingPreviewScreen() {
 const styles = StyleSheet.create({
   container: {flex: 1},
   mapContainer: {flex: 1, height: 250, width: '100%'},
-  imageMarker: {
-    borderWidth: 3,
-    borderColor: '#fff',
-    borderRadius: 30,
-    overflow: 'hidden',
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {width: 48, height: 48, borderRadius: 27},
   sheetContent: {paddingBottom: 30},
   cardImage: {
     width: deviceWidth * 0.92,
