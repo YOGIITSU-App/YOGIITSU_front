@@ -7,13 +7,14 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  ImageSourcePropType,
 } from 'react-native';
 import {colors} from '../constants';
 
 type CategoryItem = {
   type: string;
   label: string;
-  icon: any;
+  icon: ImageSourcePropType;
   activeColor: string; // 선택됐을 때 배경색
 };
 

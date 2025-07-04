@@ -8,6 +8,8 @@ import {
   PermissionsAndroid,
   Image,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import MapView, {Region, PROVIDER_GOOGLE, Marker} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
@@ -113,11 +115,16 @@ function MapHomeScreen() {
   useEffect(() => {
     setShowShuttleBottomSheet(false);
     close(); // 즐겨찾기 바텀시트 닫기
-  }, [selectedCategory]);
+  }, [selectedCategory, close]);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <View style={styles.container}>
+        {loadingSchedule && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.BLUE_700} />
+          </View>
+        )}
         {/* 검색창 */}
         <TouchableOpacity
           style={styles.searchBox}
@@ -166,6 +173,10 @@ function MapHomeScreen() {
                     setShowShuttleBottomSheet(true);
                   } catch (e) {
                     console.error('셔틀버스 스케줄 조회 실패', e);
+                    Alert.alert(
+                      '오류',
+                      '셔틀버스 스케줄을 불러올 수 없습니다.',
+                    );
                   } finally {
                     setLoadingSchedule(false);
                   }
@@ -197,7 +208,7 @@ function MapHomeScreen() {
               // index가 1이면 100%로 올라간 상태
               if (index === 1) {
                 // navigation.navigate(mapNavigation.SHUTTLE_DETAIL);
-                // 시트는 닫아줄게요
+                // 시트 닫기
                 shuttleSheetRef.current?.close();
               }
             }}>
@@ -223,6 +234,13 @@ function MapHomeScreen() {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
   map: {flex: 1},
   searchBox: {
     position: 'absolute',
