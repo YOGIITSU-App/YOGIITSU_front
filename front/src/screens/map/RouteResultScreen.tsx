@@ -13,6 +13,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import MapView, {Marker, Polyline} from 'react-native-maps';
 import axios from 'axios';
@@ -29,6 +30,8 @@ import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {getBoundingBox} from '../../utils/geoUtils';
 import WebView from 'react-native-webview';
+
+const {height: WINDOW_HEIGHT} = Dimensions.get('window');
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
@@ -51,8 +54,14 @@ const RouteResultScreen: React.FC = () => {
   const mapRef = useRef<MapView>(null);
   const webRef = useRef<WebView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const [headerH, setHeaderH] = useState(0);
+  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.35); // 초기 35%
   const flatListRef = useRef<BottomSheetFlatListMethods>(null);
   const [isWebViewReady, setIsWebViewReady] = useState(false);
+
+  const handleSheetChange = (idx: number) => {
+    setBottomH(idx === 0 ? WINDOW_HEIGHT * 0.35 : WINDOW_HEIGHT * 0.8);
+  };
 
   const {
     startLocation,
@@ -322,7 +331,9 @@ const RouteResultScreen: React.FC = () => {
           color={colors.BLUE_500}
         />
       )}
-      <View style={styles.headerWrapper}>
+      <View
+        style={styles.headerWrapper}
+        onLayout={e => setHeaderH(e.nativeEvent.layout.height)}>
         <TouchableOpacity
           style={styles.closeBtn}
           onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
@@ -368,6 +379,13 @@ const RouteResultScreen: React.FC = () => {
         ref={webRef}
         source={{
           uri: `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html?ts=${Date.now()}`,
+        }}
+        style={{
+          position: 'absolute',
+          top: headerH, // 헤더 아래부터
+          left: 0,
+          right: 0,
+          bottom: bottomH, // 바텀시트 위까지
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
