@@ -28,18 +28,13 @@ function BottomTabNavigator() {
   >('홈');
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
-  const navState = useNavigationState(state => state); // 현재 탭 감지
+  const navState = useNavigationState(state => state);
 
-  // 탭 변경 감지해서 즐겨찾기 바텀시트 닫기
+  // 현재 라우트 감지해서 탭 상태 동기화
   useEffect(() => {
     const currentRoute = navState.routes[navState.index]?.name;
 
-    if (currentRoute !== '즐겨찾기') {
-      // setTimeout으로 보장
-      setTimeout(() => {
-        globalThis.closeFavoriteBottomSheet?.();
-      }, 0);
-    }
+    // 탭 아이콘 색상 상태 업데이트
     if (
       selectedTab !== currentRoute &&
       (currentRoute === '홈' || currentRoute === 'MY')
@@ -48,17 +43,20 @@ function BottomTabNavigator() {
     }
   }, [navState]);
 
+  // 공통 버튼 생성
   const createTabButton = (props: any, label: '홈' | 'MY' | '즐겨찾기') => {
     const isFocused = selectedTab === label;
 
     const handlePress = () => {
       if (label === '즐겨찾기') {
+        // 홈으로 이동한 뒤 토글
         navigation.navigate('홈');
         requestAnimationFrame(() => {
           setSelectedTab('즐겨찾기');
           globalThis.openFavoriteBottomSheet?.();
         });
       } else {
+        // 일반 탭: 선택 + 즐겨찾기 바텀시트 닫기
         setSelectedTab(label);
         globalThis.closeFavoriteBottomSheet?.();
         props.onPress?.();

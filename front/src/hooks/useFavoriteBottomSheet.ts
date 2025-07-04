@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import favoriteApi from '../api/favoriteApi';
 
 export type FavoriteItem = {
@@ -12,7 +12,7 @@ export const useFavoriteBottomSheet = () => {
   const [visible, setVisible] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
-  // ✅ 즐겨찾기 바텀시트 열기 + 데이터 불러오기
+  // 열기
   const open = useCallback(async () => {
     try {
       const res = await favoriteApi.getFavorites();
@@ -29,10 +29,20 @@ export const useFavoriteBottomSheet = () => {
     }
   }, []);
 
-  // ✅ 닫기 함수도 useCallback 처리 (불필요한 재생성 방지)
+  // 닫기
   const close = useCallback(() => {
     setVisible(false);
   }, []);
+
+  // 글로벌 접근용 함수 등록
+  useEffect(() => {
+    globalThis.openFavoriteBottomSheet = open;
+    globalThis.closeFavoriteBottomSheet = close;
+    return () => {
+      globalThis.openFavoriteBottomSheet = undefined;
+      globalThis.closeFavoriteBottomSheet = undefined;
+    };
+  }, [open, close]);
 
   return {
     visible,
