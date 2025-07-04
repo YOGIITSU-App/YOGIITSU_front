@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,16 @@ import {
   PermissionsAndroid,
   Image,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import MapView, {Region, PROVIDER_GOOGLE} from 'react-native-maps';
+import MapView, {Region, PROVIDER_GOOGLE, Marker} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
+import ShuttleBottomSheetContent from '../../components/ShuttleBottomSheetContent';
 import {
   FavoriteItem,
   useFavoriteBottomSheet,
@@ -23,8 +26,18 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import {StackNavigationProp} from '@react-navigation/stack';
+import {FacilityFilterButtons} from '../../components/FacilityFilterButtons';
+import {useFacilities} from '../../hooks/useFacilities';
+import {fetchShuttleSchedule, ShuttleSchedule} from '../../api/shuttleApi';
 
 const deviceWidth = Dimensions.get('screen').width;
+
+const markerIconMap: {[key: string]: any} = {
+  SHUTTLE_BUS: require('../../assets/category-tabs/shuttle-bus-marker.png'),
+  PARKING: require('../../assets/category-tabs/parking-marker.png'),
+  RESTAURANT: require('../../assets/category-tabs/restaurant-marker.png'),
+  CONVENIENCE_CAFE: require('../../assets/category-tabs/cafe-marker.png'),
+};
 
 type NavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -38,10 +51,17 @@ function MapHomeScreen() {
 
   const [region, setRegion] = useState<Region | null>(null);
   const {visible, open, close, favorites} = useFavoriteBottomSheet();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const facilities = useFacilities(selectedCategory);
+  const [shuttleSchedule, setShuttleSchedule] =
+    useState<ShuttleSchedule | null>(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const [showShuttleBottomSheet, setShowShuttleBottomSheet] = useState(false);
+  const shuttleSheetRef = useRef<BottomSheet>(null);
 
   const DEFAULT_REGION: Region = {
-    latitude: 37.2983,
-    longitude: 127.0047,
+    latitude: 37.2087,
+    longitude: 126.976,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
@@ -85,15 +105,27 @@ function MapHomeScreen() {
     } else {
       getCurrentLocation();
     }
+
     globalThis.openFavoriteBottomSheet = open;
     return () => {
       globalThis.openFavoriteBottomSheet = undefined;
     };
   }, [open]);
 
+  useEffect(() => {
+    setShowShuttleBottomSheet(false);
+    close(); // 즐겨찾기 바텀시트 닫기
+  }, [selectedCategory, close]);
+
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <View style={styles.container}>
+        {loadingSchedule && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.BLUE_700} />
+          </View>
+        )}
+        {/* 검색창 */}
         <TouchableOpacity
           style={styles.searchBox}
           onPress={() =>
@@ -111,23 +143,90 @@ function MapHomeScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* 카테고리 탭 */}
+        <FacilityFilterButtons
+          selected={selectedCategory}
+          onSelect={category =>
+            setSelectedCategory(category === selectedCategory ? null : category)
+          }
+        />
+
+        {/* 지도 */}
         <MapView
           style={styles.map}
           provider={PROVIDER_GOOGLE}
-          region={region || DEFAULT_REGION}
-        />
+          region={region || DEFAULT_REGION}>
+          {/* 시설 마커 */}
+          {facilities.map((facility, idx) => (
+            <Marker
+              key={idx}
+              coordinate={{
+                latitude: facility.latitude,
+                longitude: facility.longitude,
+              }}
+              onPress={async () => {
+                if (selectedCategory === 'SHUTTLE_BUS') {
+                  setLoadingSchedule(true);
+                  try {
+                    const res = await fetchShuttleSchedule();
+                    setShuttleSchedule(res);
+                    setShowShuttleBottomSheet(true);
+                  } catch (e) {
+                    console.error('셔틀버스 스케줄 조회 실패', e);
+                    Alert.alert(
+                      '오류',
+                      '셔틀버스 스케줄을 불러올 수 없습니다.',
+                    );
+                  } finally {
+                    setLoadingSchedule(false);
+                  }
+                } else {
+                  navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+                    buildingId: facility.buildingId,
+                  });
+                }
+              }}>
+              <Image
+                source={markerIconMap[selectedCategory || 'PARKING']}
+                style={styles.marker}
+              />
+            </Marker>
+          ))}
+        </MapView>
 
-        <BottomSheet
-          index={visible ? 0 : -1}
-          snapPoints={['40%', '90%']}
-          enablePanDownToClose
-          onClose={close}>
-          <FavoriteBottomSheetContent
-            favorites={favorites}
-            onRefresh={open}
-            onSelect={handleSelectFavorite}
-          />
-        </BottomSheet>
+        {/* 바텀시트 */}
+        {selectedCategory === 'SHUTTLE_BUS' &&
+        showShuttleBottomSheet &&
+        shuttleSchedule ? (
+          <BottomSheet
+            ref={shuttleSheetRef}
+            index={0}
+            snapPoints={['65%', '100%']}
+            enablePanDownToClose
+            onClose={() => setShowShuttleBottomSheet(false)}
+            onChange={index => {
+              // index가 1이면 100%로 올라간 상태
+              if (index === 1) {
+                // navigation.navigate(mapNavigation.SHUTTLE_DETAIL);
+                // 시트 닫기
+                shuttleSheetRef.current?.close();
+              }
+            }}>
+            <ShuttleBottomSheetContent data={shuttleSchedule} />
+          </BottomSheet>
+        ) : visible ? (
+          <BottomSheet
+            index={0}
+            snapPoints={['40%', '80%']}
+            enablePanDownToClose
+            onClose={close}>
+            <FavoriteBottomSheetContent
+              favorites={favorites}
+              onRefresh={open}
+              onSelect={handleSelectFavorite}
+            />
+          </BottomSheet>
+        ) : null}
       </View>
     </GestureHandlerRootView>
   );
@@ -135,6 +234,13 @@ function MapHomeScreen() {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
   map: {flex: 1},
   searchBox: {
     position: 'absolute',
@@ -153,12 +259,23 @@ const styles = StyleSheet.create({
     zIndex: 10,
     justifyContent: 'center',
   },
-  searchBoxInput: {flexDirection: 'row', alignItems: 'center'},
-  searchIcon: {width: 20, height: 20, marginRight: 8},
+  searchBoxInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
   searchInput: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '500',
     color: colors.GRAY_500,
+  },
+  marker: {
+    width: 32,
+    height: 32,
   },
 });
 
