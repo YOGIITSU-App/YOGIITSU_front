@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useLayoutEffect,
-  useMemo,
-} from 'react';
+import React, {useEffect, useState, useRef, useMemo} from 'react';
 import {
   View,
   Text,
@@ -15,7 +9,6 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import MapView, {Marker, Polyline} from 'react-native-maps';
 import axios from 'axios';
 import {TMAP_API_KEY} from '@env';
 import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
@@ -28,7 +21,6 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
-import {getBoundingBox} from '../../utils/geoUtils';
 import WebView from 'react-native-webview';
 
 const {height: WINDOW_HEIGHT} = Dimensions.get('window');
@@ -51,17 +43,11 @@ interface Coordinate {
 const RouteResultScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
   const navigation = useNavigation<RouteResultScreenNavigationProp>();
-  const mapRef = useRef<MapView>(null);
+
   const webRef = useRef<WebView>(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const [headerH, setHeaderH] = useState(0);
   const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.35); // 초기 35%
   const flatListRef = useRef<BottomSheetFlatListMethods>(null);
-  const [isWebViewReady, setIsWebViewReady] = useState(false);
-
-  const handleSheetChange = (idx: number) => {
-    setBottomH(idx === 0 ? WINDOW_HEIGHT * 0.35 : WINDOW_HEIGHT * 0.8);
-  };
 
   const {
     startLocation,
@@ -112,22 +98,6 @@ const RouteResultScreen: React.FC = () => {
 
   const [startLat, startLon] = startCoord;
   const [endLat, endLon] = endCoord;
-
-  // useLayoutEffect(() => {
-  //   navigation.setOptions({
-  //     title: '길찾기 결과',
-  //     headerLeft: () => null,
-  //     headerRight: () => (
-  //       <TouchableOpacity
-  //         onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-  //         <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>✕</Text>
-  //       </TouchableOpacity>
-  //     ),
-  //     headerRightContainerStyle: {
-  //       paddingRight: 10,
-  //     },
-  //   });
-  // }, [navigation]);
 
   const fetchWalkingRoute = async () => {
     setLoading(true);
@@ -199,26 +169,6 @@ const RouteResultScreen: React.FC = () => {
     fetchWalkingRoute();
   }, [startLocation, endLocation, startBuildingId, endBuildingId]);
 
-  const handleMapReady = () => {
-    if (mapRef.current && routePath.length > 0) {
-      const bounds = getBoundingBox(routePath);
-
-      mapRef.current.fitToCoordinates(routePath, {
-        edgePadding: {
-          top: bounds.deltaLat > 0.01 ? 40 : 80,
-          right: bounds.deltaLon > 0.01 ? 40 : 80,
-          bottom: 100,
-          left: bounds.deltaLon > 0.01 ? 40 : 80,
-        },
-        animated: true,
-      });
-    }
-  };
-
-  useEffect(() => {
-    handleMapReady();
-  }, [routePath]);
-
   const routeSteps = useMemo(() => {
     const result: any[] = [];
 
@@ -283,9 +233,6 @@ const RouteResultScreen: React.FC = () => {
         type: 'customMarker',
         lat: startLat,
         lng: startLon,
-        imageUrl: startBuildingDetail?.buildingInfo?.imageUrl,
-        zoom: 2,
-        offsetY: 150,
       }),
     );
 
@@ -295,9 +242,6 @@ const RouteResultScreen: React.FC = () => {
         type: 'customMarker',
         lat: endLat,
         lng: endLon,
-        imageUrl: endBuildingDetail?.buildingInfo?.imageUrl,
-        zoom: 2,
-        offsetY: 150,
       }),
     );
 
@@ -403,7 +347,6 @@ const RouteResultScreen: React.FC = () => {
 
       {/* 하단 바텀시트 */}
       <BottomSheet
-        ref={bottomSheetRef}
         snapPoints={['35%', '80%']}
         index={0}
         enableContentPanningGesture={true}
@@ -412,7 +355,7 @@ const RouteResultScreen: React.FC = () => {
         style={{flex: 1}}
         onChange={index => {
           if (index === 0) {
-            // 내려왔을 때만 스크롤 초기화
+            // 바텀시트 내려왔을 때 안에 내용 스크롤 초기화
             flatListRef.current?.scrollToOffset({offset: 0, animated: true});
           }
         }}>
@@ -505,10 +448,8 @@ const RouteResultScreen: React.FC = () => {
 export default RouteResultScreen;
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  map: {
-    top: '20%',
-    height: '55%',
+  container: {
+    flex: 1,
   },
   loader: {
     position: 'absolute',
@@ -559,7 +500,6 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    // padding: 8,
   },
   inputText: {
     color: 'white',
@@ -570,26 +510,6 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.10)',
-  },
-  clearBtn: {
-    marginLeft: 8,
-    color: 'white',
-    fontSize: 14,
-  },
-  imageMarker: {
-    borderWidth: 3,
-    borderColor: colors.WHITE,
-    borderRadius: 30,
-    overflow: 'hidden',
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
   },
   sheetHeader: {
     paddingHorizontal: 16,
@@ -666,7 +586,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: 'white',
   },
-
   stepContent: {
     flex: 1,
     paddingLeft: 12,
