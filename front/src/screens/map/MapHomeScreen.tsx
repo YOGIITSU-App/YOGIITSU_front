@@ -49,7 +49,7 @@ function MapHomeScreen() {
   const shuttleSheetRef = useRef<BottomSheet>(null);
 
   const mapWebViewRef = useRef<WebView>(null);
-  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html`;
+  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html?ts=${Date.now()}`;
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
@@ -88,6 +88,28 @@ function MapHomeScreen() {
       }
     } catch (err) {
       console.error('웹뷰 메시지 처리 실패:', err);
+    }
+  };
+
+  const handleWebViewLoad = () => {
+    if (!mapWebViewRef.current) return;
+
+    if (facilities.length > 0) {
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({
+          type: 'setFacilities',
+          data: facilities.map(f => ({...f, category: f.type})),
+        }),
+      );
+    }
+
+    if (selectedCategory) {
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({
+          type: 'filterCategory',
+          category: selectedCategory,
+        }),
+      );
     }
   };
 
@@ -168,6 +190,7 @@ function MapHomeScreen() {
           javaScriptEnabled
           domStorageEnabled
           style={{flex: 1}}
+          onLoadEnd={handleWebViewLoad}
           onMessage={handleWebViewMessage}
           injectedJavaScriptBeforeContentLoaded={`
             (function() {
