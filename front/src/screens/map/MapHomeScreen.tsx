@@ -52,18 +52,18 @@ function MapHomeScreen() {
   const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html`;
 
   useEffect(() => {
-    if (!mapWebViewRef.current || !facilities.length) return;
+    if (!mapWebViewRef.current) return;
 
     const msg = JSON.stringify({
       type: 'setFacilities',
-      data: facilities.map(f => ({
-        ...f,
-        category: f.type,
-      })),
+      data:
+        selectedCategory && facilities.length > 0
+          ? facilities.map(f => ({...f, category: f.type}))
+          : [],
     });
 
     mapWebViewRef.current.postMessage(msg);
-  }, [facilities]);
+  }, [facilities, selectedCategory]);
 
   const handleWebViewMessage = async (e: any) => {
     try {
