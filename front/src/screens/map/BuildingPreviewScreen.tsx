@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
@@ -25,7 +26,8 @@ import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
+const deviceHeight = Dimensions.get('window').height;
+const {height: WINDOW_HEIGHT} = Dimensions.get('window');
 
 const facilityIconMap: {[key: string]: any} = {
   엘리베이터: require('../../assets/elevator-icon.png'),
@@ -45,13 +47,14 @@ export default function BuildingPreviewScreen() {
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
     null,
   );
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const mapWebViewRef = useRef<WebView>(null);
-  const snapPoints = useMemo(() => ['55%', '100%'], []);
   const [isFavorite, setIsFavorite] = useState(false);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const mapHtmlUrl =
-    'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map.html';
+  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-preview.html?ts=${Date.now()}`;
+  const mapWebViewRef = useRef<WebView>(null);
+  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.51);
+
+  const [loading, setLoading] = useState(true);
 
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('');
@@ -113,26 +116,6 @@ export default function BuildingPreviewScreen() {
     }
   }, [route.params?.buildingId]);
 
-  useEffect(() => {
-    if (buildingDetail && mapWebViewRef.current) {
-      const {latitude, longitude, imageUrl} = buildingDetail.buildingInfo;
-
-      const zoomLevel = 2; // 적절한 줌 값 (1~5 권장)
-      const offsetY = 90 + deviceHeight * 0.55 + 20; // 바텀시트 높이에 따라 조정!
-
-      const markerMsg = JSON.stringify({
-        type: 'customMarker',
-        lat: latitude,
-        lng: longitude,
-        imageUrl: imageUrl,
-        zoom: zoomLevel,
-        offsetY: offsetY,
-      });
-
-      mapWebViewRef.current.postMessage(markerMsg);
-    }
-  }, [buildingDetail]);
-
   const toggleFavorite = async () => {
     const id = route.params?.buildingId;
     if (!buildingDetail || !id) return;
@@ -150,21 +133,20 @@ export default function BuildingPreviewScreen() {
   };
 
   const handleMapLoaded = () => {
-    if (buildingDetail && mapWebViewRef.current) {
-      const {latitude, longitude, imageUrl} = buildingDetail.buildingInfo;
-      const zoomLevel = 0;
-      const offsetY = -500;
+    if (!buildingDetail || !mapWebViewRef.current) return;
 
-      const markerMsg = JSON.stringify({
-        type: 'customMarker',
-        lat: latitude,
-        lng: longitude,
-        imageUrl: imageUrl,
-        zoom: zoomLevel,
-        offsetY: offsetY,
-      });
-      mapWebViewRef.current.postMessage(markerMsg);
-    }
+    const {latitude, longitude} = buildingDetail.buildingInfo;
+
+    const markerMsg = JSON.stringify({
+      type: 'customMarker',
+      lat: latitude,
+      lng: longitude,
+      zoom: 3,
+    });
+
+    mapWebViewRef.current.postMessage(markerMsg);
+
+    setLoading(false);
   };
 
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
@@ -216,31 +198,45 @@ export default function BuildingPreviewScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <WebView
-          ref={mapWebViewRef}
-          source={{uri: mapHtmlUrl}}
-          originWhitelist={['*']}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          style={{flex: 1}}
-          injectedJavaScriptBeforeContentLoaded={`
-    (function() {
-      document.addEventListener("message", function(e) {
-        window.dispatchEvent(new MessageEvent("message", { data: e.data }));
-      });
-    })();
-    true;
-  `}
-          onLoadEnd={handleMapLoaded}
+      {loading && (
+        <ActivityIndicator
+          style={styles.loader}
+          size="large"
+          color={colors.BLUE_500}
         />
-      </View>
+      )}
+      <WebView
+        ref={mapWebViewRef}
+        source={{uri: mapHtmlUrl}}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: bottomH,
+        }}
+        injectedJavaScriptBeforeContentLoaded={`
+            (function() {
+              document.addEventListener("message", function(e) {
+                window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+              });
+            })();
+            true;
+          `}
+        onLoadEnd={handleMapLoaded}
+      />
 
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
+        snapPoints={['55%', '80%']}
+        enableContentPanningGesture={true}
+        enableHandlePanningGesture={true}
+        enableOverDrag={false}
+        style={{flex: 1}}
         onChange={handleSheetChange}>
         <BottomSheetView style={styles.sheetContent}>
           <Image
@@ -295,9 +291,18 @@ export default function BuildingPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  mapContainer: {flex: 1, height: 250, width: '100%'},
-  sheetContent: {paddingBottom: 30},
+  container: {
+    flex: 1,
+  },
+  loader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    zIndex: 10,
+  },
+  sheetContent: {
+    paddingBottom: 30,
+  },
   cardImage: {
     width: deviceWidth * 0.92,
     height: deviceHeight * 0.2,
