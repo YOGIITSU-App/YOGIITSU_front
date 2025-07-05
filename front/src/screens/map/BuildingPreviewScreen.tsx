@@ -13,10 +13,11 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import WebView from 'react-native-webview';
 import {mapNavigation} from '../../constants/navigation';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
@@ -25,7 +26,8 @@ import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
+const deviceHeight = Dimensions.get('window').height;
+const {height: WINDOW_HEIGHT} = Dimensions.get('window');
 
 const facilityIconMap: {[key: string]: any} = {
   엘리베이터: require('../../assets/elevator-icon.png'),
@@ -45,12 +47,15 @@ export default function BuildingPreviewScreen() {
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
     null,
   );
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['55%', '100%'], []);
-  const mapOffsetLatitude = 0.002;
   const [isFavorite, setIsFavorite] = useState(false);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
-  // 출발/도착 관련 상태값 저장 (params로부터 초기화)
+  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-preview.html?ts=${Date.now()}`;
+  const mapWebViewRef = useRef<WebView>(null);
+  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.51);
+
+  const [loading, setLoading] = useState(true);
+
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('');
   const [startBuildingId, setStartBuildingId] = useState<number | undefined>();
@@ -71,7 +76,6 @@ export default function BuildingPreviewScreen() {
     if (startLocation) setStartLocation(startLocation);
     if (startLocationName) setStartLocationName(startLocationName);
     if (startBuildingId !== undefined) setStartBuildingId(startBuildingId);
-
     if (endLocation) setEndLocation(endLocation);
     if (endLocationName) setEndLocationName(endLocationName);
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
@@ -128,7 +132,23 @@ export default function BuildingPreviewScreen() {
     }
   };
 
-  // 출발/도착 navigation (기존 값 함께 넘김)
+  const handleMapLoaded = () => {
+    if (!buildingDetail || !mapWebViewRef.current) return;
+
+    const {latitude, longitude} = buildingDetail.buildingInfo;
+
+    const markerMsg = JSON.stringify({
+      type: 'customMarker',
+      lat: latitude,
+      lng: longitude,
+      zoom: 3,
+    });
+
+    mapWebViewRef.current.postMessage(markerMsg);
+
+    setLoading(false);
+  };
+
   const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
     const lat = buildingDetail?.buildingInfo.latitude;
     const lon = buildingDetail?.buildingInfo.longitude;
@@ -143,8 +163,6 @@ export default function BuildingPreviewScreen() {
         startLocation: locationStr,
         startLocationName: name,
         startBuildingId: currentId,
-
-        // 기존 도착지 값 유지
         endLocation,
         endLocationName,
         endBuildingId,
@@ -154,8 +172,6 @@ export default function BuildingPreviewScreen() {
         endLocation: locationStr,
         endLocationName: name,
         endBuildingId: currentId,
-
-        // 기존 출발지 값 유지
         startLocation,
         startLocationName,
         startBuildingId,
@@ -182,41 +198,45 @@ export default function BuildingPreviewScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={StyleSheet.absoluteFillObject}
-          initialCamera={{
-            center: {
-              latitude: buildingInfo.latitude - mapOffsetLatitude,
-              longitude: buildingInfo.longitude,
-            },
-            zoom: 17,
-            pitch: 0,
-            heading: 0,
-            altitude: 1000,
-          }}
-          pointerEvents="none">
-          <Marker
-            coordinate={{
-              latitude: buildingInfo.latitude,
-              longitude: buildingInfo.longitude,
-            }}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        </MapView>
-      </View>
+      {loading && (
+        <ActivityIndicator
+          style={styles.loader}
+          size="large"
+          color={colors.BLUE_500}
+        />
+      )}
+      <WebView
+        ref={mapWebViewRef}
+        source={{uri: mapHtmlUrl}}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: bottomH,
+        }}
+        injectedJavaScriptBeforeContentLoaded={`
+            (function() {
+              document.addEventListener("message", function(e) {
+                window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+              });
+            })();
+            true;
+          `}
+        onLoadEnd={handleMapLoaded}
+      />
 
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
+        snapPoints={['55%', '80%']}
+        enableContentPanningGesture={true}
+        enableHandlePanningGesture={true}
+        enableOverDrag={false}
+        style={{flex: 1}}
         onChange={handleSheetChange}>
         <BottomSheetView style={styles.sheetContent}>
           <Image
@@ -271,20 +291,18 @@ export default function BuildingPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  mapContainer: {flex: 1, height: 250, width: '100%'},
-  imageMarker: {
-    borderWidth: 3,
-    borderColor: '#fff',
-    borderRadius: 30,
-    overflow: 'hidden',
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
+  container: {
+    flex: 1,
   },
-  image: {width: 48, height: 48, borderRadius: 27},
-  sheetContent: {paddingBottom: 30},
+  loader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    zIndex: 10,
+  },
+  sheetContent: {
+    paddingBottom: 30,
+  },
   cardImage: {
     width: deviceWidth * 0.92,
     height: deviceHeight * 0.2,

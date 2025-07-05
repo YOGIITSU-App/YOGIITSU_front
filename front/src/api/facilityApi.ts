@@ -5,6 +5,8 @@ export type Facility = {
   latitude: number;
   longitude: number;
   buildingId: number;
+  type: string;
+  id: number;
 };
 
 export const fetchFacilities = async (type: string): Promise<Facility[]> => {

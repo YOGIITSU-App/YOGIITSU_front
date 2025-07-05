@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useLayoutEffect,
-  useMemo,
-} from 'react';
+import React, {useEffect, useState, useRef, useMemo} from 'react';
 import {
   View,
   Text,
@@ -13,8 +7,8 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import MapView, {Marker, Polyline} from 'react-native-maps';
 import axios from 'axios';
 import {TMAP_API_KEY} from '@env';
 import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
@@ -27,7 +21,9 @@ import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
-import {getBoundingBox} from '../../utils/geoUtils';
+import WebView from 'react-native-webview';
+
+const {height: WINDOW_HEIGHT} = Dimensions.get('window');
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
@@ -47,8 +43,10 @@ interface Coordinate {
 const RouteResultScreen: React.FC = () => {
   const route = useRoute<RouteResultScreenRouteProp>();
   const navigation = useNavigation<RouteResultScreenNavigationProp>();
-  const mapRef = useRef<MapView>(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const webRef = useRef<WebView>(null);
+  const [headerH, setHeaderH] = useState(0);
+  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.35); // 초기 35%
   const flatListRef = useRef<BottomSheetFlatListMethods>(null);
 
   const {
@@ -100,22 +98,6 @@ const RouteResultScreen: React.FC = () => {
 
   const [startLat, startLon] = startCoord;
   const [endLat, endLon] = endCoord;
-
-  // useLayoutEffect(() => {
-  //   navigation.setOptions({
-  //     title: '길찾기 결과',
-  //     headerLeft: () => null,
-  //     headerRight: () => (
-  //       <TouchableOpacity
-  //         onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-  //         <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>✕</Text>
-  //       </TouchableOpacity>
-  //     ),
-  //     headerRightContainerStyle: {
-  //       paddingRight: 10,
-  //     },
-  //   });
-  // }, [navigation]);
 
   const fetchWalkingRoute = async () => {
     setLoading(true);
@@ -187,26 +169,6 @@ const RouteResultScreen: React.FC = () => {
     fetchWalkingRoute();
   }, [startLocation, endLocation, startBuildingId, endBuildingId]);
 
-  const handleMapReady = () => {
-    if (mapRef.current && routePath.length > 0) {
-      const bounds = getBoundingBox(routePath);
-
-      mapRef.current.fitToCoordinates(routePath, {
-        edgePadding: {
-          top: bounds.deltaLat > 0.01 ? 40 : 80,
-          right: bounds.deltaLon > 0.01 ? 40 : 80,
-          bottom: 100,
-          left: bounds.deltaLon > 0.01 ? 40 : 80,
-        },
-        animated: true,
-      });
-    }
-  };
-
-  useEffect(() => {
-    handleMapReady();
-  }, [routePath]);
-
   const routeSteps = useMemo(() => {
     const result: any[] = [];
 
@@ -262,6 +224,48 @@ const RouteResultScreen: React.FC = () => {
     });
   };
 
+  const handleWebViewReady = () => {
+    if (!webRef.current || routePath.length === 0) return;
+
+    // 출발 마커
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'customMarker',
+        lat: startLat,
+        lng: startLon,
+      }),
+    );
+
+    // 도착 마커
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'customMarker',
+        lat: endLat,
+        lng: endLon,
+      }),
+    );
+
+    // 경로
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'drawRoute',
+        path: routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
+      }),
+    );
+
+    // 확대 및 중심이동
+    webRef.current.postMessage(
+      JSON.stringify({
+        type: 'fitBounds',
+        path: [
+          {lat: startLat, lng: startLon},
+          {lat: endLat, lng: endLon},
+          ...routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
+        ],
+      }),
+    );
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -271,7 +275,9 @@ const RouteResultScreen: React.FC = () => {
           color={colors.BLUE_500}
         />
       )}
-      <View style={styles.headerWrapper}>
+      <View
+        style={styles.headerWrapper}
+        onLayout={e => setHeaderH(e.nativeEvent.layout.height)}>
         <TouchableOpacity
           style={styles.closeBtn}
           onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
@@ -313,48 +319,34 @@ const RouteResultScreen: React.FC = () => {
         </View>
       </View>
 
-      <MapView ref={mapRef} style={styles.map} onMapReady={handleMapReady}>
-        {/* 출발 마커 */}
-        {startBuildingDetail?.buildingInfo.imageUrl ? (
-          <Marker coordinate={{latitude: startLat, longitude: startLon}}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        ) : (
-          <Marker coordinate={{latitude: startLat, longitude: startLon}} />
-        )}
-
-        {/* 도착 마커 */}
-        {endBuildingDetail?.buildingInfo.imageUrl ? (
-          <Marker coordinate={{latitude: endLat, longitude: endLon}}>
-            <View style={styles.imageMarker}>
-              <Image
-                source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
-                style={styles.image}
-              />
-            </View>
-          </Marker>
-        ) : (
-          <Marker coordinate={{latitude: endLat, longitude: endLon}} />
-        )}
-
-        {/* 경로 */}
-        {routePath.length > 0 && (
-          <Polyline
-            coordinates={routePath}
-            strokeWidth={5}
-            strokeColor={colors.BLUE_500}
-          />
-        )}
-      </MapView>
+      <WebView
+        ref={webRef}
+        source={{
+          uri: `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html?ts=${Date.now()}`,
+        }}
+        style={{
+          position: 'absolute',
+          top: headerH, // 헤더 아래부터
+          left: 0,
+          right: 0,
+          bottom: bottomH, // 바텀시트 위까지
+        }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        originWhitelist={['*']}
+        injectedJavaScriptBeforeContentLoaded={`
+    (function() {
+      document.addEventListener("message", function(e) {
+        window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+      });
+    })();
+    true;
+  `}
+        onLoadEnd={handleWebViewReady}
+      />
 
       {/* 하단 바텀시트 */}
       <BottomSheet
-        ref={bottomSheetRef}
         snapPoints={['35%', '80%']}
         index={0}
         enableContentPanningGesture={true}
@@ -363,7 +355,7 @@ const RouteResultScreen: React.FC = () => {
         style={{flex: 1}}
         onChange={index => {
           if (index === 0) {
-            // 내려왔을 때만 스크롤 초기화
+            // 바텀시트 내려왔을 때 안에 내용 스크롤 초기화
             flatListRef.current?.scrollToOffset({offset: 0, animated: true});
           }
         }}>
@@ -456,10 +448,8 @@ const RouteResultScreen: React.FC = () => {
 export default RouteResultScreen;
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  map: {
-    top: '20%',
-    height: '55%',
+  container: {
+    flex: 1,
   },
   loader: {
     position: 'absolute',
@@ -510,7 +500,6 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    // padding: 8,
   },
   inputText: {
     color: 'white',
@@ -521,26 +510,6 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.10)',
-  },
-  clearBtn: {
-    marginLeft: 8,
-    color: 'white',
-    fontSize: 14,
-  },
-  imageMarker: {
-    borderWidth: 3,
-    borderColor: colors.WHITE,
-    borderRadius: 30,
-    overflow: 'hidden',
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
   },
   sheetHeader: {
     paddingHorizontal: 16,
@@ -617,7 +586,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: 'white',
   },
-
   stepContent: {
     flex: 1,
     paddingLeft: 12,
