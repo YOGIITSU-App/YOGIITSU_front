@@ -5,14 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  PermissionsAndroid,
   Image,
-  Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import MapView, {Region, PROVIDER_GOOGLE, Marker} from 'react-native-maps';
-import Geolocation from 'react-native-geolocation-service';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
@@ -29,15 +25,9 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {FacilityFilterButtons} from '../../components/FacilityFilterButtons';
 import {useFacilities} from '../../hooks/useFacilities';
 import {fetchShuttleSchedule, ShuttleSchedule} from '../../api/shuttleApi';
+import WebView from 'react-native-webview';
 
 const deviceWidth = Dimensions.get('screen').width;
-
-const markerIconMap: {[key: string]: any} = {
-  SHUTTLE_BUS: require('../../assets/category-tabs/shuttle-bus-marker.png'),
-  PARKING: require('../../assets/category-tabs/parking-marker.png'),
-  RESTAURANT: require('../../assets/category-tabs/restaurant-marker.png'),
-  CONVENIENCE_CAFE: require('../../assets/category-tabs/cafe-marker.png'),
-};
 
 type NavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -49,7 +39,6 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
-  const [region, setRegion] = useState<Region | null>(null);
   const {visible, open, close, favorites} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
@@ -59,36 +48,59 @@ function MapHomeScreen() {
   const [showShuttleBottomSheet, setShowShuttleBottomSheet] = useState(false);
   const shuttleSheetRef = useRef<BottomSheet>(null);
 
-  const DEFAULT_REGION: Region = {
-    latitude: 37.2087,
-    longitude: 126.976,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+  const mapWebViewRef = useRef<WebView>(null);
+  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html`;
+
+  useEffect(() => {
+    if (!mapWebViewRef.current || !facilities.length) return;
+
+    const msg = JSON.stringify({
+      type: 'setFacilities',
+      data: facilities.map(f => ({
+        ...f,
+        category: f.type,
+      })),
+    });
+
+    mapWebViewRef.current.postMessage(msg);
+  }, [facilities]);
+
+  const handleWebViewMessage = async (e: any) => {
+    try {
+      const data = JSON.parse(e.nativeEvent.data);
+
+      if (data.type === 'selectFacility' && data.buildingId) {
+        navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+          buildingId: data.buildingId,
+        });
+      } else if (data.type === 'shuttleClicked') {
+        // 셔틀버스 마커 클릭 시 처리
+        setLoadingSchedule(true);
+        try {
+          const res = await fetchShuttleSchedule();
+          setShuttleSchedule(res);
+          setShowShuttleBottomSheet(true);
+        } catch (err) {
+          Alert.alert('오류', '셔틀버스 스케줄을 불러올 수 없습니다.');
+        } finally {
+          setLoadingSchedule(false);
+        }
+      }
+    } catch (err) {
+      console.error('웹뷰 메시지 처리 실패:', err);
+    }
   };
 
-  const getCurrentLocation = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        setRegion(DEFAULT_REGION);
-        return;
-      }
-    }
-    Geolocation.getCurrentPosition(
-      position => {
-        setRegion({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-      },
-      () => setRegion(DEFAULT_REGION),
-      {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
-    );
-  };
+  useEffect(() => {
+    if (!mapWebViewRef.current) return;
+
+    const msg = JSON.stringify({
+      type: 'filterCategory',
+      category: selectedCategory,
+    });
+
+    mapWebViewRef.current.postMessage(msg);
+  }, [selectedCategory]);
 
   const handleSelectFavorite = (item: FavoriteItem) => {
     navigation.navigate(mapNavigation.ROUTE_SELECTION, {
@@ -102,10 +114,7 @@ function MapHomeScreen() {
     const buildingId = route.params?.buildingId;
     if (typeof buildingId === 'number') {
       navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
-    } else {
-      getCurrentLocation();
     }
-
     globalThis.openFavoriteBottomSheet = open;
     return () => {
       globalThis.openFavoriteBottomSheet = undefined;
@@ -152,47 +161,23 @@ function MapHomeScreen() {
         />
 
         {/* 지도 */}
-        <MapView
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          region={region || DEFAULT_REGION}>
-          {/* 시설 마커 */}
-          {facilities.map((facility, idx) => (
-            <Marker
-              key={idx}
-              coordinate={{
-                latitude: facility.latitude,
-                longitude: facility.longitude,
-              }}
-              onPress={async () => {
-                if (selectedCategory === 'SHUTTLE_BUS') {
-                  setLoadingSchedule(true);
-                  try {
-                    const res = await fetchShuttleSchedule();
-                    setShuttleSchedule(res);
-                    setShowShuttleBottomSheet(true);
-                  } catch (e) {
-                    console.error('셔틀버스 스케줄 조회 실패', e);
-                    Alert.alert(
-                      '오류',
-                      '셔틀버스 스케줄을 불러올 수 없습니다.',
-                    );
-                  } finally {
-                    setLoadingSchedule(false);
-                  }
-                } else {
-                  navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-                    buildingId: facility.buildingId,
-                  });
-                }
-              }}>
-              <Image
-                source={markerIconMap[selectedCategory || 'PARKING']}
-                style={styles.marker}
-              />
-            </Marker>
-          ))}
-        </MapView>
+        <WebView
+          ref={mapWebViewRef}
+          source={{uri: mapHtmlUrl}}
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          style={{flex: 1}}
+          onMessage={handleWebViewMessage}
+          injectedJavaScriptBeforeContentLoaded={`
+            (function() {
+              document.addEventListener("message", function(e) {
+                window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+              });
+            })();
+            true;
+          `}
+        />
 
         {/* 바텀시트 */}
         {selectedCategory === 'SHUTTLE_BUS' &&
@@ -236,7 +221,7 @@ const styles = StyleSheet.create({
   container: {flex: 1},
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
