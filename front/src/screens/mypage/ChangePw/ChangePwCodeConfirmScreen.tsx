@@ -1,7 +1,7 @@
 import React, {useLayoutEffect, useState} from 'react';
 import {
+  Alert,
   Dimensions,
-  Modal,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -19,6 +19,9 @@ import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {defaultTabOptions} from '../../../constants/tabOptions';
+import emailApi from '../../../api/emailApi';
+import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
+import AlertModal from '../../../components/AlertModal';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -38,7 +41,8 @@ function ChangePwCodeConfirmScreen() {
     validate: validateCodeMessage,
   });
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
+  const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
@@ -54,10 +58,41 @@ function ChangePwCodeConfirmScreen() {
     };
   }, [navigation]);
 
+  // 인증번호 전송
+  const handleSendCode = async () => {
+    try {
+      const res = await emailApi.sendCode(
+        emailcheak.values.email,
+        EmailVerificationPurpose.PASSWORD_CHANGE,
+      );
+      console.log('응답 확인 👉', res.data);
+      setSendCodeModalVisible(true);
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
+      Alert.alert('에러', msg);
+    }
+  };
+
+  // 인증번호 확인
+  const handleVerifyCode = async () => {
+    try {
+      await emailApi.verifyCode(codemessagecheck.values.codemessage);
+      navigation.navigate('ChangePw');
+    } catch (error: any) {
+      setCodeWrongModalVisible(true);
+    }
+  };
+
+  // 인증번호 재전송
+  const handleReSend = () => {
+    setSendCodeModalVisible(false);
+    handleSendCode();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.guideContainer}>
-        {/* ✅ 상태에 따라 문구 변경 */}
+        {/* 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
           <>
             <Text style={styles.guideText}>비밀번호를 변경하기 위해</Text>
@@ -99,33 +134,29 @@ function ChangePwCodeConfirmScreen() {
             variant="filled"
             size="large"
             inValid={!emailcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-            onPress={() => {
-              setModalVisible(true); // 모달 표시
-            }}
+            onPress={handleSendCode}
           />
         )}
-        {/* ✅ 모달 (인증번호 전송 안내) */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
-              <CustomBotton
-                label="확인"
-                style={styles.confirmButton}
-                onPress={() => {
-                  setModalVisible(false); // 모달 닫기
-                  setSendButtonVisible(false); // 버튼 숨기기
-                  setGuideTextType('code'); // 안내 문구 변경
-                  setCodeFieldVisible(true); // 인증번호 입력란 보이기
-                }}></CustomBotton>
-            </View>
-          </View>
-        </Modal>
-        {/* ✅ 인증번호 입력란 (모달 확인 버튼 클릭 시 표시됨) */}
+        {/* 인증번호 전송 안내 모달 */}
+        <AlertModal
+          visible={sendCodeModalVisible}
+          onRequestClose={() => setSendCodeModalVisible(false)}
+          message="인증번호가 전송되었습니다"
+          buttons={[
+            {
+              label: '확인',
+              onPress: () => {
+                setSendCodeModalVisible(false);
+                setSendButtonVisible(false);
+                setGuideTextType('code');
+                setCodeFieldVisible(true);
+              },
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
+
+        {/* 인증번호 입력란 (모달 확인 버튼 클릭 시 표시됨) */}
         {isCodeFieldVisible && (
           <View style={styles.smallContainer}>
             <MiniInputField
@@ -134,7 +165,7 @@ function ChangePwCodeConfirmScreen() {
               focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
-                const upperText = text.toUpperCase(); // ✅ 입력값을 대문자로 변환
+                const upperText = text.toUpperCase(); // 입력값을 대문자로 변환
                 if (upperText.length <= 6) {
                   codemessagecheck
                     .getTextInputProps('codemessage')
@@ -145,14 +176,28 @@ function ChangePwCodeConfirmScreen() {
             <MiniCustomButton_W
               label="확인"
               inValid={!codemessagecheck.isFormValid}
-              onPress={() => {
-                if (codemessagecheck.isFormValid) {
-                  navigation.navigate('ChangePw'); // ✅ ChangePwScreen으로 이동
-                }
-              }}
+              onPress={handleVerifyCode}
             />
           </View>
         )}
+        {/* 인증번호 틀림 모달 */}
+        <AlertModal
+          visible={codeWrongModalVisible}
+          onRequestClose={() => setCodeWrongModalVisible(false)}
+          message="인증번호가 틀렸습니다"
+          buttons={[
+            {
+              label: '다시 입력',
+              onPress: () => setCodeWrongModalVisible(false),
+              style: {backgroundColor: colors.GRAY_300},
+            },
+            {
+              label: '재전송',
+              onPress: handleReSend,
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
       </View>
     </SafeAreaView>
   );
@@ -198,7 +243,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // 반투명 배경
   },
   modalBox: {
     width: deviceWidth * 0.85,
@@ -222,7 +267,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
+    marginTop: 15, // 버튼과 텍스트 간격 조정
   },
   smallContainer: {
     width: deviceWidth * 0.84,
