@@ -1,30 +1,32 @@
+import React from 'react';
+import {
+  Alert,
+  Dimensions,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RouteProp} from '@react-navigation/native';
-import {
-  Dimensions,
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+
+import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
-import InputField from '../../../components/inputField';
+
 import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validatePwConfirm} from '../../../utils';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
-import authApi from '../../../api/authApi'; // ✅ 비밀번호 변경 API
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import authApi from '../../../api/authApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 
 function FindPwScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
-  const route = useRoute<RouteProp<AuthStackParamList, 'FindPw'>>(); // ✅ route로 email 받기
-  const {email: routeEmail} = route.params; // ✅ 이메일 꺼내기
+  const route = useRoute<RouteProp<AuthStackParamList, 'FindPw'>>();
+  const {email: routeEmail} = route.params;
 
   const pwconfirmcheak = useForm({
     initialValue: {
@@ -38,17 +40,12 @@ function FindPwScreen() {
     try {
       const {password, passwordConfirm} = pwconfirmcheak.values;
 
-      const email = routeEmail;
-
-      console.log(email);
-
-      if (!email) {
+      if (!routeEmail) {
         Alert.alert('오류', '인증된 이메일이 없어요!');
         return;
       }
 
-      // ✅ API 호출: 이메일 + 새로운 비밀번호
-      await authApi.resetPassword(password, passwordConfirm, email);
+      await authApi.resetPassword(routeEmail, password, passwordConfirm);
       navigation.navigate('FindPwComplete');
     } catch (err) {
       Alert.alert('비밀번호 변경 실패', '다시 시도해주세요!');
