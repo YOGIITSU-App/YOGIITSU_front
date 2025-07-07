@@ -174,14 +174,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   emailContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
     marginLeft: deviceWidth * 0.05,
-    marginTop: 58,
+    marginTop: 5,
     marginBottom: '15%',
   },
   overlay: {
