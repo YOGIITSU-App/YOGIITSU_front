@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   Modal,
@@ -16,11 +17,12 @@ import {validatePw} from '../../../utils';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import authApi from '../../../api/authApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
-function SignupScreen() {
+function DeleteAccountScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
   const pwcheak = useForm({
@@ -84,17 +86,24 @@ function SignupScreen() {
               <CustomBotton
                 label="아니요"
                 style={[styles.button, styles.cancelButton]}
-                onPress={
-                  () => setModalVisible(false) // 모달 닫기
-                }></CustomBotton>
+                onPress={() => setModalVisible(false)}
+              />
               {/* 탈퇴 버튼 */}
               <CustomBotton
                 label="네"
                 style={[styles.button, styles.confirmButton]}
-                onPress={() => {
-                  setModalVisible(false); // 모달 닫기
-                  navigation.navigate('DeleteAccountComplete');
-                }}></CustomBotton>
+                onPress={async () => {
+                  setModalVisible(false);
+                  try {
+                    await authApi.deleteAccount(pwcheak.values.password);
+                    navigation.navigate('DeleteAccountComplete');
+                  } catch (error: any) {
+                    const msg =
+                      error.response?.data?.message ?? '회원 탈퇴 실패';
+                    Alert.alert('에러', msg);
+                  }
+                }}
+              />
             </View>
           </View>
         </View>
@@ -151,8 +160,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderRadius: 6,
     alignItems: 'center',
-    paddingTop: 30, // ✅ 상단 패딩
-    paddingBottom: 0, // ✅ 하단 패딩 제거
+    paddingTop: 30,
+    paddingBottom: 0,
   },
   warningIcon: {
     width: 28,
@@ -178,23 +187,23 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     width: '100%',
-    height: deviceHeight * 0.07, // ✅ 버튼 높이 설정 (모달 하단을 채우도록)
-    position: 'absolute', // ✅ 모달 하단에 고정
+    height: deviceHeight * 0.07, // 버튼 높이 설정 (모달 하단을 채우도록)
+    position: 'absolute', // 모달 하단에 고정
     bottom: 0,
   },
   button: {
-    flex: 1, // ✅ 버튼을 동일한 크기로 설정
+    flex: 1, // 버튼을 동일한 크기로 설정
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: colors.GRAY_300,
-    borderBottomLeftRadius: 6, // ✅ 왼쪽 모서리 둥글게
+    borderBottomLeftRadius: 6, // 왼쪽 모서리 둥글게
   },
   confirmButton: {
     backgroundColor: colors.BLUE_700,
-    borderBottomRightRadius: 6, // ✅ 오른쪽 모서리 둥글게
+    borderBottomRightRadius: 6, // 오른쪽 모서리 둥글게
   },
 });
 
-export default SignupScreen;
+export default DeleteAccountScreen;
