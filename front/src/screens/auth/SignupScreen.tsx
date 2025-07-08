@@ -12,6 +12,8 @@ import CustomText from '../../components/CustomText';
 import CustomBotton from '../../components/CustomButton';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import authApi from '../../api/authApi';
+import emailApi from '../../api/emailApi';
+import {EmailVerificationPurpose} from '../../constants/emailPurpose';
 import AlertModal from '../../components/AlertModal';
 import CompleteCheck from '../../assets/CompleteCheck.svg';
 import {useNavigation} from '@react-navigation/native';
@@ -39,13 +41,16 @@ function SignupScreen() {
   const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
   const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [codeCorrectModalVisible, setCodeCorrectModalVisible] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
 
   // 인증번호 전송
   const handleSendCode = async () => {
     try {
-      const res = await authApi.sendCode(signup.values.email);
-      console.log('응답 확인 👉', res.data);
+      const res = await emailApi.sendCode(
+        signup.values.email,
+        EmailVerificationPurpose.SIGNUP,
+      );
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
@@ -53,10 +58,11 @@ function SignupScreen() {
     }
   };
 
-  // 🔐 인증번호 확인
+  // 인증번호 확인
   const handleVerifyCode = async () => {
     try {
-      await authApi.verifyCode(signup.values.email, signup.values.codemessage);
+      await emailApi.verifyCode(signup.values.codemessage);
+      setIsVerified(true);
       setCodeCorrectModalVisible(true);
     } catch (error: any) {
       setCodeWrongModalVisible(true);
@@ -69,9 +75,14 @@ function SignupScreen() {
     handleSendCode();
   };
 
-  // 🙌 최종 회원가입 요청
+  // 최종 회원가입 요청
   const handleSignup = async () => {
     const {id, password, email, username} = signup.values;
+
+    if (!isVerified) {
+      Alert.alert('안내', '이메일 인증을 먼저 완료해주세요.');
+      return;
+    }
 
     try {
       await authApi.signup(id, password, email, username);
@@ -237,7 +248,7 @@ function SignupScreen() {
       <View style={styles.completeButton}>
         <CustomBotton
           label="가입하기"
-          inValid={!signup.isFormValid}
+          inValid={!signup.isFormValid || !isVerified}
           onPress={handleSignup}
         />
       </View>

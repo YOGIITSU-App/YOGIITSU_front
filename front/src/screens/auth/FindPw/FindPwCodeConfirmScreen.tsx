@@ -1,29 +1,29 @@
 import React, {useState} from 'react';
 import {
-  Dimensions,
-  Modal,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
+  Dimensions,
   Alert,
 } from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
+import MiniCustomButton_W from '../../../components/miniCustomButton_W';
+import MiniInputField from '../../../components/miniInputField';
+import AlertModal from '../../../components/AlertModal';
+
 import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validateCodeMessage, validateEmail} from '../../../utils';
-import MiniCustomButton_W from '../../../components/miniCustomButton_W';
-import MiniInputField from '../../../components/miniInputField';
-import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import authApi from '../../../api/authApi'; // ✅ 추가
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
+import emailApi from '../../../api/emailApi';
+import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
 
 function FindPwCodeConfirmScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
@@ -42,54 +42,44 @@ function FindPwCodeConfirmScreen() {
     validate: validateCodeMessage,
   });
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
+  const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
-  const [token, setToken] = useState('');
 
-  // ✉️ 인증번호 전송
+  // 인증번호 전송
   const handleSendCode = async () => {
     try {
-      const res = await authApi.sendCode(emailcheak.values.email);
-
-      console.log('응답 확인 👉', res.data);
-
-      setToken(res.data.token); // 토큰 저장
-      setModalVisible(true);
-    } catch (error) {
-      Alert.alert('전송 실패', '가입된 이메일이 아니에요!');
+      await emailApi.sendCode(
+        emailcheak.values.email,
+        EmailVerificationPurpose.FIND_PASSWORD,
+      );
+      setSendCodeModalVisible(true);
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
+      Alert.alert('에러', msg);
     }
   };
 
-  // ✅ 인증번호 확인
+  // 인증번호 확인
   const handleVerifyCode = async () => {
     try {
-      // 서버에 입력한 이메일과 인증코드를 보내어 검증 요청
-      await authApi.verifyCode(
-        emailcheak.values.email,
-        codemessagecheck.values.codemessage,
-      );
-
-      // 인증이 완료된 후, 필요하다면 임시 토큰 삭제
-      try {
-        await AsyncStorage.removeItem('emailVerifyToken');
-      } catch (removeErr) {
-        console.warn('임시 토큰 삭제 실패:', removeErr);
-      }
-
-      // 입력했던 이메일 값을 바로 다음 화면에 파라미터로 전달
-      navigation.navigate('FindPw', {
-        email: emailcheak.values.email,
-      });
+      await emailApi.verifyCode(codemessagecheck.values.codemessage);
+      navigation.navigate('FindPw', {email: emailcheak.values.email});
     } catch (error) {
-      Alert.alert('실패', '인증번호가 올바르지 않아요!');
+      setCodeWrongModalVisible(true);
     }
+  };
+
+  // 인증번호 재전송
+  const handleReSend = () => {
+    setCodeWrongModalVisible(false);
+    handleSendCode();
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 안내 문구 */}
       <View style={styles.guideContainer}>
         {guideTextType === 'email' ? (
           <>
@@ -101,13 +91,13 @@ function FindPwCodeConfirmScreen() {
           </>
         ) : (
           <Text style={styles.guideText}>
-            <Text style={styles.highlightedText}>인증번호</Text>를 입력해 주세요
+            전송된 <Text style={styles.highlightedText}>인증번호</Text>를 입력해
+            주세요
           </Text>
         )}
       </View>
-
-      {/* 이메일 입력 */}
       <View style={styles.infoContainer}>
+        {/* 이메일 입력 */}
         <InputField
           placeholder="이메일 입력"
           inputMode="email"
@@ -116,7 +106,16 @@ function FindPwCodeConfirmScreen() {
           {...emailcheak.getTextInputProps('email')}
         />
 
-        {/* 인증번호 전송 버튼 */}
+        {/* 이메일 에러 텍스트 */}
+        <View style={styles.errorMessageContainer}>
+          <CustomText
+            text="이메일 형식으로 입력해 주세요"
+            touched={emailcheak.touched.email}
+            error={emailcheak.errors.email}
+            {...emailcheak.getTextInputProps('email')}
+          />
+        </View>
+
         {isSendButtonVisible && (
           <CustomBotton
             label="인증번호 전송"
@@ -127,33 +126,32 @@ function FindPwCodeConfirmScreen() {
           />
         )}
 
-        {/* 인증번호 전송 완료 모달 */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
-              <CustomBotton
-                label="확인"
-                style={styles.confirmButton}
-                onPress={() => {
-                  setModalVisible(false); // 모달 닫기
-                  setSendButtonVisible(false); // 버튼 숨기기
-                  setGuideTextType('code'); // 안내 문구 변경
-                  setCodeFieldVisible(true); // 인증번호 입력란 보이기
-                }}></CustomBotton>
-            </View>
-          </View>
-        </Modal>
-        {/* 인증번호 입력 UI */}
+        {/* 인증번호 전송 안내 모달 */}
+        <AlertModal
+          visible={sendCodeModalVisible}
+          onRequestClose={() => setSendCodeModalVisible(false)}
+          message="인증번호가 전송되었습니다"
+          buttons={[
+            {
+              label: '확인',
+              onPress: () => {
+                setSendCodeModalVisible(false);
+                setSendButtonVisible(false);
+                setGuideTextType('code');
+                setCodeFieldVisible(true);
+              },
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
+
+        {/* 인증번호 입력 */}
         {isCodeFieldVisible && (
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
               inputMode="text"
+              focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
                 const upperText = text.toUpperCase();
@@ -171,6 +169,25 @@ function FindPwCodeConfirmScreen() {
             />
           </View>
         )}
+
+        {/* 인증번호 틀림 모달 */}
+        <AlertModal
+          visible={codeWrongModalVisible}
+          onRequestClose={() => setCodeWrongModalVisible(false)}
+          message="인증번호가 틀렸습니다"
+          buttons={[
+            {
+              label: '다시 입력',
+              onPress: () => setCodeWrongModalVisible(false),
+              style: {backgroundColor: colors.GRAY_300},
+            },
+            {
+              label: '재전송',
+              onPress: handleReSend,
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
       </View>
     </SafeAreaView>
   );
@@ -198,40 +215,17 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     gap: 20,
   },
+  errorMessageContainer: {
+    alignSelf: 'flex-start',
+    marginLeft: deviceWidth * 0.05,
+    marginTop: 8,
+  },
   smallContainer: {
+    width: deviceWidth * 0.84,
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
-  },
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
-  },
-  modalBox: {
-    width: deviceWidth * 0.85,
-    height: deviceHeight * 0.19375,
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.BLACK_500,
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  confirmButton: {
-    width: deviceWidth * 0.7277,
-    height: deviceHeight * 0.06125,
-    backgroundColor: colors.BLUE_700,
-    paddingVertical: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
+    gap: deviceWidth * 0.025,
   },
 });
 

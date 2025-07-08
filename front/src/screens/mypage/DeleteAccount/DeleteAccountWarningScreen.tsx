@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#999999',
-    lineHeight: 20, // ✅ 아이콘 크기와 맞추기 위해 줄 간격 설정
+    lineHeight: 20, // 아이콘 크기와 맞추기 위해 줄 간격 설정
   },
   infoText: {
     fontSize: 14,

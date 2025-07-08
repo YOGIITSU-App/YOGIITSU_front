@@ -10,13 +10,12 @@ import CompleteCheck from '../../../assets/CompleteCheck.svg';
 function ChangeEmailCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
-  // ✅ InquiryCompleteScreen 컴포넌트 내부에서
   useEffect(() => {
-    // ✅ 안드로이드 하드웨어 뒤로가기 차단
+    // 안드로이드 하드웨어 뒤로가기 차단
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
-        return true; // 뒤로가기 무시!
+        return true; // 뒤로가기 무시
       },
     );
     return () => {
@@ -24,30 +23,25 @@ function ChangeEmailCompleteScreen() {
     };
   }, [navigation]);
 
-  // ✅ 헤더 왼쪽 ← 버튼 없애기
+  // 헤더 왼쪽 ← 버튼 없애기
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerLeft: () => null, // ← 버튼 제거!
+      headerLeft: () => null, // ← 버튼 제거
     });
   }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ 체크 아이콘 */}
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
       </View>
-
-      {/* ✅ 안내 문구 */}
       <Text style={styles.title}>변경이 완료되었습니다</Text>
-
-      {/* ✅ 확인 버튼 */}
       <CustomBotton
         label="확인"
         variant="filled"
         size="large"
         onPress={() => {
-          navigation.navigate('MypageHome'); // ✅ MypageHomeScreen으로 이동
+          navigation.navigate('MypageHome');
         }}
       />
     </SafeAreaView>

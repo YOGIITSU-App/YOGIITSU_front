@@ -1,49 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from './axiosInstance';
-import EncryptedStorage from 'react-native-encrypted-storage';
 
 const authApi = {
-  // 로그인 요청
+  // [비로그인] 로그인
   login: (memberId: string, password: string) =>
     axiosInstance.post('/members/login', {
       memberId,
       password,
     }),
 
-  // 인증번호 이메일로 전송
-  sendCode: async (email: string) => {
-    const response = await axiosInstance.post('/send-mail/email', {
-      email,
-    });
-
-    const token = response.data?.token;
-
-    if (token) {
-      await EncryptedStorage.setItem('emailVerifyToken', token);
-    }
-
-    return response;
-  },
-
-  // 인증번호 확인
-  verifyCode: async (email: string, code: string) => {
-    const token = await EncryptedStorage.getItem('emailVerifyToken'); // 저장한 임시 토큰 불러오기
-
-    const response = await axiosInstance.post(
-      '/verify/code',
-      {email, code},
-      {
-        headers: {
-          'X-Email-Verification-Token': token ?? '',
-        },
-      },
-    );
-
-    return response;
-  },
-
-  // 회원가입
-  signup: async (
+  // [비로그인] 회원가입
+  signup: (
     memberId: string,
     password: string,
     email: string,
@@ -57,8 +23,13 @@ const authApi = {
     });
   },
 
-  // 비밀번호 재설정
-  resetPassword: async (
+  // [비로그인] 아이디 찾기
+  findId: (email: string) => {
+    return axiosInstance.post('/members/find-id', {email});
+  },
+
+  // [비로그인] 비밀번호 재설정 (이메일 인증 기반)
+  resetPassword: (
     newPassword: string,
     confirmPassword: string,
     email: string,
@@ -67,6 +38,21 @@ const authApi = {
       email,
       newPassword,
       confirmPassword,
+    });
+  },
+
+  // [로그인] 비밀번호 변경
+  changePassword: (newPassword: string, confirmPassword: string) => {
+    return axiosInstance.patch('/members/change-password', {
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  // [로그인] 회원 탈퇴
+  deleteAccount: (password: string) => {
+    return axiosInstance.delete('/members/delete', {
+      data: {password},
     });
   },
 };
