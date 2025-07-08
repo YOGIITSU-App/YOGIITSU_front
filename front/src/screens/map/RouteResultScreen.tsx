@@ -335,13 +335,13 @@ const RouteResultScreen: React.FC = () => {
         domStorageEnabled={true}
         originWhitelist={['*']}
         injectedJavaScriptBeforeContentLoaded={`
-    (function() {
-      document.addEventListener("message", function(e) {
-        window.dispatchEvent(new MessageEvent("message", { data: e.data }));
-      });
-    })();
-    true;
-  `}
+          (function() {
+            document.addEventListener("message", function(e) {
+              window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+            });
+          })();
+          true;
+        `}
         onLoadEnd={handleWebViewReady}
       />
 
@@ -391,13 +391,13 @@ const RouteResultScreen: React.FC = () => {
                     <View style={styles.circle}>
                       {isFirst && (
                         <Image
-                          source={require('../../assets/direction-icon.png')}
+                          source={require('../../assets/start-icon.png')}
                           style={styles.startIcon}
                         />
                       )}
                       {isLast && (
                         <Image // 도착 아이콘 변경 예정
-                          source={require('../../assets/direction-icon.png')}
+                          source={require('../../assets/arrival-icon.png')}
                           style={styles.startIcon}
                         />
                       )}

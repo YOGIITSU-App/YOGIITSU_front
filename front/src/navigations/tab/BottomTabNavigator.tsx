@@ -11,7 +11,7 @@ import {
   useNavigation,
   useNavigationState,
 } from '@react-navigation/native';
-import {mapNavigation} from '../../constants';
+import {colors, mapNavigation} from '../../constants';
 import React, {useEffect, useState} from 'react';
 
 export type BottomTabParamList = {
@@ -84,7 +84,7 @@ function BottomTabNavigator() {
           style={{
             width: 24,
             height: 24,
-            tintColor: isFocused ? 'blue' : 'gray',
+            ...(isFocused && {tintColor: colors.BLUE_700}),
           }}
           resizeMode="contain"
         />
@@ -92,7 +92,7 @@ function BottomTabNavigator() {
           style={{
             fontSize: 12,
             marginTop: 2,
-            color: isFocused ? 'blue' : 'gray',
+            color: isFocused ? colors.BLUE_700 : colors.BLACK_500,
           }}>
           {label}
         </Text>
