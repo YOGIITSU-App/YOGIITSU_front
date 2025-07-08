@@ -169,12 +169,10 @@ function MapHomeScreen() {
             })
           }>
           <View style={styles.searchBoxInput}>
-            <View style={styles.searchIcon}>
-              <Image
-                source={require('../../assets/Search-icon.png')}
-                style={styles.searchIcon}
-              />
-            </View>
+            <Image
+              source={require('../../assets/Search-icon.png')}
+              style={styles.searchIcon}
+            />
             <Text style={styles.searchInput}>어디로 떠나볼까요?</Text>
           </View>
         </TouchableOpacity>
