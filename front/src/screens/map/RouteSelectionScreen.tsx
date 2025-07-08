@@ -144,10 +144,7 @@ function RouteSelectionScreen() {
             </Text>
             {startLocation && !endLocation && (
               <TouchableOpacity onPress={swapLocations}>
-                <Image
-                  source={require('../../assets/swap.png')}
-                  style={styles.swapIcon}
-                />
+                <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -167,10 +164,7 @@ function RouteSelectionScreen() {
             </Text>
             {endLocation && !startLocation && (
               <TouchableOpacity onPress={swapLocations}>
-                <Image
-                  source={require('../../assets/swap.png')}
-                  style={styles.swapIcon}
-                />
+                <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
               </TouchableOpacity>
             )}
           </View>

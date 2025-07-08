@@ -64,6 +64,7 @@ export default function FavoriteBottomSheetContent({
                 style={styles.iconBox}>
                 <Image
                   source={require('../assets/favorite-bookmark-icon.png')}
+                  style={styles.favoriteIcon}
                 />
               </TouchableOpacity>
 
@@ -76,7 +77,10 @@ export default function FavoriteBottomSheetContent({
               <TouchableOpacity
                 onPress={() => onSelect(item)}
                 style={styles.iconBox}>
-                <Image source={require('../assets/direction-icon.png')} />
+                <Image
+                  source={require('../assets/start-icon.png')}
+                  style={styles.startIcon}
+                />
               </TouchableOpacity>
             </View>
           )}
@@ -101,6 +105,14 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     paddingHorizontal: 10,
+  },
+  favoriteIcon: {
+    width: 26,
+    height: 26,
+  },
+  startIcon: {
+    width: 28,
+    height: 28,
   },
   name: {
     flex: 1,

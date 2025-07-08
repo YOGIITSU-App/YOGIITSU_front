@@ -16,6 +16,10 @@ type CategoryItem = {
   label: string;
   icon: ImageSourcePropType;
   activeColor: string; // 선택됐을 때 배경색
+  iconSize?: {
+    width: number;
+    height: number;
+  };
 };
 
 type Props = {
@@ -31,24 +35,28 @@ const categories: CategoryItem[] = [
     label: '셔틀버스',
     icon: require('../assets/category-tabs/shuttle-bus.png'),
     activeColor: colors.BLUE_700,
+    iconSize: {width: 16, height: 17},
   },
   {
     type: 'PARKING',
     label: '주차',
     icon: require('../assets/category-tabs/parking.png'),
     activeColor: colors.YELLOW_700,
+    iconSize: {width: 17, height: 17},
   },
   {
     type: 'RESTAURANT',
     label: '식당',
     icon: require('../assets/category-tabs/restaurant.png'),
     activeColor: colors.BLUE_700,
+    iconSize: {width: 16, height: 18},
   },
   {
     type: 'CONVENIENCE_CAFE',
     label: '카페 및 편의점',
     icon: require('../assets/category-tabs/cafe.png'),
     activeColor: colors.YELLOW_700,
+    iconSize: {width: 18, height: 16},
   },
 ];
 
@@ -59,7 +67,7 @@ export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.container}>
-        {categories.map(({type, label, icon, activeColor}) => {
+        {categories.map(({type, label, icon, activeColor, iconSize}) => {
           const isSelected = selected === type;
           return (
             <TouchableOpacity
@@ -71,7 +79,11 @@ export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
               ]}>
               <Image
                 source={icon}
-                style={[styles.icon, isSelected && {tintColor: 'white'}]}
+                style={[
+                  styles.icon,
+                  iconSize,
+                  isSelected && {tintColor: 'white'},
+                ]}
               />
               <Text style={[styles.label, isSelected && {color: 'white'}]}>
                 {label}

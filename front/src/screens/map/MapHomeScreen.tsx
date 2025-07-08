@@ -137,7 +137,10 @@ function MapHomeScreen() {
     if (typeof buildingId === 'number') {
       navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
     }
-    globalThis.openFavoriteBottomSheet = open;
+    globalThis.openFavoriteBottomSheet = () => {
+      setSelectedCategory(null);
+      open();
+    };
     return () => {
       globalThis.openFavoriteBottomSheet = undefined;
     };
@@ -256,9 +259,9 @@ const styles = StyleSheet.create({
     left: '5%',
     width: deviceWidth * 0.9,
     height: 50,
-    paddingHorizontal: 10,
+    paddingHorizontal: 18,
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
@@ -272,18 +275,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
+    width: 16,
+    height: 16,
+    marginRight: 12,
   },
   searchInput: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.GRAY_500,
-  },
-  marker: {
-    width: 32,
-    height: 32,
+    color: colors.GRAY_1000,
+    lineHeight: 20,
   },
 });
 
