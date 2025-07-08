@@ -40,9 +40,9 @@ function FindIdScreen() {
   const handleCheckEmail = async () => {
     try {
       const res = await authApi.findId(emailcheak.values.email);
-      const {status, id} = res.data;
+      const {id} = res.data;
 
-      if (status?.toLowerCase() === 'error' || !id) {
+      if (!id) {
         setWrongModalVisible(true);
       } else {
         setFoundId(id);

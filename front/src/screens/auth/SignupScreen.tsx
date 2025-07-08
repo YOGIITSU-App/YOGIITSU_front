@@ -51,7 +51,6 @@ function SignupScreen() {
         signup.values.email,
         EmailVerificationPurpose.SIGNUP,
       );
-      console.log('응답 확인 👉', res.data);
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
