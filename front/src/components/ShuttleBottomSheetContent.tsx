@@ -13,45 +13,42 @@ import {colors} from '../constants';
 
 type Props = {
   data: ShuttleSchedule;
+  currentStopName: string;
 };
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
-const ShuttleBottomSheet = ({data}: Props) => {
-  const [selectedTime, setSelectedTime] = useState(data.nextShuttleTime[0]);
-  const extendedRoute = [...data.route, data.route[0]];
+const ShuttleBottomSheet = ({data, currentStopName}: Props) => {
+  const nearestTime = data.nextShuttleTime[0];
+  const extendedRoute = data.route;
 
   return (
     <View style={styles.container}>
       {/* 시간 선택 */}
       <View style={styles.timeSelector}>
-        {data.nextShuttleTime.map(time => (
-          <TouchableOpacity
-            key={time}
-            style={[
-              styles.timeButton,
-              selectedTime === time && styles.timeButtonActive,
-            ]}
-            onPress={() => setSelectedTime(time)}>
-            <View style={styles.timeButtonContent}>
-              <Image
-                source={require('../assets/category-tabs/shuttle-bus.png')}
-                style={[
-                  styles.busIcon,
-                  selectedTime === time && styles.busIconActive,
-                ]}
-              />
-              <Text
-                style={[
-                  styles.timeButtonText,
-                  selectedTime === time && styles.timeButtonTextActive,
-                ]}>
-                {time}
-              </Text>
+        {data.nextShuttleTime.map(time => {
+          const isNearest = time === nearestTime;
+          return (
+            <View
+              key={time}
+              style={[styles.timeButton, isNearest && styles.timeButtonActive]}>
+              <View style={styles.timeButtonContent}>
+                <Image
+                  source={require('../assets/category-tabs/shuttle-bus.png')}
+                  style={[styles.busIcon, isNearest && styles.busIconActive]}
+                />
+                <Text
+                  style={[
+                    styles.timeButtonText,
+                    isNearest && styles.timeButtonTextActive,
+                  ]}>
+                  {time}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
-        ))}
+          );
+        })}
       </View>
       {/* 노선 타임라인 */}
       <FlatList
@@ -61,27 +58,27 @@ const ShuttleBottomSheet = ({data}: Props) => {
         renderItem={({item, index}) => {
           const isFirst = index === 0;
           const isLast = index === extendedRoute.length - 1;
+          const isCurrentStop = item === currentStopName;
 
           return (
             <View style={styles.routeRow}>
               {/* 타임라인 선 + 점 */}
               <View style={styles.timeline}>
                 {!isFirst && <View style={styles.lineTop} />}
-                {isFirst ? (
+                {isCurrentStop ? (
                   <Image
                     source={require('../assets/category-tabs/shuttle-bus-marker.png')}
                     style={styles.timelineImage}
                   />
                 ) : (
-                  <View
-                    style={[styles.circle, isLast && styles.circleActive]}
-                  />
+                  <View style={styles.circle} />
                 )}
                 {!isLast && <View style={styles.lineBottom} />}
               </View>
               {/* 정류장 이름 */}
               <View style={styles.stopTextWrapper}>
-                <Text style={[styles.stopName, isFirst && styles.departure]}>
+                <Text
+                  style={[styles.stopName, isCurrentStop && styles.departure]}>
                   {item}
                 </Text>
                 {isLast && <Text style={styles.arrival}> 회차</Text>}
