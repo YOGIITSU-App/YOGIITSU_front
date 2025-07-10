@@ -1,5 +1,14 @@
 import React, {useState} from 'react';
-import {Alert, Dimensions, Modal, StyleSheet, Text, View} from 'react-native';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {authNavigations, colors} from '../../constants';
 import useForm from '../../hooks/useForms';
 import {validateSignup} from '../../utils';
@@ -38,11 +47,43 @@ function SignupScreen() {
     validate: validateSignup,
   });
 
+  const [agreements, setAgreements] = useState({
+    all: false,
+    age: false,
+    terms: false,
+    privacy: false,
+    loc: false,
+  });
+
   const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
   const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [codeCorrectModalVisible, setCodeCorrectModalVisible] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
+
+  const toggleAll = () => {
+    const newValue = !agreements.all;
+    setAgreements({
+      all: newValue,
+      age: newValue,
+      terms: newValue,
+      privacy: newValue,
+      loc: newValue,
+    });
+  };
+
+  const toggleOne = (key: keyof typeof agreements) => {
+    const updated = {...agreements, [key]: !agreements[key]};
+    updated.all =
+      updated.age && updated.terms && updated.privacy && updated.loc;
+    setAgreements(updated);
+  };
+
+  const handleNavigateToTermsDetail = (
+    type: 'age' | 'terms' | 'privacy' | 'loc',
+  ) => {
+    navigation.navigate(authNavigations.TERMS_DETAIL, {type});
+  };
 
   // 인증번호 전송
   const handleSendCode = async () => {
@@ -243,12 +284,103 @@ function SignupScreen() {
               />
             </View>
           </View>
+          <View style={styles.divider} />
+          <View style={{marginTop: 30}}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: '600',
+                marginBottom: 20,
+                color: colors.GRAY_500,
+              }}>
+              서비스 정책 동의
+            </Text>
+            <TouchableOpacity
+              onPress={toggleAll}
+              style={[
+                styles.agreeBox,
+                agreements.all && styles.agreeBoxChecked,
+              ]}>
+              <View style={styles.allagreeRow}>
+                <View
+                  style={[
+                    styles.checkCircle,
+                    agreements.all && styles.checkCircleChecked,
+                  ]}>
+                  <Image
+                    source={require('../../assets/check-icon.png')} // 회색 체크 아이콘
+                    style={[
+                      styles.allcheckIcon,
+                      agreements.all && {tintColor: colors.WHITE},
+                    ]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.allText,
+                    agreements.all && styles.allTextChecked,
+                  ]}>
+                  전체동의 (필수)
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {[
+              {key: 'age', label: '만 14세 이상입니다 (필수)'},
+              {key: 'terms', label: '서비스 이용약관에 동의 (필수)'},
+              {key: 'privacy', label: '개인정보 수집 및 이용에 동의 (필수)'},
+              {key: 'loc', label: '위치기반 서비스 이용에 동의 (필수)'},
+            ].map(item => (
+              <View key={item.key}>
+                <TouchableOpacity
+                  onPress={() => toggleOne(item.key as keyof typeof agreements)}
+                  style={styles.agreeRow}>
+                  <Image
+                    source={require('../../assets/check-icon.png')}
+                    style={[
+                      styles.checkIcon,
+                      agreements[item.key as keyof typeof agreements] && {
+                        tintColor: colors.BLUE_700,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.agreeText}>{item.label}</Text>
+                  <TouchableOpacity
+                    onPress={() => handleNavigateToTermsDetail(item.key as any)}
+                    style={{marginRight: 6, marginLeft: 'auto'}}>
+                    <Image
+                      source={require('../../assets/right-arrow-icon.png')}
+                      style={{
+                        tintColor: colors.GRAY_400,
+                      }}
+                    />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         </View>
       </KeyboardAwareScrollView>
       <View style={styles.completeButton}>
         <CustomBotton
-          label="가입하기"
-          inValid={!signup.isFormValid || !isVerified}
+          label={`동의 및 완료 ${
+            [
+              agreements.age,
+              agreements.terms,
+              agreements.privacy,
+              agreements.loc,
+            ].filter(Boolean).length
+          }/4`}
+          inValid={
+            !signup.isFormValid ||
+            !isVerified ||
+            !(
+              agreements.age &&
+              agreements.terms &&
+              agreements.privacy &&
+              agreements.loc
+            )
+          }
           onPress={handleSignup}
         />
       </View>
@@ -267,7 +399,7 @@ function SignupScreen() {
               label="로그인 하기"
               onPress={() => {
                 setCompleteModalVisible(false);
-                navigation.navigate(authNavigations.AUTH_HOME); // 혹은 원하는 화면
+                navigation.navigate(authNavigations.AUTH_HOME);
               }}
               style={styles.loginButton}
             />
@@ -384,6 +516,75 @@ const styles = StyleSheet.create({
     backgroundColor: colors.BLUE_700,
     borderRadius: 6,
     justifyContent: 'center',
+  },
+  divider: {
+    height: 1,
+    marginTop: 30,
+    backgroundColor: colors.GRAY_50,
+  },
+  agreeBox: {
+    backgroundColor: colors.GRAY_100,
+    borderRadius: 6,
+    paddingVertical: 15,
+    paddingHorizontal: 17,
+    marginBottom: 4,
+  },
+  agreeBoxChecked: {
+    backgroundColor: colors.BLUE_100,
+  },
+  allagreeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 17,
+    marginLeft: 22,
+    marginTop: 12,
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.GRAY_300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkCircleChecked: {
+    backgroundColor: colors.BLUE_700,
+  },
+  allcheckIcon: {
+    width: 12,
+    height: 8,
+    tintColor: colors.GRAY_100,
+  },
+  allText: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
+    color: colors.GRAY_500,
+  },
+  allTextChecked: {
+    color: colors.BLUE_700,
+  },
+  checkIcon: {
+    width: 12,
+    height: 8,
+    resizeMode: 'contain',
+  },
+  agreeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.GRAY_500,
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: colors.GRAY_500,
+    fontWeight: '500',
+    lineHeight: 18,
+    marginLeft: 22,
   },
 });
 

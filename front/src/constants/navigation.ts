@@ -4,6 +4,7 @@ const authNavigations = {
   SIGNUP: 'Signup',
   FINDID: 'FindId',
   FINDPW: 'FindPw',
+  TERMS_DETAIL: 'TermsDetail',
 } as const;
 
 const mapNavigation = {
