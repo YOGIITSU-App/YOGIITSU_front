@@ -9,6 +9,7 @@ import FindPwScreen from '../../screens/auth/FindPw/FindPwScreen';
 import BottomTabNavigator from '../tab/BottomTabNavigator';
 import FindPwCodeConfirmScreen from '../../screens/auth/FindPw/FindPwCodeConfirmScreen';
 import FindPwCompleteScreen from '../../screens/auth/FindPw/FindPwCompleteScreen';
+import TermsDetailScreen from '../../screens/auth/TermsDetailScreen';
 
 export type AuthStackParamList = {
   [authNavigations.AUTH_HOME]: undefined;
@@ -18,6 +19,7 @@ export type AuthStackParamList = {
   FindPw: {email: string};
   FindPwComplete: undefined;
   [authNavigations.SIGNUP]: undefined;
+  [authNavigations.TERMS_DETAIL]: {type: 'age' | 'terms' | 'privacy' | 'loc'};
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
@@ -100,6 +102,11 @@ function AuthStackNavigator() {
             borderBottomColor: colors.GRAY_200,
           },
         }}
+      />
+      <Stack.Screen
+        name={authNavigations.TERMS_DETAIL}
+        component={TermsDetailScreen}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );
