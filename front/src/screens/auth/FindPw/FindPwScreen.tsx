@@ -73,7 +73,7 @@ function FindPwScreen() {
         </View>
         <View style={styles.errorMessageContainer}>
           <CustomText
-            text="영문, 숫자, 특수문자를 포함한 8자리 이상"
+            text="영문, 숫자, 특수문자를 포함한 8~16자리"
             touched={pwconfirmcheak.touched.password}
             error={pwconfirmcheak.errors.password}
           />
