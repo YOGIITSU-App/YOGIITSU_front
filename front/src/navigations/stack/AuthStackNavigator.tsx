@@ -9,6 +9,7 @@ import FindPwScreen from '../../screens/auth/FindPw/FindPwScreen';
 import BottomTabNavigator from '../tab/BottomTabNavigator';
 import FindPwCodeConfirmScreen from '../../screens/auth/FindPw/FindPwCodeConfirmScreen';
 import FindPwCompleteScreen from '../../screens/auth/FindPw/FindPwCompleteScreen';
+import TermsDetailScreen from '../../screens/auth/TermsDetailScreen';
 
 export type AuthStackParamList = {
   [authNavigations.AUTH_HOME]: undefined;
@@ -18,9 +19,24 @@ export type AuthStackParamList = {
   FindPw: {email: string};
   FindPwComplete: undefined;
   [authNavigations.SIGNUP]: undefined;
+  [authNavigations.TERMS_DETAIL]: {type: 'age' | 'terms' | 'privacy' | 'loc'};
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
+function getTermsTitle(type: 'age' | 'terms' | 'privacy' | 'loc') {
+  switch (type) {
+    case 'age':
+      return '연령 확인';
+    case 'terms':
+      return '서비스 이용약관';
+    case 'privacy':
+      return '개인정보 수집 및 이용';
+    case 'loc':
+      return '위치기반 서비스';
+    default:
+      return '';
+  }
+}
 
 function AuthStackNavigator() {
   return (
@@ -100,6 +116,11 @@ function AuthStackNavigator() {
             borderBottomColor: colors.GRAY_200,
           },
         }}
+      />
+      <Stack.Screen
+        name={authNavigations.TERMS_DETAIL}
+        component={TermsDetailScreen}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );
