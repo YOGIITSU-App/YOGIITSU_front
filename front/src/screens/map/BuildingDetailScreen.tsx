@@ -161,6 +161,8 @@ export default function BuildingDetailScreen() {
               source={require('../../assets/bookmark-icon.png')}
               style={{
                 tintColor: isFavorite ? undefined : colors.GRAY_700,
+                width: 14,
+                height: 18,
               }}
             />
           </TouchableOpacity>

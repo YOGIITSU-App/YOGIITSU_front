@@ -249,7 +249,11 @@ export default function BuildingPreviewScreen() {
               <TouchableOpacity onPress={toggleFavorite}>
                 <Image
                   source={require('../../assets/bookmark-icon.png')}
-                  style={{tintColor: isFavorite ? undefined : colors.GRAY_700}}
+                  style={{
+                    tintColor: isFavorite ? undefined : colors.GRAY_700,
+                    width: 14,
+                    height: 18,
+                  }}
                 />
               </TouchableOpacity>
             </View>
