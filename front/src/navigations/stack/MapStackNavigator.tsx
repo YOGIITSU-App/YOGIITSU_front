@@ -2,11 +2,13 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import MapHomeScreen from '../../screens/map/MapHomeScreen';
 import SearchScreen from '../../screens/map/SearchScreen';
-import {mapNavigation} from '../../constants';
+import {colors, mapNavigation} from '../../constants';
 import RouteSelectionScreen from '../../screens/map/RouteSelectionScreen';
 import RouteResultScreen from '../../screens/map/RouteResultScreen';
 import BuildingPreviewScreen from '../../screens/map/BuildingPreviewScreen';
 import BuildingDetailScreen from '../../screens/map/BuildingDetailScreen';
+import ShortcutListScreen from '../../screens/map/ShortcutListScreen';
+import ShortcutDetailScreen from '../../screens/map/ShortcutDetailScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -68,6 +70,10 @@ export type MapStackParamList = {
     startBuildingId?: number;
     endBuildingId?: number;
   };
+  [mapNavigation.SHORTCUT_LIST]: undefined;
+  [mapNavigation.SHORTCUT_DETAIL]: {
+    shortcutId: number;
+  };
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -103,6 +109,22 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.ROUTE_RESULT}
         component={RouteResultScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name={mapNavigation.SHORTCUT_LIST}
+        component={ShortcutListScreen}
+        options={{
+          title: '지름길',
+          headerStyle: {backgroundColor: colors.BLUE_700},
+          headerTintColor: '#fff',
+          headerTitleStyle: {fontSize: 16, fontWeight: '600'},
+          headerTitleAlign: 'center',
+        }}
+      />
+      <Stack.Screen
+        name={mapNavigation.SHORTCUT_DETAIL}
+        component={ShortcutDetailScreen}
         options={{headerShown: false}}
       />
     </Stack.Navigator>
