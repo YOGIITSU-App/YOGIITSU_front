@@ -47,6 +47,7 @@ function MapHomeScreen() {
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [showShuttleBottomSheet, setShowShuttleBottomSheet] = useState(false);
   const shuttleSheetRef = useRef<BottomSheet>(null);
+  const [selectedStopName, setSelectedStopName] = useState<string>('');
 
   const mapWebViewRef = useRef<WebView>(null);
   const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html?ts=${Date.now()}`;
@@ -79,6 +80,7 @@ function MapHomeScreen() {
         try {
           const res = await fetchShuttleSchedule();
           setShuttleSchedule(res);
+          setSelectedStopName(data.name);
           setShowShuttleBottomSheet(true);
         } catch (err) {
           Alert.alert('오류', '셔틀버스 스케줄을 불러올 수 없습니다.');
@@ -205,17 +207,6 @@ function MapHomeScreen() {
           `}
         />
 
-        <TouchableOpacity
-          style={styles.shortcutButton}
-          onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}>
-          <Image
-            source={require('../../assets/shortcut-icon.png')}
-            style={{width: 24, height: 24, marginBottom: 4}}
-            resizeMode="contain"
-          />
-          <Text style={styles.shortcutButtonText}>지름길</Text>
-        </TouchableOpacity>
-
         {/* 바텀시트 */}
         {selectedCategory === 'SHUTTLE_BUS' &&
         showShuttleBottomSheet &&
@@ -234,7 +225,10 @@ function MapHomeScreen() {
                 shuttleSheetRef.current?.close();
               }
             }}>
-            <ShuttleBottomSheetContent data={shuttleSchedule} />
+            <ShuttleBottomSheetContent
+              data={shuttleSchedule}
+              currentStopName={selectedStopName}
+            />
           </BottomSheet>
         ) : visible ? (
           <BottomSheet
@@ -295,23 +289,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.GRAY_1000,
     lineHeight: 20,
-  },
-  shortcutButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-    width: 56,
-    height: 70,
-    backgroundColor: colors.BLUE_700,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shortcutButtonText: {
-    color: colors.WHITE,
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 2,
   },
 });
 
