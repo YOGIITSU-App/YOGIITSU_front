@@ -74,7 +74,8 @@ function SignupScreen() {
 
   const toggleOne = (key: keyof typeof agreements) => {
     const updated = {...agreements, [key]: !agreements[key]};
-    updated.all = updated.age && updated.terms && updated.privacy;
+    updated.all =
+      updated.age && updated.terms && updated.privacy && updated.loc;
     setAgreements(updated);
   };
 
@@ -325,7 +326,7 @@ function SignupScreen() {
             </TouchableOpacity>
 
             {[
-              {key: 'age', label: '만 18세 이상입니다 (필수)'},
+              {key: 'age', label: '만 14세 이상입니다 (필수)'},
               {key: 'terms', label: '서비스 이용약관에 동의 (필수)'},
               {key: 'privacy', label: '개인정보 수집 및 이용에 동의 (필수)'},
               {key: 'loc', label: '위치기반 서비스 이용에 동의 (필수)'},
@@ -363,14 +364,22 @@ function SignupScreen() {
       <View style={styles.completeButton}>
         <CustomBotton
           label={`동의 및 완료 ${
-            [agreements.age, agreements.terms, agreements.privacy].filter(
-              Boolean,
-            ).length
+            [
+              agreements.age,
+              agreements.terms,
+              agreements.privacy,
+              agreements.loc,
+            ].filter(Boolean).length
           }/4`}
           inValid={
             !signup.isFormValid ||
             !isVerified ||
-            !(agreements.age && agreements.terms && agreements.privacy)
+            !(
+              agreements.age &&
+              agreements.terms &&
+              agreements.privacy &&
+              agreements.loc
+            )
           }
           onPress={handleSignup}
         />

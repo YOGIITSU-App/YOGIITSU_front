@@ -23,20 +23,6 @@ export type AuthStackParamList = {
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
-function getTermsTitle(type: 'age' | 'terms' | 'privacy' | 'loc') {
-  switch (type) {
-    case 'age':
-      return '연령 확인';
-    case 'terms':
-      return '서비스 이용약관';
-    case 'privacy':
-      return '개인정보 수집 및 이용';
-    case 'loc':
-      return '위치기반 서비스';
-    default:
-      return '';
-  }
-}
 
 function AuthStackNavigator() {
   return (
