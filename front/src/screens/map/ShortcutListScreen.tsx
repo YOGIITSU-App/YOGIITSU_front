@@ -1,4 +1,4 @@
-import React, {useLayoutEffect} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {defaultTabOptions} from '../../constants/tabOptions';
 import {colors} from '../../constants';
 
 type Shortcut = {
@@ -77,15 +76,6 @@ const mockShortcuts: Shortcut[] = [
 
 export default function ShortcutListScreen() {
   const navigation = useNavigation<NavigationProp>();
-
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
-    };
-  }, [navigation]);
 
   const renderItem = ({item}: {item: Shortcut}) => (
     <TouchableOpacity
