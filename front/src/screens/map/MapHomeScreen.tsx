@@ -306,7 +306,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 20,
   },
   shortcutButtonText: {
     color: colors.WHITE,
