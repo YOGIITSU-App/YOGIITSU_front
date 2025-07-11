@@ -50,11 +50,8 @@ function MapHomeScreen() {
   const [selectedStopName, setSelectedStopName] = useState<string>('');
 
   const mapWebViewRef = useRef<WebView>(null);
-  const mapHtmlUrl = useMemo(
-    () =>
-      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html?ts=${Date.now()}`,
-    [],
-  );
+  const MAP_HTML_URL =
+    'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html';
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
@@ -194,11 +191,13 @@ function MapHomeScreen() {
         {/* 지도 */}
         <WebView
           ref={mapWebViewRef}
-          source={{uri: mapHtmlUrl}}
+          source={{uri: MAP_HTML_URL}}
           originWhitelist={['*']}
           javaScriptEnabled
           domStorageEnabled
           style={{flex: 1}}
+          cacheEnabled={true}
+          cacheMode="LOAD_DEFAULT"
           onLoadEnd={handleWebViewLoad}
           onMessage={handleWebViewMessage}
           injectedJavaScriptBeforeContentLoaded={`
