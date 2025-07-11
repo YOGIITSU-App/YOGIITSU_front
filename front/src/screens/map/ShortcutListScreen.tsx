@@ -20,11 +20,15 @@ export default function ShortcutListScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [shortcuts, setShortcuts] = useState<ShortcutSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchShortcuts()
       .then(setShortcuts)
-      .catch(err => console.warn('지름길 리스트 불러오기 실패:', err))
+      .catch(err => {
+        console.warn('지름길 리스트 불러오기 실패:', err);
+        setError('지름길 목록을 불러올 수 없습니다.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,6 +40,8 @@ export default function ShortcutListScreen() {
         return require('../../assets/shortcut/dormitory.png');
       case 3:
         return require('../../assets/shortcut/byway-root.png');
+      default:
+        return require('../../assets/shortcut/default-icon.png');
     }
   };
 
@@ -64,6 +70,29 @@ export default function ShortcutListScreen() {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.BLUE_700} />
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{color: 'red', marginBottom: 10}}>{error}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setError(null);
+            setLoading(true);
+            fetchShortcuts()
+              .then(setShortcuts)
+              .catch(err => {
+                console.warn('지름길 리스트 불러오기 실패:', err);
+                setError('지름길 목록을 불러올 수 없습니다.');
+              })
+              .finally(() => setLoading(false));
+          }}>
+          <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
+            재시도
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }

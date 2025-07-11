@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Image,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -36,6 +37,7 @@ export default function ShortcutDetailScreen() {
   // 2) 상세 데이터 상태
   const [detail, setDetail] = useState<ShortcutDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const webRef = useRef<WebView>(null);
 
@@ -58,7 +60,10 @@ export default function ShortcutDetailScreen() {
   useEffect(() => {
     fetchShortcutDetail(shortcutId)
       .then(data => setDetail(data))
-      .catch(err => console.warn('상세 불러오기 실패', err))
+      .catch(err => {
+        console.error('상세 불러오기 실패', err);
+        setDetailError('지름길 정보를 불러올 수 없습니다.');
+      })
       .finally(() => setDetailLoading(false));
   }, [shortcutId]);
 
@@ -87,6 +92,42 @@ export default function ShortcutDetailScreen() {
   }, [detail, mapLoaded]);
 
   const loading = detailLoading || !mapLoaded;
+
+  if (detailError) {
+    return (
+      <View style={[styles.container, styles.loading]}>
+        <Text style={{color: 'red', marginBottom: 12}}>{detailError}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setDetailError(null);
+            setDetailLoading(true);
+            fetchShortcutDetail(shortcutId)
+              .then(data => setDetail(data))
+              .catch(err => {
+                console.error('상세 불러오기 실패', err);
+                setDetailError('지름길 정보를 불러올 수 없습니다.');
+              })
+              .finally(() => setDetailLoading(false));
+          }}>
+          <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
+            재시도
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator
+          style={styles.loader}
+          size="large"
+          color={colors.BLUE_500}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -245,6 +286,11 @@ export default function ShortcutDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loader: {
     position: 'absolute',
     top: '50%',
@@ -259,20 +305,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
-  // headerTop: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   position: 'relative',
-  // },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    // paddingVertical: 5,
   },
   iconWrapper: {
-    width: 40, // ←, ✕ 이 들어가는 고정 width
+    width: 40,
     alignItems: 'center',
   },
   centerIconWrapper: {
@@ -292,7 +331,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   walkingIcon: {
-    width: 48, // 아이콘 사이즈에 맞게
+    width: 48,
     height: 30,
   },
   titleBox: {
