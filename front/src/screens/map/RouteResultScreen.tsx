@@ -23,13 +23,12 @@ import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import WebView from 'react-native-webview';
 
-const {height: WINDOW_HEIGHT} = Dimensions.get('window');
+const {height: deviceHeight} = Dimensions.get('window');
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
   typeof mapNavigation.ROUTE_RESULT
 >;
-
 type RouteResultScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.ROUTE_RESULT
@@ -40,15 +39,9 @@ interface Coordinate {
   longitude: number;
 }
 
-const RouteResultScreen: React.FC = () => {
+function RouteResultScreen() {
   const route = useRoute<RouteResultScreenRouteProp>();
   const navigation = useNavigation<RouteResultScreenNavigationProp>();
-
-  const webRef = useRef<WebView>(null);
-  const [headerH, setHeaderH] = useState(0);
-  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.35); // 초기 35%
-  const flatListRef = useRef<BottomSheetFlatListMethods>(null);
-
   const {
     startLocation,
     endLocation,
@@ -58,6 +51,34 @@ const RouteResultScreen: React.FC = () => {
     endBuildingId,
   } = route.params;
 
+  // WebView 레퍼런스 & 로딩 상태 관리
+  const webRef = useRef<WebView>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  // 바텀시트 내부 FlatList ref
+  const flatListRef = useRef<BottomSheetFlatListMethods>(null);
+
+  // 경로 API / 건물 상세 로딩 상태
+  const [routePath, setRoutePath] = useState<Coordinate[]>([]);
+  const [routeFeatures, setRouteFeatures] = useState<any[]>([]);
+  const [travelTime, setTravelTime] = useState<number | null>(null);
+  const [routeLoading, setRouteLoading] = useState(true);
+  const [startBuildingDetail, setStartBuildingDetail] =
+    useState<BuildingDetail | null>(null);
+  const [endBuildingDetail, setEndBuildingDetail] =
+    useState<BuildingDetail | null>(null);
+
+  // bottom sheet snap points 계산
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const snapPoints = useMemo(() => {
+    const collapsed = 0.35 * deviceHeight;
+    const expanded = deviceHeight - headerHeight;
+    return [collapsed, expanded];
+  }, [headerHeight]);
+
+  const isLoading = routeLoading || !mapLoaded;
+
+  // 출발/도착지 재검색으로 이동
   const navigateToSearch = (type: 'start' | 'end') => {
     navigation.push(mapNavigation.SEARCH, {
       selectionType: type,
@@ -71,190 +92,102 @@ const RouteResultScreen: React.FC = () => {
     });
   };
 
-  const [startBuildingDetail, setStartBuildingDetail] =
-    useState<BuildingDetail | null>(null);
-  const [endBuildingDetail, setEndBuildingDetail] =
-    useState<BuildingDetail | null>(null);
-  const [routePath, setRoutePath] = useState<Coordinate[]>([]);
-  const [routeFeatures, setRouteFeatures] = useState<any[]>([]);
-  const [travelTime, setTravelTime] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const parseCoord = (coordStr?: string): [number, number] | null => {
-    if (!coordStr) return null;
-    const [latStr, lonStr] = coordStr.split(',');
-    const lat = parseFloat(latStr);
-    const lon = parseFloat(lonStr);
-    if (isNaN(lat) || isNaN(lon)) return null;
-    return [lat, lon];
+  // 좌표 파싱
+  const parseCoord = (str?: string): [number, number] | null => {
+    if (!str) return null;
+    const [lat, lon] = str.split(',').map(Number);
+    return isNaN(lat) || isNaN(lon) ? null : [lat, lon];
   };
-
   const startCoord = parseCoord(startLocation);
   const endCoord = parseCoord(endLocation);
   if (!startCoord || !endCoord) {
     Alert.alert('에러', '위치 정보가 올바르지 않습니다');
     return null;
   }
-
   const [startLat, startLon] = startCoord;
   const [endLat, endLon] = endCoord;
 
-  const fetchWalkingRoute = async () => {
-    setLoading(true);
-    const url = `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${TMAP_API_KEY}`;
-    const requestData = {
-      startX: startLon,
-      startY: startLat,
-      endX: endLon,
-      endY: endLat,
-      reqCoordType: 'WGS84GEO',
-      resCoordType: 'WGS84GEO',
-      startName: startLocationName,
-      endName: endLocationName,
-      searchOption: '0',
-      sort: 'index',
-    };
+  // 맵 페이지 URL
+  const routeMapUrl = useMemo(
+    () => `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html`,
+    [],
+  );
 
-    try {
-      const response = await axios.post(url, requestData, {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+  // 1) 경로 API 호출
+  useEffect(() => {
+    setRouteLoading(true);
+    axios
+      .post(
+        `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${TMAP_API_KEY}`,
+        {
+          startX: startLon,
+          startY: startLat,
+          endX: endLon,
+          endY: endLat,
+          reqCoordType: 'WGS84GEO',
+          resCoordType: 'WGS84GEO',
+          startName: startLocationName,
+          endName: endLocationName,
+          searchOption: '0',
+          sort: 'index',
         },
-      });
-
-      if (response.data?.features) {
-        const props = response.data.features[0].properties;
-        setTravelTime(Math.ceil(props.totalTime / 60));
-
-        const lineStrings = response.data.features.filter(
-          (feature: any) => feature.geometry.type === 'LineString',
-        );
+      )
+      .then(res => {
+        const features = res.data.features;
+        const totalTime = features[0].properties.totalTime;
+        setTravelTime(Math.ceil(totalTime / 60));
+        setRouteFeatures(features);
         const coords: Coordinate[] = [];
-        lineStrings.forEach((feature: any) => {
-          feature.geometry.coordinates.forEach((coord: number[]) => {
-            coords.push({latitude: coord[1], longitude: coord[0]});
-          });
-        });
+        features
+          .filter((f: any) => f.geometry.type === 'LineString')
+          .forEach((f: any) =>
+            f.geometry.coordinates.forEach((c: number[]) =>
+              coords.push({latitude: c[1], longitude: c[0]}),
+            ),
+          );
         setRoutePath(coords);
-        setRouteFeatures(response.data.features);
-      } else {
-        Alert.alert('오류', '경로 데이터를 가져올 수 없습니다.');
-      }
-    } catch (error: any) {
-      Alert.alert(
-        '길찾기 오류',
-        error.response?.data?.message || '길찾기 요청 실패',
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      })
+      .catch(() => Alert.alert('오류', '경로 데이터를 가져올 수 없습니다.'))
+      .finally(() => setRouteLoading(false));
+  }, [startLocation, endLocation]);
 
+  // 1-1) 출발/도착 건물 상세 정보 로드
   useEffect(() => {
     if (startBuildingId) {
       buildingApi
         .getBuildingDetail(startBuildingId)
         .then(res => setStartBuildingDetail(res.data))
-        .catch(err => console.error('출발지 건물 정보 로드 실패:', err));
+        .catch(() => console.error('출발지 정보 로드 실패'));
     }
-
     if (endBuildingId) {
       buildingApi
         .getBuildingDetail(endBuildingId)
         .then(res => setEndBuildingDetail(res.data))
-        .catch(err => console.error('도착지 건물 정보 로드 실패:', err));
+        .catch(() => console.error('도착지 정보 로드 실패'));
     }
+  }, [startBuildingId, endBuildingId]);
 
-    fetchWalkingRoute();
-  }, [startLocation, endLocation, startBuildingId, endBuildingId]);
-
-  const routeSteps = useMemo(() => {
-    const result: any[] = [];
-
-    // 출발 Point
-    result.push({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [startLon, startLat],
-      },
-      properties: {
-        description: `${startLocationName} 출발`,
-        pointType: 'SP',
-        turnType: 200,
-      },
-    });
-
-    // 중간 경로
-    for (let i = 0; i < routeFeatures.length; i++) {
-      const current = routeFeatures[i];
-      const next = routeFeatures[i + 1];
-
-      if (current.geometry.type === 'Point') {
-        const isEnd = current.properties.pointType === 'EP';
-
-        const step = {
-          ...current,
-          properties: {
-            ...current.properties,
-            description: isEnd
-              ? `${endLocationName} 도착` // 도착 Point
-              : current.properties.description,
-            distance: next?.properties?.distance ?? null,
-          },
-        };
-        result.push(step);
-      }
-    }
-
-    return result;
-  }, [routeFeatures, startLat, startLon, startLocationName, endLocationName]);
-
-  const handleSwap = () => {
-    navigation.replace(mapNavigation.ROUTE_RESULT, {
-      startLocation: endLocation,
-      startLocationName:
-        endLocationName === '도착지 선택' ? '출발지 선택' : endLocationName,
-      endLocation: startLocation,
-      endLocationName:
-        startLocationName === '출발지 선택' ? '도착지 선택' : startLocationName,
-      startBuildingId: endBuildingId ?? undefined,
-      endBuildingId: startBuildingId ?? undefined,
-    });
+  /** 2) WebView 로드 완료 시 */
+  const onWebViewLoadEnd = () => {
+    setMapLoaded(true);
   };
 
-  const handleWebViewReady = () => {
-    if (!webRef.current || routePath.length === 0) return;
-
-    // 출발 마커
-    webRef.current.postMessage(
-      JSON.stringify({
-        type: 'customMarker',
-        lat: startLat,
-        lng: startLon,
-      }),
+  /** 3) mapLoaded && routePath 준비되면 지도에 그리기 */
+  useEffect(() => {
+    if (!mapLoaded || routePath.length === 0) return;
+    webRef.current?.postMessage(
+      JSON.stringify({type: 'customMarker', lat: startLat, lng: startLon}),
     );
-
-    // 도착 마커
-    webRef.current.postMessage(
-      JSON.stringify({
-        type: 'customMarker',
-        lat: endLat,
-        lng: endLon,
-      }),
+    webRef.current?.postMessage(
+      JSON.stringify({type: 'customMarker', lat: endLat, lng: endLon}),
     );
-
-    // 경로
-    webRef.current.postMessage(
+    webRef.current?.postMessage(
       JSON.stringify({
         type: 'drawRoute',
         path: routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
       }),
     );
-
-    // 확대 및 중심이동
-    webRef.current.postMessage(
+    webRef.current?.postMessage(
       JSON.stringify({
         type: 'fitBounds',
         path: [
@@ -264,76 +197,120 @@ const RouteResultScreen: React.FC = () => {
         ],
       }),
     );
+  }, [mapLoaded, routePath]);
+
+  /** 4) 출발/도착 swap (params 갱신만) */
+  const handleSwap = () => {
+    navigation.setParams({
+      startLocation: endLocation,
+      startLocationName:
+        endLocationName === '도착지' ? '출발지' : endLocationName,
+      endLocation: startLocation,
+      endLocationName:
+        startLocationName === '출발지' ? '도착지' : startLocationName,
+      startBuildingId: endBuildingId,
+      endBuildingId: startBuildingId,
+    });
   };
+
+  /** BottomSheet 단계별 안내 리스트 */
+  const routeSteps = useMemo(() => {
+    const steps: any[] = [];
+    steps.push({
+      type: 'Feature',
+      geometry: {type: 'Point', coordinates: [startLon, startLat]},
+      properties: {
+        description: `${startLocationName} 출발`,
+        pointType: 'SP',
+        turnType: 200,
+      },
+    });
+    for (let i = 0; i < routeFeatures.length; i++) {
+      const cur = routeFeatures[i];
+      const nxt = routeFeatures[i + 1];
+      if (cur.geometry.type === 'Point') {
+        const isEnd = cur.properties.pointType === 'EP';
+        steps.push({
+          ...cur,
+          properties: {
+            ...cur.properties,
+            description: isEnd
+              ? `${endLocationName} 도착`
+              : cur.properties.description,
+            distance: nxt?.properties?.distance ?? null,
+          },
+        });
+      }
+    }
+    return steps;
+  }, [routeFeatures]);
 
   return (
     <View style={styles.container}>
-      {loading && (
+      {isLoading && (
         <ActivityIndicator
           style={styles.loader}
           size="large"
           color={colors.BLUE_500}
         />
       )}
+
+      {/* 헤더 */}
       <View
         style={styles.headerWrapper}
-        onLayout={e => setHeaderH(e.nativeEvent.layout.height)}>
-        <TouchableOpacity
-          style={styles.closeBtn}
-          onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-          <Text style={styles.closeBtnText}>✕</Text>
-        </TouchableOpacity>
-
-        {/* 걷기 아이콘 */}
-        <View style={styles.modeIconWrapper}>
-          <Image
-            source={require('../../assets/walking-icon.png')}
-            style={{width: 48, height: 30}}
-            resizeMode="contain"
-          />
+        onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <View style={styles.headerTop}>
+          <View style={styles.placeholder} />
+          <View style={styles.modeIconWrapper}>
+            <Image
+              source={require('../../assets/walking-icon.png')}
+              style={{width: 48, height: 30}}
+              resizeMode="contain"
+            />
+          </View>
+          <TouchableOpacity
+            hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+            onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+            <Text style={styles.closeBtnText}>✕</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* 출발지 / 도착지 입력 영역 */}
         <View style={styles.inputBox}>
-          {/* 출발지 & 도착지 */}
           <View style={styles.inputCol}>
             <TouchableOpacity
               style={styles.inputRow}
               onPress={() => navigateToSearch('start')}>
               <Text style={styles.inputText}>{startLocationName}</Text>
             </TouchableOpacity>
-
             <View style={styles.divider} />
-
             <TouchableOpacity
               style={styles.inputRow}
               onPress={() => navigateToSearch('end')}>
               <Text style={styles.inputText}>{endLocationName}</Text>
             </TouchableOpacity>
           </View>
-
-          {/* ⇅ 전환 버튼 */}
           <TouchableOpacity style={styles.switchBtn} onPress={handleSwap}>
             <Text style={{fontSize: 16, color: 'white'}}>⇅</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* WebView */}
       <WebView
         ref={webRef}
-        source={{
-          uri: `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html?ts=${Date.now()}`,
-        }}
+        source={{uri: routeMapUrl}}
         style={{
           position: 'absolute',
-          top: headerH, // 헤더 아래부터
+          top: 0,
           left: 0,
           right: 0,
-          bottom: bottomH, // 바텀시트 위까지
+          bottom: deviceHeight * 0.35,
         }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
+        javaScriptEnabled
+        domStorageEnabled
         originWhitelist={['*']}
+        cacheEnabled={true}
+        cacheMode="LOAD_DEFAULT"
+        onLoadEnd={onWebViewLoadEnd}
         injectedJavaScriptBeforeContentLoaded={`
           (function() {
             document.addEventListener("message", function(e) {
@@ -342,22 +319,19 @@ const RouteResultScreen: React.FC = () => {
           })();
           true;
         `}
-        onLoadEnd={handleWebViewReady}
       />
 
-      {/* 하단 바텀시트 */}
+      {/* 경로 단계별 안내 */}
       <BottomSheet
-        snapPoints={['35%', '80%']}
+        snapPoints={snapPoints}
         index={0}
-        enableContentPanningGesture={true}
-        enableHandlePanningGesture={true}
+        enableContentPanningGesture
+        enableHandlePanningGesture
         enableOverDrag={false}
         style={{flex: 1}}
-        onChange={index => {
-          if (index === 0) {
-            // 바텀시트 내려왔을 때 안에 내용 스크롤 초기화
+        onChange={idx => {
+          if (idx === 0)
             flatListRef.current?.scrollToOffset({offset: 0, animated: true});
-          }
         }}>
         <View style={styles.sheetHeader}>
           <Text style={styles.headerTitle}>경로 안내</Text>
@@ -365,12 +339,10 @@ const RouteResultScreen: React.FC = () => {
             <Text style={styles.travelTime}>⏱ 약 {travelTime}분 소요</Text>
           )}
         </View>
-
         <BottomSheetFlatList
           ref={flatListRef}
           data={routeSteps}
-          keyExtractor={(_, idx) => `step-${idx}`}
-          scrollEnabled={true}
+          keyExtractor={(_, i) => `step-${i}`}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 20,
@@ -380,45 +352,35 @@ const RouteResultScreen: React.FC = () => {
             const {description, distance} = item.properties;
             const isFirst = index === 0;
             const isLast = index === routeSteps.length - 1;
-
             return (
               <View style={styles.stepRow}>
-                {/* 타임라인 */}
+                {/* 타임라인 아이콘 */}
                 <View style={styles.timelineContainer}>
                   {!isFirst && <View style={styles.verticalLineTop} />}
-
                   {isFirst || isLast ? (
                     <View style={styles.circle}>
-                      {isFirst && (
-                        <Image
-                          source={require('../../assets/start-icon.png')}
-                          style={styles.startIcon}
-                        />
-                      )}
-                      {isLast && (
-                        <Image // 도착 아이콘 변경 예정
-                          source={require('../../assets/arrival-icon.png')}
-                          style={styles.startIcon}
-                        />
-                      )}
+                      <Image
+                        source={
+                          isFirst
+                            ? require('../../assets/start-icon.png')
+                            : require('../../assets/arrival-icon.png')
+                        }
+                        style={styles.startIcon}
+                      />
                     </View>
                   ) : (
                     <View style={styles.donutOuter}>
                       <View style={styles.donutInner} />
                     </View>
                   )}
-
                   {!isLast && <View style={styles.verticalLineBottom} />}
                 </View>
-
-                {/* 안내 내용 */}
+                {/* 안내 텍스트 & 거리 & 이미지 */}
                 <View style={styles.stepContent}>
                   <Text style={styles.stepTitle}>{description}</Text>
-                  <Text style={styles.stepDistance}>
-                    {distance != null ? `${distance}m` : ''}
-                  </Text>
-
-                  {/* 출발지 이미지 */}
+                  {distance != null && (
+                    <Text style={styles.stepDistance}>{distance}m</Text>
+                  )}
                   {isFirst && startBuildingDetail?.buildingInfo.imageUrl && (
                     <Image
                       source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
@@ -426,8 +388,6 @@ const RouteResultScreen: React.FC = () => {
                       resizeMode="cover"
                     />
                   )}
-
-                  {/* 도착지 이미지 */}
                   {isLast && endBuildingDetail?.buildingInfo.imageUrl && (
                     <Image
                       source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
@@ -443,7 +403,7 @@ const RouteResultScreen: React.FC = () => {
       </BottomSheet>
     </View>
   );
-};
+}
 
 export default RouteResultScreen;
 
@@ -458,28 +418,28 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    position: 'relative',
     paddingTop: 5,
     paddingBottom: 20,
     paddingHorizontal: 16,
     backgroundColor: colors.BLUE_700,
-    zIndex: 10,
   },
-  closeBtn: {
-    position: 'absolute',
-    right: 13,
-    padding: 5,
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'relative',
   },
   closeBtnText: {
-    fontSize: 22,
     color: 'white',
+    fontSize: 20,
+    padding: 5,
+  },
+  placeholder: {
+    width: 30,
   },
   modeIconWrapper: {
     alignItems: 'center',
-    marginBottom: 10,
   },
   inputBox: {
     flexDirection: 'row',
@@ -488,6 +448,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    marginTop: 10,
   },
   inputCol: {
     flex: 1,
