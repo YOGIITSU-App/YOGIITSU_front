@@ -27,7 +27,6 @@ import favoriteApi from '../../api/favoriteApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('window').height;
-const {height: WINDOW_HEIGHT} = Dimensions.get('window');
 
 const facilityIconMap: {[key: string]: any} = {
   엘리베이터: require('../../assets/elevator-icon.png'),
@@ -50,10 +49,12 @@ export default function BuildingPreviewScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-preview.html?ts=${Date.now()}`;
+  const mapHtmlUrl = useMemo(
+    () =>
+      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-preview.html`,
+    [],
+  );
   const mapWebViewRef = useRef<WebView>(null);
-  const [bottomH, setBottomH] = useState(WINDOW_HEIGHT * 0.51);
-
   const [loading, setLoading] = useState(true);
 
   const [startLocation, setStartLocation] = useState('');
@@ -216,8 +217,11 @@ export default function BuildingPreviewScreen() {
           top: 0,
           left: 0,
           right: 0,
-          bottom: bottomH,
+          bottom: deviceHeight * 0.5,
         }}
+        cacheEnabled={true}
+        cacheMode="LOAD_DEFAULT"
+        onLoadEnd={handleMapLoaded}
         injectedJavaScriptBeforeContentLoaded={`
             (function() {
               document.addEventListener("message", function(e) {
@@ -226,13 +230,12 @@ export default function BuildingPreviewScreen() {
             })();
             true;
           `}
-        onLoadEnd={handleMapLoaded}
       />
 
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
-        snapPoints={['55%', '80%']}
+        snapPoints={[deviceHeight * 0.5, '80%']}
         enableContentPanningGesture={true}
         enableHandlePanningGesture={true}
         enableOverDrag={false}
