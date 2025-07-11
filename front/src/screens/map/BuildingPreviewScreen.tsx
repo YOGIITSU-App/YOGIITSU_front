@@ -64,6 +64,14 @@ export default function BuildingPreviewScreen() {
   const [endLocationName, setEndLocationName] = useState('');
   const [endBuildingId, setEndBuildingId] = useState<number | undefined>();
 
+  // bottom sheet snap points 계산
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const snapPoints = useMemo(() => {
+    const collapsed = 0.5 * deviceHeight;
+    const expanded = deviceHeight - headerHeight;
+    return [collapsed, expanded];
+  }, [headerHeight]);
+
   useEffect(() => {
     const {
       startLocation,
@@ -235,7 +243,7 @@ export default function BuildingPreviewScreen() {
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
-        snapPoints={[deviceHeight * 0.5, '80%']}
+        snapPoints={snapPoints}
         enableContentPanningGesture={true}
         enableHandlePanningGesture={true}
         enableOverDrag={false}
