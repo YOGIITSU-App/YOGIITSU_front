@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -50,7 +50,11 @@ function MapHomeScreen() {
   const [selectedStopName, setSelectedStopName] = useState<string>('');
 
   const mapWebViewRef = useRef<WebView>(null);
-  const mapHtmlUrl = `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html?ts=${Date.now()}`;
+  const mapHtmlUrl = useMemo(
+    () =>
+      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html?ts=${Date.now()}`,
+    [],
+  );
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
