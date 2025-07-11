@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,85 +6,48 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {colors} from '../../constants';
-
-type Shortcut = {
-  shortcutId: number;
-  pointA: string;
-  pointB: string;
-  distance: number;
-  duration: number;
-  icon: any;
-};
+import {fetchShortcuts, ShortcutSummary} from '../../api/shortcutApi';
 
 type NavigationProp = StackNavigationProp<MapStackParamList, 'ShortcutList'>;
 
-const mockShortcuts: Shortcut[] = [
-  {
-    shortcutId: 1,
-    pointA: '학군단',
-    pointB: '법정대학',
-    distance: 500,
-    duration: 360, // 초 단위 (분으로 나눌거니까!)
-    icon: require('../../assets/shortcut/rotc.png'),
-  },
-  {
-    shortcutId: 2,
-    pointA: '기숙사',
-    pointB: 'IT 3층',
-    distance: 480,
-    duration: 300,
-    icon: require('../../assets/shortcut/dormitory.png'),
-  },
-  {
-    shortcutId: 3,
-    pointA: '알촌 입구',
-    pointB: 'IT 샛길',
-    distance: 450,
-    duration: 300,
-    icon: require('../../assets/shortcut/byway-root.png'),
-  },
-  {
-    shortcutId: 4,
-    pointA: '쪽문',
-    pointB: '미래 2층',
-    distance: 300,
-    duration: 240,
-    icon: require('../../assets/shortcut/side-door.png'),
-  },
-  {
-    shortcutId: 5,
-    pointA: '체대',
-    pointB: '계단으로 미혁',
-    distance: 420,
-    duration: 360,
-    icon: require('../../assets/shortcut/gym.png'),
-  },
-  {
-    shortcutId: 6,
-    pointA: '외부(예담)',
-    pointB: '공대 입구',
-    distance: 520,
-    duration: 420,
-    icon: require('../../assets/shortcut/engineering.png'),
-  },
-];
-
 export default function ShortcutListScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const [shortcuts, setShortcuts] = useState<ShortcutSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderItem = ({item}: {item: Shortcut}) => (
+  useEffect(() => {
+    fetchShortcuts()
+      .then(setShortcuts)
+      .catch(err => console.warn('지름길 리스트 불러오기 실패:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const getIcon = (shortcutId: number) => {
+    switch (shortcutId) {
+      case 1:
+        return require('../../assets/shortcut/gym.png');
+      case 2:
+        return require('../../assets/shortcut/dormitory.png');
+      case 3:
+        return require('../../assets/shortcut/byway-root.png');
+    }
+  };
+
+  const renderItem = ({item}: {item: ShortcutSummary}) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() =>
-        navigation.navigate('ShortcutDetail', {shortcutId: item.shortcutId})
-      }>
+      onPress={() => {
+        navigation.navigate('ShortcutDetail', {shortcutId: item.shortcutId});
+        console.log(item.shortcutId);
+      }}>
       <View style={styles.iconWrapper}>
-        <Image source={item.icon} style={styles.icon} />
+        <Image source={getIcon(item.shortcutId)} style={styles.icon} />
       </View>
       <View style={styles.info}>
         <Text style={styles.title}>
@@ -97,10 +60,18 @@ export default function ShortcutListScreen() {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.BLUE_700} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={mockShortcuts}
+        data={shortcuts}
         keyExtractor={item => item.shortcutId.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
@@ -111,6 +82,11 @@ export default function ShortcutListScreen() {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   list: {padding: 16},
   card: {
     backgroundColor: '#fff',

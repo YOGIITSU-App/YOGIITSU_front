@@ -1,104 +1,92 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {View, Text, StyleSheet, ActivityIndicator, Image} from 'react-native';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+  Dimensions,
+} from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {BottomSheetFlatList} from '@gorhom/bottom-sheet';
-import {colors} from '../../constants';
-import {useNavigation} from '@react-navigation/native';
+import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
+import {fetchShortcutDetail, ShortcutDetail} from '../../api/shortcutApi';
+import {colors, mapNavigation} from '../../constants';
 
-type Coordinate = {
-  latitude: number;
-  longitude: number;
-  pointOrder: number;
-  description: string;
-  turnType: string;
-  segmentDistance: number;
-  imageUrl?: string;
-};
+type ShortcutDetailRouteProp = RouteProp<
+  MapStackParamList,
+  typeof mapNavigation.SHORTCUT_DETAIL
+>;
+type NavigationProp = StackNavigationProp<
+  MapStackParamList,
+  typeof mapNavigation.SHORTCUT_DETAIL
+>;
 
 export default function ShortcutDetailScreen() {
-  const navigation = useNavigation<StackNavigationProp<MapStackParamList>>();
+  const deviceHeight = Dimensions.get('window').height;
+  const route = useRoute<ShortcutDetailRouteProp>();
+  const navigation = useNavigation<NavigationProp>();
+  const {shortcutId} = route.params;
+
+  // 1) map 로딩 상태
+  const [mapLoaded, setMapLoaded] = useState(false);
+  // 2) 상세 데이터 상태
+  const [detail, setDetail] = useState<ShortcutDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(true);
 
   const webRef = useRef<WebView>(null);
-  const [headerH, setHeaderH] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  const mock = {
-    shortcutId: '1',
-    pointA: '기숙사',
-    pointB: 'IT 3층',
-    distance: 150,
-    duration: 2,
-    coordinates: [
-      {
-        latitude: 37.21,
-        longitude: 126.975,
-        pointOrder: 1,
-        description: '기숙사 앞에서 출발',
-        turnType: 'STRAIGHT',
-        segmentDistance: 20,
-        imageUrl: 'https://example.com/image1.jpg',
-      },
-      {
-        latitude: 37.211,
-        longitude: 126.976,
-        pointOrder: 2,
-        description: '건물 사이 길로 직진',
-        turnType: 'STRAIGHT',
-        segmentDistance: 50,
-      },
-      {
-        latitude: 37.213,
-        longitude: 126.977,
-        pointOrder: 1,
-        description: '우회전해서 쭉 직진',
-        turnType: 'STRAIGHT',
-        segmentDistance: 20,
-        imageUrl: 'https://example.com/image2.jpg',
-      },
-    ],
+  // 맵 페이지 URL
+  const shortcutMapUrl = useMemo(
+    () =>
+      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-shortcut.html`,
+    [],
+  );
+
+  // bottom sheet snap points 계산
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const snapPoints = useMemo(() => {
+    const collapsed = 0.35 * deviceHeight;
+    const expanded = deviceHeight - headerHeight;
+    return [collapsed, expanded];
+  }, [headerHeight]);
+
+  // 1) 상세 API 호출
+  useEffect(() => {
+    fetchShortcutDetail(shortcutId)
+      .then(data => setDetail(data))
+      .catch(err => console.warn('상세 불러오기 실패', err))
+      .finally(() => setDetailLoading(false));
+  }, [shortcutId]);
+
+  // 2) map 로드 완료 시
+  const onWebViewLoadEnd = () => {
+    setMapLoaded(true);
   };
 
-  const {pointA, pointB, distance, duration, coordinates} = mock;
+  // 3) detail & mapLoaded 가 모두 true 될 때만 그리기
+  useEffect(() => {
+    if (!detail || !mapLoaded) return;
 
-  const handleWebViewReady = () => {
-    if (!coordinates || coordinates.length === 0) return;
-
-    const path = coordinates.map(coord => ({
-      lat: coord.latitude,
-      lng: coord.longitude,
+    const path = detail.coordinates.map(c => ({
+      lat: c.latitude,
+      lng: c.longitude,
     }));
+    webRef.current?.postMessage(JSON.stringify({type: 'drawShortcut', path}));
 
-    webRef.current?.postMessage(
-      JSON.stringify({
-        type: 'drawShortcut',
-        path,
-      }),
+    const start = detail.coordinates[0];
+    const end = detail.coordinates[detail.coordinates.length - 1];
+    [start, end].forEach(p =>
+      webRef.current?.postMessage(
+        JSON.stringify({type: 'marker', lat: p.latitude, lng: p.longitude}),
+      ),
     );
+  }, [detail, mapLoaded]);
 
-    const start = coordinates[0];
-    const end = coordinates[coordinates.length - 1];
-
-    webRef.current?.postMessage(
-      JSON.stringify({
-        type: 'marker',
-        lat: start.latitude,
-        lng: start.longitude,
-      }),
-    );
-
-    webRef.current?.postMessage(
-      JSON.stringify({
-        type: 'marker',
-        lat: end.latitude,
-        lng: end.longitude,
-      }),
-    );
-
-    setLoading(false);
-  };
+  const loading = detailLoading || !mapLoaded;
 
   return (
     <View style={styles.container}>
@@ -110,53 +98,44 @@ export default function ShortcutDetailScreen() {
         />
       )}
 
-      {/* 상단 정보 */}
+      {/* Header */}
       <View
         style={styles.header}
-        onLayout={e => setHeaderH(e.nativeEvent.layout.height)}>
+        onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
         <View style={styles.headerTop}>
-          {/* 왼쪽: ← */}
-          <Text style={styles.iconLeft} onPress={() => navigation.goBack()}>
+          <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
             ←
           </Text>
-
-          {/* 중앙: 걷기 아이콘 (고정 중앙) */}
           <Image
             source={require('../../assets/walking-icon.png')}
             style={styles.walkingIcon}
-            resizeMode="contain"
           />
-
-          {/* 오른쪽: ✕ */}
           <Text
-            style={styles.iconRight}
-            onPress={() => navigation.navigate('MapHome')}>
+            onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
+            style={styles.iconRight}>
             ✕
           </Text>
         </View>
         <View style={styles.titleBox}>
-          <Text style={styles.pointText}>{pointA}</Text>
+          <Text style={styles.pointText}>{detail?.pointA}</Text>
           <Text style={styles.arrowIcon}>↔</Text>
-          <Text style={styles.pointText}>{pointB}</Text>
+          <Text style={styles.pointText}>{detail?.pointB}</Text>
         </View>
       </View>
 
-      {/* 지도 WebView */}
+      {/* WebView */}
       <WebView
         ref={webRef}
-        source={{
-          uri: `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-shortcut.html?ts=${Date.now()}`,
-        }}
+        source={{uri: shortcutMapUrl}}
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          bottom: '42%',
+          bottom: deviceHeight * 0.35,
         }}
-        javaScriptEnabled
-        domStorageEnabled
-        originWhitelist={['*']}
+        cacheEnabled={true}
+        cacheMode="LOAD_DEFAULT"
         injectedJavaScriptBeforeContentLoaded={`
           (function() {
             document.addEventListener("message", function(e) {
@@ -165,21 +144,26 @@ export default function ShortcutDetailScreen() {
           })();
           true;
         `}
-        onLoadEnd={handleWebViewReady}
+        onLoadEnd={onWebViewLoadEnd}
       />
 
+      {/* 요약 박스 */}
       <View style={[styles.summaryBox, {bottom: '37%'}]}>
         <Text style={styles.summaryText}>
-          {mock.distance}m · 약 {mock.duration}분 소요
+          {detail?.distance}m · 약 {detail?.duration}분 소요
         </Text>
       </View>
 
-      {/* 바텀시트 안내 리스트 */}
-      <BottomSheet index={0} snapPoints={['35%', '85%']}>
+      {/* 안내 BottomSheet */}
+      <BottomSheet
+        index={0}
+        snapPoints={snapPoints}
+        enableContentPanningGesture
+        enableHandlePanningGesture
+        enableOverDrag={false}>
         <BottomSheetFlatList
-          data={coordinates}
-          keyExtractor={(_, idx) => `step-${idx}`}
-          scrollEnabled={true}
+          data={detail?.coordinates || []}
+          keyExtractor={c => c.pointOrder.toString()}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 20,
@@ -187,46 +171,37 @@ export default function ShortcutDetailScreen() {
           }}
           renderItem={({item, index}) => {
             const isFirst = index === 0;
-            const isLast = index === coordinates.length - 1;
-
+            const isLast = index === (detail?.coordinates.length ?? 0) - 1;
             return (
               <View style={styles.stepRow}>
-                {/* 타임라인 */}
                 <View style={styles.timelineContainer}>
                   {!isFirst && <View style={styles.verticalLineTop} />}
-
                   {isFirst || isLast ? (
                     <View style={styles.circle}>
-                      {isFirst && (
-                        <Image
-                          source={require('../../assets/start-icon.png')}
-                          style={styles.startIcon}
-                        />
-                      )}
-                      {isLast && (
-                        <Image
-                          source={require('../../assets/arrival-icon.png')}
-                          style={styles.startIcon}
-                        />
-                      )}
+                      <Image
+                        source={
+                          isFirst
+                            ? require('../../assets/start-icon.png')
+                            : require('../../assets/arrival-icon.png')
+                        }
+                        style={styles.startIcon}
+                      />
                     </View>
                   ) : (
                     <View style={styles.donutOuter}>
                       <View style={styles.donutInner} />
                     </View>
                   )}
-
                   {!isLast && <View style={styles.verticalLineBottom} />}
                 </View>
-
-                {/* 안내 내용 */}
                 <View style={styles.stepContent}>
                   <Text style={styles.stepTitle}>{item.description}</Text>
-                  <Text style={styles.stepDistance}>
-                    {item.segmentDistance.toFixed(0)}m 이동
-                  </Text>
-
-                  {(isFirst || isLast) && item.imageUrl && (
+                  {item.segmentDistance > 0 && (
+                    <Text style={styles.stepDistance}>
+                      {item.segmentDistance}m 이동
+                    </Text>
+                  )}
+                  {item.imageUrl?.trim() !== '' && (
                     <Image
                       source={{uri: item.imageUrl}}
                       style={styles.image}
@@ -249,15 +224,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginLeft: -20,
-    marginTop: -20,
+    marginLeft: -18,
+    marginTop: -18,
     zIndex: 99,
   },
   header: {
     backgroundColor: colors.BLUE_700,
     paddingTop: 10,
-    paddingBottom: 20,
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -276,7 +251,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   walkingIcon: {
-    position: 'absolute',
     left: '50%',
     transform: [{translateX: -24}],
     width: 48,
@@ -291,7 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     columnGap: 70,
-    marginTop: 30,
+    marginTop: 20,
   },
   pointText: {
     color: colors.BLUE_700,
@@ -301,12 +275,6 @@ const styles = StyleSheet.create({
   arrowIcon: {
     color: colors.BLUE_700,
     fontSize: 17,
-  },
-  icon: {
-    color: 'white',
-    fontSize: 20,
-    width: 24,
-    textAlign: 'center',
   },
   summaryBox: {
     position: 'absolute',
@@ -319,8 +287,6 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowRadius: 4,
     elevation: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   summaryText: {
     fontSize: 12,
