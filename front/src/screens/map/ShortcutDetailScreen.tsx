@@ -103,23 +103,48 @@ export default function ShortcutDetailScreen() {
         style={styles.header}
         onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
         <View style={styles.headerTop}>
-          <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
-            ←
-          </Text>
-          <Image
-            source={require('../../assets/walking-icon.png')}
-            style={styles.walkingIcon}
-          />
-          <Text
-            onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
-            style={styles.iconRight}>
-            ✕
-          </Text>
+          {/* 왼쪽: ← 아이콘 */}
+          <View style={styles.iconWrapper}>
+            <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
+              ←
+            </Text>
+          </View>
+
+          {/* 중앙: 걷기 아이콘 */}
+          <View style={styles.centerIconWrapper}>
+            <Image
+              source={require('../../assets/walking-icon.png')}
+              style={styles.walkingIcon}
+            />
+          </View>
+
+          {/* 오른쪽: ✕ 아이콘 */}
+          <View style={styles.iconWrapper}>
+            <Text
+              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
+              style={styles.iconRight}>
+              ✕
+            </Text>
+          </View>
         </View>
         <View style={styles.titleBox}>
-          <Text style={styles.pointText}>{detail?.pointA}</Text>
-          <Text style={styles.arrowIcon}>↔</Text>
-          <Text style={styles.pointText}>{detail?.pointB}</Text>
+          <View style={{flex: 1, alignItems: 'center'}}>
+            <Text
+              style={[styles.pointText, {textAlign: 'center'}]}
+              numberOfLines={1}
+              ellipsizeMode="tail">
+              {detail?.pointA}
+            </Text>
+          </View>
+          <Text style={[styles.arrowIcon, {marginHorizontal: 16}]}>↔</Text>
+          <View style={{flex: 1, alignItems: 'center'}}>
+            <Text
+              style={[styles.pointText, {textAlign: 'center'}]}
+              numberOfLines={1}
+              ellipsizeMode="tail">
+              {detail?.pointB}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -234,26 +259,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
+  // headerTop: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  //   position: 'relative',
+  // },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    position: 'relative',
+    justifyContent: 'center',
+    // paddingVertical: 5,
+  },
+  iconWrapper: {
+    width: 40, // ←, ✕ 이 들어가는 고정 width
+    alignItems: 'center',
+  },
+  centerIconWrapper: {
+    flex: 1,
+    alignItems: 'center',
   },
   iconLeft: {
     color: 'white',
-    fontSize: 20,
-    textAlign: 'left',
+    fontSize: 22,
+    textAlign: 'center',
+    marginRight: 10,
   },
   iconRight: {
     color: 'white',
-    fontSize: 20,
-    textAlign: 'right',
+    fontSize: 22,
+    textAlign: 'center',
+    marginLeft: 10,
   },
   walkingIcon: {
-    left: '50%',
-    transform: [{translateX: -24}],
-    width: 48,
+    width: 48, // 아이콘 사이즈에 맞게
     height: 30,
   },
   titleBox: {
@@ -264,13 +303,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    columnGap: 70,
     marginTop: 20,
   },
   pointText: {
     color: colors.BLUE_700,
     fontSize: 16,
     fontWeight: '600',
+    paddingHorizontal: 10,
   },
   arrowIcon: {
     color: colors.BLUE_700,
