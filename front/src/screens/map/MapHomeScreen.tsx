@@ -207,6 +207,17 @@ function MapHomeScreen() {
           `}
         />
 
+        <TouchableOpacity
+          style={styles.shortcutButton}
+          onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}>
+          <Image
+            source={require('../../assets/shortcut-icon.png')}
+            style={{width: 24, height: 24, marginBottom: 4}}
+            resizeMode="contain"
+          />
+          <Text style={styles.shortcutButtonText}>지름길</Text>
+        </TouchableOpacity>
+
         {/* 바텀시트 */}
         {selectedCategory === 'SHUTTLE_BUS' &&
         showShuttleBottomSheet &&
@@ -289,6 +300,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.GRAY_1000,
     lineHeight: 20,
+  },
+  shortcutButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 16,
+    width: 56,
+    height: 70,
+    backgroundColor: colors.BLUE_700,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shortcutButtonText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
   },
 });
 
