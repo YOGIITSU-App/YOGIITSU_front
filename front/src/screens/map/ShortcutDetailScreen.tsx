@@ -117,18 +117,6 @@ export default function ShortcutDetailScreen() {
     );
   }
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator
-          style={styles.loader}
-          size="large"
-          color={colors.BLUE_500}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       {loading && (
@@ -320,15 +308,15 @@ const styles = StyleSheet.create({
   },
   iconLeft: {
     color: 'white',
-    fontSize: 22,
-    textAlign: 'center',
+    fontSize: 30,
     marginRight: 10,
+    lineHeight: 34,
   },
   iconRight: {
     color: 'white',
     fontSize: 22,
-    textAlign: 'center',
     marginLeft: 10,
+    lineHeight: 28,
   },
   walkingIcon: {
     width: 48,
@@ -352,7 +340,8 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     color: colors.BLUE_700,
-    fontSize: 17,
+    fontSize: 22,
+    lineHeight: 24,
   },
   summaryBox: {
     position: 'absolute',
