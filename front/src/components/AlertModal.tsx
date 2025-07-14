@@ -68,14 +68,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.BLACK_500,
-    marginTop: 10,
+    marginTop: 18,
   },
   row: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
     paddingVertical: 12,
-    marginTop: 25,
+    marginTop: 17,
   },
   btn: {
     flex: 1,
