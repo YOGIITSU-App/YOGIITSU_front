@@ -5,7 +5,9 @@ import {
   Text,
   View,
   Dimensions,
-  Alert,
+  Modal,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
@@ -13,7 +15,6 @@ import CustomText from '../../../components/CustomText';
 import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import MiniInputField from '../../../components/miniInputField';
 import AlertModal from '../../../components/AlertModal';
-
 import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
 import {validateCodeMessage, validateEmail} from '../../../utils';
@@ -22,23 +23,20 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
 import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
+import {scale, verticalScale} from '../../../utils/scale';
 
-const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
 
 function FindPwCodeConfirmScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
 
   const emailcheak = useForm({
-    initialValue: {
-      email: '',
-    },
+    initialValue: {email: ''},
     validate: validateEmail,
   });
 
   const codemessagecheck = useForm({
-    initialValue: {
-      codemessage: '',
-    },
+    initialValue: {codemessage: ''},
     validate: validateCodeMessage,
   });
 
@@ -47,6 +45,7 @@ function FindPwCodeConfirmScreen() {
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
+  const [wrongEmailModalVisible, setWrongEmailModalVisible] = useState(false);
 
   // 인증번호 전송
   const handleSendCode = async () => {
@@ -57,8 +56,7 @@ function FindPwCodeConfirmScreen() {
       );
       setSendCodeModalVisible(true);
     } catch (error: any) {
-      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
-      Alert.alert('에러', msg);
+      setWrongEmailModalVisible(true);
     }
   };
 
@@ -188,6 +186,35 @@ function FindPwCodeConfirmScreen() {
             },
           ]}
         />
+
+        {/* 가입 이력이 없는 이메일 모달 (일반 Modal) */}
+        <Modal
+          transparent
+          visible={wrongEmailModalVisible}
+          animationType="fade"
+          onRequestClose={() => setWrongEmailModalVisible(false)}>
+          <View style={styles.overlay}>
+            <View style={styles.modalBox}>
+              <Image
+                source={require('../../../assets/Warning-icon-gray.png')}
+                style={styles.warningIcon}
+              />
+              <Text style={styles.wrongTitle}>
+                가입 이력이 없는 이메일입니다
+              </Text>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  setWrongEmailModalVisible(false);
+                  setSendButtonVisible(true);
+                  setGuideTextType('email');
+                  setCodeFieldVisible(false);
+                }}>
+                <Text style={styles.buttonText}>다시 입력하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -196,13 +223,13 @@ function FindPwCodeConfirmScreen() {
 const styles = StyleSheet.create({
   container: {flex: 1},
   guideContainer: {
-    marginTop: 15,
-    marginLeft: deviceWidth * 0.08,
-    gap: 3,
+    marginTop: verticalScale(15),
+    marginLeft: scale(24),
+    gap: scale(3),
     marginBottom: '5%',
   },
   guideText: {
-    fontSize: 20,
+    fontSize: scale(20),
     color: colors.BLACK_700,
     fontWeight: '700',
   },
@@ -211,21 +238,59 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     justifyContent: 'flex-start',
-    paddingHorizontal: 20,
-    marginBottom: 15,
-    gap: 20,
+    paddingTop: verticalScale(20),
+    paddingHorizontal: scale(20),
+    alignItems: 'center',
+    marginBottom: verticalScale(15),
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
-    marginLeft: deviceWidth * 0.05,
-    marginTop: 8,
+    marginLeft: scale(10),
+    marginBottom: '10%',
   },
   smallContainer: {
-    width: deviceWidth * 0.84,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: deviceWidth * 0.025,
+    gap: scale(10),
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: colors.TRANSLUCENT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    width: '85%',
+    backgroundColor: colors.WHITE,
+    padding: scale(20),
+    borderRadius: scale(10),
+    alignItems: 'center',
+  },
+  warningIcon: {
+    width: scale(28),
+    height: scale(28),
+    marginBottom: verticalScale(18),
+  },
+  wrongTitle: {
+    color: colors.BLACK_700,
+    fontSize: scale(16),
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: scale(25),
+    marginBottom: verticalScale(30),
+  },
+  button: {
+    backgroundColor: colors.BLUE_700,
+    width: '73%',
+    height: deviceHeight * 0.06,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: scale(6),
+  },
+  buttonText: {
+    color: colors.WHITE,
+    fontSize: scale(14),
+    fontWeight: '600',
   },
 });
 
