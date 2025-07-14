@@ -51,6 +51,13 @@ export default function BottomTabNavigator() {
     }
   }, [navState]);
 
+  useEffect(() => {
+    globalThis.setTabToHome = () => setSelectedTab('홈');
+    return () => {
+      globalThis.setTabToHome = undefined;
+    };
+  }, []);
+
   const createTabButton = (props: any, label: '홈' | '즐겨찾기' | 'MY') => {
     const isFocused = selectedTab === label;
     const handlePress = () => {

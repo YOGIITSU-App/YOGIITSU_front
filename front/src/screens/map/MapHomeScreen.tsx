@@ -39,7 +39,7 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
-  const {visible, open, close, favorites} = useFavoriteBottomSheet();
+  const {open, close, favorites} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
   const [shuttleSchedule, setShuttleSchedule] =
@@ -48,6 +48,10 @@ function MapHomeScreen() {
   const [showShuttleBottomSheet, setShowShuttleBottomSheet] = useState(false);
   const shuttleSheetRef = useRef<BottomSheet>(null);
   const [selectedStopName, setSelectedStopName] = useState<string>('');
+  const [openSheet, setOpenSheet] = useState<null | 'FAVORITE' | 'SHUTTLE'>(
+    null,
+  );
+  const [pendingFavoriteSheet, setPendingFavoriteSheet] = useState(false);
 
   const mapWebViewRef = useRef<WebView>(null);
   const MAP_HTML_URL =
@@ -76,13 +80,12 @@ function MapHomeScreen() {
           buildingId: data.buildingId,
         });
       } else if (data.type === 'shuttleClicked') {
-        // 셔틀버스 마커 클릭 시 처리
         setLoadingSchedule(true);
         try {
           const res = await fetchShuttleSchedule();
           setShuttleSchedule(res);
           setSelectedStopName(data.name);
-          setShowShuttleBottomSheet(true);
+          setOpenSheet('SHUTTLE');
         } catch (err) {
           Alert.alert('오류', '셔틀버스 스케줄을 불러올 수 없습니다.');
         } finally {
@@ -140,19 +143,35 @@ function MapHomeScreen() {
     if (typeof buildingId === 'number') {
       navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
     }
+  }, [route.params]);
+
+  useEffect(() => {
     globalThis.openFavoriteBottomSheet = () => {
-      setSelectedCategory(null);
-      open();
+      if (selectedCategory !== null) {
+        setSelectedCategory(null);
+        setPendingFavoriteSheet(true);
+      } else {
+        setOpenSheet('FAVORITE');
+      }
     };
+    globalThis.closeFavoriteBottomSheet = () => setOpenSheet(null);
     return () => {
       globalThis.openFavoriteBottomSheet = undefined;
+      globalThis.closeFavoriteBottomSheet = undefined;
     };
-  }, [open]);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (pendingFavoriteSheet && selectedCategory === null) {
+      setOpenSheet('FAVORITE');
+      setPendingFavoriteSheet(false);
+    }
+  }, [pendingFavoriteSheet, selectedCategory]);
 
   useEffect(() => {
     setShowShuttleBottomSheet(false);
-    close(); // 즐겨찾기 바텀시트 닫기
-  }, [selectedCategory, close]);
+    setOpenSheet(null);
+  }, [selectedCategory]);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
@@ -183,9 +202,12 @@ function MapHomeScreen() {
         {/* 카테고리 탭 */}
         <FacilityFilterButtons
           selected={selectedCategory}
-          onSelect={category =>
-            setSelectedCategory(category === selectedCategory ? null : category)
-          }
+          onSelect={category => {
+            if (globalThis.setTabToHome) globalThis.setTabToHome();
+            setSelectedCategory(
+              category === selectedCategory ? null : category,
+            );
+          }}
         />
 
         {/* 지도 */}
@@ -221,16 +243,13 @@ function MapHomeScreen() {
           <Text style={styles.shortcutButtonText}>지름길</Text>
         </TouchableOpacity>
 
-        {/* 바텀시트 */}
-        {selectedCategory === 'SHUTTLE_BUS' &&
-        showShuttleBottomSheet &&
-        shuttleSchedule ? (
+        {openSheet === 'SHUTTLE' && shuttleSchedule && (
           <BottomSheet
             ref={shuttleSheetRef}
             index={0}
             snapPoints={['65%', '100%']}
             enablePanDownToClose
-            onClose={() => setShowShuttleBottomSheet(false)}
+            onClose={() => setOpenSheet(null)}
             onChange={index => {
               // index가 1이면 100%로 올라간 상태
               if (index === 1) {
@@ -244,19 +263,20 @@ function MapHomeScreen() {
               currentStopName={selectedStopName}
             />
           </BottomSheet>
-        ) : visible ? (
+        )}
+        {openSheet === 'FAVORITE' && (
           <BottomSheet
             index={0}
             snapPoints={['40%', '80%']}
             enablePanDownToClose
-            onClose={close}>
+            onClose={() => setOpenSheet(null)}>
             <FavoriteBottomSheetContent
               favorites={favorites}
               onRefresh={open}
               onSelect={handleSelectFavorite}
             />
           </BottomSheet>
-        ) : null}
+        )}
       </View>
     </GestureHandlerRootView>
   );
