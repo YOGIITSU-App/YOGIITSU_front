@@ -52,7 +52,21 @@ export default function FavoriteBottomSheetContent({
     <View style={styles.container}>
       <Text style={styles.title}>즐겨찾기</Text>
       {favorites.length === 0 ? (
-        <Text style={{marginTop: 10}}>등록된 즐겨찾기가 없어요.</Text>
+        <View style={styles.emptyContainer}>
+          <View style={styles.iconContainer}>
+            <Image
+              source={require('../assets/favorite-bookmark-icon.png')}
+              style={styles.warningIcon}
+            />
+          </View>
+          <Text style={styles.emptyTitle}>즐겨찾기 내역이 없습니다</Text>
+          <Text style={styles.emptySubtitle}>
+            관심있는 장소를 즐겨찾기 해보세요!
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            건물 정보에서 북마커를 눌러 추가할 수 있어요
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={favorites}
@@ -97,6 +111,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 15,
     marginLeft: 10,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainer: {
+    borderRadius: 50,
+    padding: 13,
+    marginBottom: 10,
+  },
+  warningIcon: {
+    width: 36,
+    height: 36,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.BLACK_700,
+    marginBottom: 13,
+    lineHeight: 27,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.GRAY_500,
+    lineHeight: 22,
   },
   row: {
     flexDirection: 'row',
