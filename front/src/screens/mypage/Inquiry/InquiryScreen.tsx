@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import CustomButton from '../../../components/CustomButton';
@@ -19,6 +20,7 @@ import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
@@ -31,11 +33,14 @@ function InquiryScreen() {
 
   const fetchInquiries = async () => {
     try {
+      setIsLoading(true);
       const res = await inquiryApi.getAll();
       const mapped = res.data.map(mapToInquiry);
       setInquiries(mapped);
     } catch (e) {
       console.error('문의 리스트 불러오기 실패', e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,87 +56,108 @@ function InquiryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {inquiries.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={styles.iconContainer}>
-            <Image
-              source={require('../../../assets/Warning-icon-gray.png')}
-              style={styles.warningIcon}
-            />
-          </View>
-          <Text style={styles.title}>문의 내용이 없습니다</Text>
-          <Text style={styles.subtitle}>이용 중 불편한 점이 있으셨다면</Text>
-          <Text style={styles.subtitle}>
-            아래 등록 버튼을 눌러 문의를 접수해주세요
-          </Text>
+      {isLoading && (
+        <View style={styles.spinnerOverlay}>
+          <ActivityIndicator size="large" color={colors.BLUE_500} />
         </View>
-      ) : (
-        <>
-          <View style={styles.headerRow}>
-            <Text style={[styles.headerText, {flex: 1}]}>상태</Text>
-            <Text style={[styles.headerText, {flex: 3}]}>제목</Text>
-            <Text style={[styles.headerText, {flex: 1}]}>작성자</Text>
-          </View>
-
-          <FlatList
-            data={inquiries}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                style={styles.itemRow}
-                onPress={() =>
-                  navigation.navigate('InquiryDetail', {inquiryId: item.id})
-                }>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor:
-                        item.status === 'PROCESSING'
-                          ? colors.GRAY_100
-                          : colors.BLUE_100,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.statusText,
-                      {
-                        color:
-                          item.status === 'PROCESSING'
-                            ? colors.GRAY_500
-                            : colors.BLUE_700,
-                      },
-                    ]}>
-                    {item.status === 'PROCESSING' ? '답변대기' : '답변완료'}
-                  </Text>
-                </View>
-
-                <View style={styles.titleDateContainer}>
-                  <Text numberOfLines={1} style={styles.titleText}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.dateText}>{item.date}</Text>
-                </View>
-
-                <Text style={styles.authorText}>{maskName(item.author)}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </>
       )}
 
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          label="문의 등록하기"
-          onPress={() => navigation.navigate('InquiryWrite')}
-        />
-      </View>
+      {!isLoading && (
+        <>
+          {inquiries.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <View style={styles.iconContainer}>
+                <Image
+                  source={require('../../../assets/Warning-icon-gray.png')}
+                  style={styles.warningIcon}
+                />
+              </View>
+              <Text style={styles.title}>문의 내용이 없습니다</Text>
+              <Text style={styles.subtitle}>
+                이용 중 불편한 점이 있으셨다면
+              </Text>
+              <Text style={styles.subtitle}>
+                아래 등록 버튼을 눌러 문의를 접수해주세요
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.headerRow}>
+                <Text style={[styles.headerText, {flex: 1}]}>상태</Text>
+                <Text style={[styles.headerText, {flex: 3}]}>제목</Text>
+                <Text style={[styles.headerText, {flex: 1}]}>작성자</Text>
+              </View>
+
+              <FlatList
+                data={inquiries}
+                keyExtractor={item => item.id.toString()}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    style={styles.itemRow}
+                    onPress={() =>
+                      navigation.navigate('InquiryDetail', {inquiryId: item.id})
+                    }>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor:
+                            item.status === 'PROCESSING'
+                              ? colors.GRAY_100
+                              : colors.BLUE_100,
+                        },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color:
+                              item.status === 'PROCESSING'
+                                ? colors.GRAY_500
+                                : colors.BLUE_700,
+                          },
+                        ]}>
+                        {item.status === 'PROCESSING' ? '답변대기' : '답변완료'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.titleDateContainer}>
+                      <Text numberOfLines={1} style={styles.titleText}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.dateText}>{item.date}</Text>
+                    </View>
+
+                    <Text style={styles.authorText}>
+                      {maskName(item.author)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </>
+          )}
+
+          <View style={styles.buttonContainer}>
+            <CustomButton
+              label="문의 등록하기"
+              onPress={() => navigation.navigate('InquiryWrite')}
+            />
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  spinnerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 99,
+  },
   headerRow: {
     flexDirection: 'row',
     paddingVertical: 10,
