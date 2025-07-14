@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {
   Alert,
-  Dimensions,
   Image,
   Modal,
   StyleSheet,
@@ -28,9 +27,7 @@ import CompleteCheck from '../../assets/CompleteCheck.svg';
 import {useNavigation} from '@react-navigation/native';
 import {AuthStackParamList} from '../../navigations/stack/AuthStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
-
-const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
+import {scale, verticalScale} from '../../utils/scale';
 
 function SignupScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
@@ -60,6 +57,20 @@ function SignupScreen() {
   const [codeCorrectModalVisible, setCodeCorrectModalVisible] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const isAllFilled =
+    !!signup.values.id &&
+    !!signup.values.password &&
+    !!signup.values.passwordConfirm &&
+    !!signup.values.username &&
+    !!signup.values.email &&
+    !!isVerified &&
+    agreements.age &&
+    agreements.terms &&
+    agreements.privacy &&
+    agreements.loc;
 
   const toggleAll = () => {
     const newValue = !agreements.all;
@@ -140,7 +151,6 @@ function SignupScreen() {
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: 'space-between',
-          // padding: 20,
         }}
         keyboardShouldPersistTaps="handled">
         <View style={styles.guideContainer}>
@@ -196,7 +206,12 @@ function SignupScreen() {
                 onPress={handleVerifyCode}
               />
             </View>
-            <Text style={styles.emailText}>* 아이디 찾기에 사용됩니다.</Text>
+            <Text
+              style={styles.emailText}
+              numberOfLines={1}
+              ellipsizeMode="tail">
+              * 아이디 찾기에 사용됩니다.
+            </Text>
           </View>
           <AlertModal
             visible={sendCodeModalVisible}
@@ -245,8 +260,17 @@ function SignupScreen() {
               inputMode="text"
               keyboardType="ascii-capable"
               focused={signup.focused.id}
+              error={signup.errors.id} // ← 여기!
+              touched={signup.touched.id}
               {...signup.getTextInputProps('id')}
             />
+            <View style={styles.errorMessageContainer}>
+              <CustomText
+                text="영문 또는 영문+숫자 조합의 4~20자리"
+                touched={signup.touched.id}
+                error={signup.errors.id}
+              />
+            </View>
           </View>
           <View style={styles.pwContainer}>
             <View style={styles.pwBigInputfield}>
@@ -254,6 +278,7 @@ function SignupScreen() {
                 placeholder="비밀번호"
                 inputMode="text"
                 secureTextEntry
+                focused={signup.focused.password}
                 touched={signup.touched.password}
                 error={signup.errors.password}
                 {...signup.getTextInputProps('password')}
@@ -271,6 +296,7 @@ function SignupScreen() {
                 placeholder="비밀번호 확인"
                 inputMode="text"
                 secureTextEntry
+                focused={signup.focused.passwordConfirm}
                 touched={signup.touched.passwordConfirm}
                 error={signup.errors.passwordConfirm}
                 {...signup.getTextInputProps('passwordConfirm')}
@@ -285,16 +311,8 @@ function SignupScreen() {
             </View>
           </View>
           <View style={styles.divider} />
-          <View style={{marginTop: 30}}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                marginBottom: 20,
-                color: colors.GRAY_500,
-              }}>
-              서비스 정책 동의
-            </Text>
+          <View style={{marginTop: verticalScale(30)}}>
+            <Text style={styles.policyTitle}>서비스 정책 동의</Text>
             <TouchableOpacity
               onPress={toggleAll}
               style={[
@@ -308,7 +326,7 @@ function SignupScreen() {
                     agreements.all && styles.checkCircleChecked,
                   ]}>
                   <Image
-                    source={require('../../assets/check-icon.png')} // 회색 체크 아이콘
+                    source={require('../../assets/check-icon.png')}
                     style={[
                       styles.allcheckIcon,
                       agreements.all && {tintColor: colors.WHITE},
@@ -319,7 +337,9 @@ function SignupScreen() {
                   style={[
                     styles.allText,
                     agreements.all && styles.allTextChecked,
-                  ]}>
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail">
                   전체동의 (필수)
                 </Text>
               </View>
@@ -331,31 +351,40 @@ function SignupScreen() {
               {key: 'privacy', label: '개인정보 수집 및 이용에 동의 (필수)'},
               {key: 'loc', label: '위치기반 서비스 이용에 동의 (필수)'},
             ].map(item => (
-              <View key={item.key}>
-                <TouchableOpacity
-                  onPress={() => toggleOne(item.key as keyof typeof agreements)}
-                  style={styles.agreeRow}>
-                  <Image
-                    source={require('../../assets/check-icon.png')}
-                    style={[
-                      styles.checkIcon,
-                      agreements[item.key as keyof typeof agreements] && {
-                        tintColor: colors.BLUE_700,
-                      },
-                    ]}
-                  />
-                  <Text style={styles.agreeText}>{item.label}</Text>
+              <View key={item.key} style={styles.agreeItemWrapper}>
+                <View style={styles.agreeRow}>
                   <TouchableOpacity
-                    onPress={() => handleNavigateToTermsDetail(item.key as any)}
-                    style={{marginRight: 6, marginLeft: 'auto'}}>
+                    onPress={() =>
+                      toggleOne(item.key as keyof typeof agreements)
+                    }
+                    style={styles.checkIconBox}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
                     <Image
-                      source={require('../../assets/right-arrow-icon.png')}
-                      style={{
-                        tintColor: colors.GRAY_400,
-                      }}
+                      source={require('../../assets/check-icon.png')}
+                      style={[
+                        styles.checkIcon,
+                        agreements[item.key as keyof typeof agreements] && {
+                          tintColor: colors.BLUE_700,
+                        },
+                      ]}
                     />
                   </TouchableOpacity>
-                </TouchableOpacity>
+                  <Text
+                    style={styles.agreeText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    {item.label}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleNavigateToTermsDetail(item.key as any)}
+                    style={styles.arrowButton}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                    <Image
+                      source={require('../../assets/right-arrow-icon.png')}
+                      style={styles.arrowIcon}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
@@ -371,19 +400,23 @@ function SignupScreen() {
               agreements.loc,
             ].filter(Boolean).length
           }/4`}
-          inValid={
-            !signup.isFormValid ||
-            !isVerified ||
-            !(
-              agreements.age &&
-              agreements.terms &&
-              agreements.privacy &&
-              agreements.loc
-            )
-          }
+          inValid={!isAllFilled}
           onPress={handleSignup}
         />
       </View>
+      <AlertModal
+        visible={errorModalVisible}
+        onRequestClose={() => setErrorModalVisible(false)}
+        message={errorMessage}
+        buttons={[
+          {
+            label: '확인',
+            onPress: () => setErrorModalVisible(false),
+            style: {backgroundColor: colors.BLUE_700},
+          },
+        ]}
+      />
+
       <Modal
         animationType="fade"
         transparent
@@ -416,12 +449,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   guideContainer: {
-    marginTop: 15,
-    marginLeft: deviceWidth * 0.08,
-    gap: 3,
+    marginTop: verticalScale(15),
+    marginLeft: scale(24),
+    gap: scale(3),
   },
   guideText: {
-    fontSize: 24,
+    fontSize: scale(24),
     color: colors.BLACK_700,
     fontWeight: '700',
   },
@@ -429,13 +462,13 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   textHeight: {
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
-    marginTop: 10,
+    marginTop: verticalScale(10),
   },
   infoContainer: {
-    paddingTop: 20, // 위쪽 여백 조정
-    paddingHorizontal: deviceWidth * 0.08,
+    paddingTop: verticalScale(20),
+    paddingHorizontal: scale(24),
     marginBottom: '10%',
   },
   nameInputfield: {
@@ -445,23 +478,18 @@ const styles = StyleSheet.create({
     marginTop: '15%',
   },
   smallContainer: {
-    width: deviceWidth * 0.84,
     flexDirection: 'row',
-    justifyContent: 'space-between', // 입력칸과 버튼의 간격 유지
-    marginBottom: 15, // 입력 필드와 다음 요소 간격,
-    gap: deviceWidth * 0.025,
-  },
-  smallInputText: {
-    fontSize: 14,
-    color: colors.BLACK,
-    padding: 0,
-    fontWeight: '700',
+    alignItems: 'center',
+    gap: scale(8),
+    marginBottom: verticalScale(15),
   },
   emailText: {
     alignSelf: 'flex-end',
-    marginRight: deviceWidth * 0.03,
-    fontSize: 12,
+    fontSize: scale(12),
     color: colors.GRAY_500,
+    maxWidth: '90%',
+    marginTop: verticalScale(2),
+    marginRight: scale(2),
   },
   idContainer: {
     marginTop: '15%',
@@ -470,15 +498,15 @@ const styles = StyleSheet.create({
     marginTop: '8%',
   },
   pwBigInputfield: {
-    paddingTop: 20,
-    gap: 20,
+    paddingTop: verticalScale(20),
+    gap: scale(20),
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
-    marginLeft: deviceWidth * 0.04,
+    marginLeft: scale(10),
   },
   completeButton: {
-    paddingVertical: 20,
+    paddingVertical: verticalScale(20),
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderColor: '#eee',
@@ -490,44 +518,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalBox: {
-    width: deviceWidth * 0.85,
-    height: deviceHeight * 0.2525,
-    padding: 20,
+    width: '85%',
+    padding: scale(20),
     backgroundColor: colors.WHITE,
-    borderRadius: 12,
+    borderRadius: scale(12),
     alignItems: 'center',
   },
   iconContainer: {
-    width: 38,
-    height: 38,
-    marginTop: 10,
-    marginBottom: 15,
+    width: scale(38),
+    height: scale(38),
+    marginTop: verticalScale(10),
+    marginBottom: verticalScale(15),
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
     color: colors.BLACK_700,
-    marginBottom: 30,
+    marginBottom: verticalScale(30),
     textAlign: 'center',
   },
   loginButton: {
-    width: deviceWidth * 0.7277,
-    height: deviceHeight * 0.06125,
+    width: '100%',
+    height: verticalScale(55),
     backgroundColor: colors.BLUE_700,
-    borderRadius: 6,
+    borderRadius: scale(6),
     justifyContent: 'center',
   },
   divider: {
     height: 1,
-    marginTop: 30,
+    marginTop: verticalScale(30),
     backgroundColor: colors.GRAY_50,
+  },
+  policyTitle: {
+    fontSize: scale(16),
+    fontWeight: '600',
+    marginBottom: verticalScale(20),
+    color: colors.GRAY_500,
   },
   agreeBox: {
     backgroundColor: colors.GRAY_100,
-    borderRadius: 6,
-    paddingVertical: 15,
-    paddingHorizontal: 17,
-    marginBottom: 4,
+    borderRadius: scale(6),
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: scale(17),
+    marginBottom: verticalScale(4),
   },
   agreeBoxChecked: {
     backgroundColor: colors.BLUE_100,
@@ -535,19 +568,28 @@ const styles = StyleSheet.create({
   allagreeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: scale(12),
   },
-  agreeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 17,
-    marginLeft: 22,
-    marginTop: 12,
+  allcheckIcon: {
+    width: scale(12),
+    height: scale(8),
+    tintColor: colors.GRAY_100,
+  },
+  allText: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    lineHeight: scale(18),
+    color: colors.GRAY_500,
+    flex: 1,
+    minWidth: 0,
+  },
+  allTextChecked: {
+    color: colors.BLUE_700,
   },
   checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
     backgroundColor: colors.GRAY_300,
     justifyContent: 'center',
     alignItems: 'center',
@@ -555,36 +597,56 @@ const styles = StyleSheet.create({
   checkCircleChecked: {
     backgroundColor: colors.BLUE_700,
   },
-  allcheckIcon: {
-    width: 12,
-    height: 8,
-    tintColor: colors.GRAY_100,
+  agreeItemWrapper: {
+    marginBottom: verticalScale(2),
   },
-  allText: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-    color: colors.GRAY_500,
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(16),
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(6),
+    backgroundColor: 'transparent',
+    width: '100%',
   },
-  allTextChecked: {
-    color: colors.BLUE_700,
+  checkIconBox: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: scale(24),
+    height: scale(24),
+    paddingLeft: scale(19),
   },
   checkIcon: {
-    width: 12,
-    height: 8,
+    width: scale(12),
+    height: scale(8),
     resizeMode: 'contain',
   },
   agreeText: {
-    fontSize: 14,
+    flex: 1,
+    minWidth: 0,
+    fontSize: scale(14),
     fontWeight: '600',
     color: colors.GRAY_500,
+    paddingHorizontal: scale(6),
+  },
+  arrowButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(4),
+    marginLeft: scale(2),
+  },
+  arrowIcon: {
+    width: scale(9),
+    height: scale(9),
+    tintColor: colors.GRAY_400,
+    resizeMode: 'contain',
   },
   descriptionText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: colors.GRAY_500,
     fontWeight: '500',
-    lineHeight: 18,
-    marginLeft: 22,
+    lineHeight: scale(18),
+    marginLeft: scale(10),
   },
 });
 
