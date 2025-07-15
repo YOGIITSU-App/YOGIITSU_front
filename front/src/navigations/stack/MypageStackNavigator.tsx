@@ -1,7 +1,7 @@
 import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import MypageHomeScreen from '../../screens/mypage/MypageHomeScreen';
-import NoticeScreen from '../../screens/mypage/NoticeScreen';
+import NoticeScreen from '../../screens/mypage/Notice/NoticeScreen';
 import InquiryScreen from '../../screens/mypage/Inquiry/InquiryScreen';
 import {colors} from '../../constants';
 import DeleteAccountWarningScreen from '../../screens/mypage/DeleteAccount/DeleteAccountWarningScreen';
@@ -18,8 +18,9 @@ import InquiryCompleteScreen from '../../screens/mypage/Inquiry/InquiryCompleteS
 import InquiryDetailScreen from '../../screens/mypage/Inquiry/InquiryDetailScreen';
 import InquiryEditScreen from '../../screens/mypage/Inquiry/InquiryEditScreen';
 import {Inquiry} from '../../api/inquiryApi';
+import NoticeDetailScreen from '../../screens/mypage/Notice/NoticeDetailScreen';
 
-// 🔹 네비게이션 타입 정의
+// 네비게이션 타입 정의
 export type MypageStackParamList = {
   MypageHome: undefined;
   ChangePwCodeConfirm: undefined;
@@ -29,6 +30,7 @@ export type MypageStackParamList = {
   ChangeNewEmail: undefined;
   ChangeEmailComplete: undefined;
   Notice: undefined;
+  NoticeDetail: {noticeId: number};
   Inquiry: undefined;
   InquiryWrite: undefined;
   InquiryComplete: undefined;
@@ -48,8 +50,8 @@ function MypageStackNavigator() {
         cardStyle: {
           backgroundColor: 'white',
         },
-        headerShown: true, // ✅ 헤더 표시
-        headerTitleAlign: 'center', // ✅ 중앙 정렬
+        headerShown: true,
+        headerTitleAlign: 'center',
         headerTitleStyle: {
           fontSize: 16,
           fontWeight: '600',
@@ -94,6 +96,11 @@ function MypageStackNavigator() {
       <Stack.Screen
         name="Notice"
         component={NoticeScreen}
+        options={{title: '공지사항'}}
+      />
+      <Stack.Screen
+        name="NoticeDetail"
+        component={NoticeDetailScreen}
         options={{title: '공지사항'}}
       />
       <Stack.Screen
