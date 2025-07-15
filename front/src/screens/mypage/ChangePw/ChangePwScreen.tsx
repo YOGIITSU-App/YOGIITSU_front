@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
@@ -17,6 +10,7 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import authApi from '../../../api/authApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -32,7 +26,7 @@ function ChangePwScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
           <Text style={styles.highlightedText}>새로운 비밀번호</Text>
@@ -96,7 +90,7 @@ function ChangePwScreen() {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

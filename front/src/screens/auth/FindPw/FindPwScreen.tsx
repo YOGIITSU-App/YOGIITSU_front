@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RouteProp} from '@react-navigation/native';
@@ -20,6 +13,7 @@ import useForm from '../../../hooks/useForms';
 import {validatePwConfirm} from '../../../utils';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
 import authApi from '../../../api/authApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -54,7 +48,7 @@ function FindPwScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
           <Text style={styles.highlightedText}>새로운 비밀번호</Text>를
@@ -104,7 +98,7 @@ function FindPwScreen() {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

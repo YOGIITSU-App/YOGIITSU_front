@@ -1,18 +1,12 @@
 import React, {useEffect, useLayoutEffect} from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  BackHandler,
-} from 'react-native';
+import {StyleSheet, Text, View, Image, BackHandler} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {RootStackParamList} from '../../../navigations/root/Rootnavigator';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {logoutEmitter} from '../../../utils/logoutEmitter';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function DeleteAccountCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -38,7 +32,7 @@ function DeleteAccountCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       {/* 체크 아이콘 */}
       <View style={styles.iconContainer}>
         <Image
@@ -61,7 +55,7 @@ function DeleteAccountCompleteScreen() {
           logoutEmitter.emit('force-logout');
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

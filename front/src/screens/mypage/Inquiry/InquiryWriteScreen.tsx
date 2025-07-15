@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +9,7 @@ import {
   Dimensions,
   Keyboard,
   TouchableWithoutFeedback,
+  StatusBar,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
@@ -17,6 +17,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {colors} from '../../../constants';
 import inquiryApi from '../../../api/inquiryApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -48,7 +49,7 @@ function InquiryWriteScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.container}>
+      <AppScreenLayout disableTopInset>
         <TextInput
           style={styles.titleInput}
           placeholder="제목을 입력하세요"
@@ -77,6 +78,10 @@ function InquiryWriteScreen() {
           transparent
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}>
+          <StatusBar
+            backgroundColor="rgba(0,0,0,0.5)"
+            barStyle="light-content"
+          />
           <View style={styles.modalBackground}>
             <View style={styles.modalBox}>
               <Text style={styles.modalText}>문의를 등록하시겠어요?</Text>
@@ -95,7 +100,7 @@ function InquiryWriteScreen() {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
+      </AppScreenLayout>
     </TouchableWithoutFeedback>
   );
 }

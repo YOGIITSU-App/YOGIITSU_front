@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect} from 'react';
-import {SafeAreaView, StyleSheet, Text, View, BackHandler} from 'react-native';
+import {StyleSheet, Text, View, BackHandler} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useNavigation} from '@react-navigation/native';
@@ -7,6 +7,7 @@ import CompleteCheck from '../../../assets/CompleteCheck.svg';
 import {RootStackParamList} from '../../../navigations/root/Rootnavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {logoutEmitter} from '../../../utils/logoutEmitter';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function ChangePwCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -32,7 +33,7 @@ function ChangePwCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
       </View>
@@ -46,7 +47,7 @@ function ChangePwCompleteScreen() {
           logoutEmitter.emit('force-logout');
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

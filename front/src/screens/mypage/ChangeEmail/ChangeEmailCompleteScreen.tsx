@@ -1,11 +1,12 @@
 import React, {useEffect, useLayoutEffect} from 'react';
-import {BackHandler, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {BackHandler, StyleSheet, Text, View} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function ChangeEmailCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
@@ -31,7 +32,7 @@ function ChangeEmailCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
       </View>
@@ -44,7 +45,7 @@ function ChangeEmailCompleteScreen() {
           navigation.navigate('MypageHome');
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

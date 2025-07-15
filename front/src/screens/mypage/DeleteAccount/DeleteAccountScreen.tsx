@@ -4,7 +4,7 @@ import {
   Dimensions,
   Image,
   Modal,
-  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -18,6 +18,7 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import authApi from '../../../api/authApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -35,7 +36,7 @@ function DeleteAccountScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>회원탈퇴를 위해</Text>
         <Text style={styles.guideText}>
@@ -66,6 +67,7 @@ function DeleteAccountScreen() {
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}>
+        <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
             {/* 아이콘 자리 */}
@@ -108,7 +110,7 @@ function DeleteAccountScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

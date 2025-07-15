@@ -25,6 +25,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('window').height;
@@ -192,31 +193,32 @@ export default function BuildingPreviewScreen() {
   const {buildingInfo} = buildingDetail;
 
   return (
-    <View style={styles.container}>
-      {loading && (
-        <ActivityIndicator
-          style={styles.loader}
-          size="large"
-          color={colors.BLUE_500}
-        />
-      )}
-      <WebView
-        ref={mapWebViewRef}
-        source={{uri: mapHtmlUrl}}
-        originWhitelist={['*']}
-        javaScriptEnabled
-        domStorageEnabled
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: deviceHeight * 0.5,
-        }}
-        cacheEnabled={true}
-        cacheMode="LOAD_DEFAULT"
-        onLoadEnd={handleMapLoaded}
-        injectedJavaScriptBeforeContentLoaded={`
+    <AppScreenLayout>
+      <View style={styles.container}>
+        {loading && (
+          <ActivityIndicator
+            style={styles.loader}
+            size="large"
+            color={colors.BLUE_500}
+          />
+        )}
+        <WebView
+          ref={mapWebViewRef}
+          source={{uri: mapHtmlUrl}}
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: deviceHeight * 0.5,
+          }}
+          cacheEnabled={true}
+          cacheMode="LOAD_DEFAULT"
+          onLoadEnd={handleMapLoaded}
+          injectedJavaScriptBeforeContentLoaded={`
             (function() {
               document.addEventListener("message", function(e) {
                 window.dispatchEvent(new MessageEvent("message", { data: e.data }));
@@ -224,70 +226,71 @@ export default function BuildingPreviewScreen() {
             })();
             true;
           `}
-      />
+        />
 
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        enableContentPanningGesture={true}
-        enableHandlePanningGesture={true}
-        enableOverDrag={false}
-        style={{flex: 1}}
-        onChange={handleSheetChange}>
-        <BottomSheetView style={styles.sheetContent}>
-          <Image
-            source={{uri: buildingInfo.imageUrl}}
-            style={styles.cardImage}
-          />
-          <View style={styles.cardContent}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardTitle}>{buildingInfo.name}</Text>
-              <TouchableOpacity onPress={toggleFavorite}>
-                <Image
-                  source={require('../../assets/bookmark-icon.png')}
-                  style={{
-                    tintColor: isFavorite ? undefined : colors.GRAY_700,
-                    width: 14,
-                    height: 18,
-                  }}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.tags}>
-              {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
-            </Text>
-
-            <View style={styles.facilityRow}>
-              {buildingInfo.facilities.map(fac => {
-                const icon = facilityIconMap[fac.name.trim()];
-                return icon ? (
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enableContentPanningGesture={true}
+          enableHandlePanningGesture={true}
+          enableOverDrag={false}
+          style={{flex: 1}}
+          onChange={handleSheetChange}>
+          <BottomSheetView style={styles.sheetContent}>
+            <Image
+              source={{uri: buildingInfo.imageUrl}}
+              style={styles.cardImage}
+            />
+            <View style={styles.cardContent}>
+              <View style={styles.cardTitleRow}>
+                <Text style={styles.cardTitle}>{buildingInfo.name}</Text>
+                <TouchableOpacity onPress={toggleFavorite}>
                   <Image
-                    key={fac.name}
-                    source={icon}
-                    style={styles.facilityIcon}
+                    source={require('../../assets/bookmark-icon.png')}
+                    style={{
+                      tintColor: isFavorite ? undefined : colors.GRAY_700,
+                      width: 14,
+                      height: 18,
+                    }}
                   />
-                ) : null;
-              })}
-            </View>
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.startbutton}
-                onPress={() => handleNavigateToRouteSelection('start')}>
-                <Text style={styles.startbuttonText}>출발</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.finishbutton}
-                onPress={() => handleNavigateToRouteSelection('end')}>
-                <Text style={styles.finishbuttonText}>도착</Text>
-              </TouchableOpacity>
+              <Text style={styles.tags}>
+                {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
+              </Text>
+
+              <View style={styles.facilityRow}>
+                {buildingInfo.facilities.map(fac => {
+                  const icon = facilityIconMap[fac.name.trim()];
+                  return icon ? (
+                    <Image
+                      key={fac.name}
+                      source={icon}
+                      style={styles.facilityIcon}
+                    />
+                  ) : null;
+                })}
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.startbutton}
+                  onPress={() => handleNavigateToRouteSelection('start')}>
+                  <Text style={styles.startbuttonText}>출발</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.finishbutton}
+                  onPress={() => handleNavigateToRouteSelection('end')}>
+                  <Text style={styles.finishbuttonText}>도착</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </BottomSheetView>
-      </BottomSheet>
-    </View>
+          </BottomSheetView>
+        </BottomSheet>
+      </View>
+    </AppScreenLayout>
   );
 }
 

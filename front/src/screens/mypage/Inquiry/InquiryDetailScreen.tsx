@@ -1,6 +1,5 @@
 import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -8,6 +7,7 @@ import {
   Modal,
   Dimensions,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
@@ -16,6 +16,7 @@ import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {useUser} from '../../../contexts/UserContext';
 import inquiryApi, {Inquiry, mapToInquiry} from '../../../api/inquiryApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('window').width;
 const deviceHeight = Dimensions.get('window').height;
@@ -77,24 +78,24 @@ function InquiryDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <AppScreenLayout disableTopInset>
         <ActivityIndicator size="large" color={colors.BLUE_700} />
-      </SafeAreaView>
+      </AppScreenLayout>
     );
   }
 
   if (!inquiry) {
     return (
-      <SafeAreaView style={styles.container}>
+      <AppScreenLayout disableTopInset>
         <Text style={{textAlign: 'center'}}>
           문의 데이터를 불러올 수 없어요
         </Text>
-      </SafeAreaView>
+      </AppScreenLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{inquiry.title}</Text>
@@ -163,6 +164,7 @@ function InquiryDetailScreen() {
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}>
+        <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
             <Text style={styles.modalText}>문의를 삭제하시겠어요?</Text>
@@ -190,7 +192,7 @@ function InquiryDetailScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

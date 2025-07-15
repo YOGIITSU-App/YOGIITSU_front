@@ -9,10 +9,10 @@ import {
   Image,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {TERMS_CONTENT} from '../../constants/terms';
 import {colors} from '../../constants';
 import {AuthStackParamList} from '../../navigations/stack/AuthStackNavigator';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 // 타입 명시
 const TermsDetailScreen = () => {
@@ -37,7 +37,7 @@ const TermsDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Image
@@ -53,7 +53,7 @@ const TermsDetailScreen = () => {
         contentContainerStyle={{paddingBottom: 30}}>
         <Text style={styles.contentText}>{content}</Text>
       </ScrollView>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 };
 

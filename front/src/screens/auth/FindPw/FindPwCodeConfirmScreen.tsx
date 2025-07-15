@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -24,6 +23,7 @@ import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator'
 import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import {scale, verticalScale} from '../../../utils/scale';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceHeight = Dimensions.get('screen').height;
 
@@ -77,7 +77,7 @@ function FindPwCodeConfirmScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         {guideTextType === 'email' ? (
           <>
@@ -216,7 +216,7 @@ function FindPwCodeConfirmScreen() {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

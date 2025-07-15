@@ -14,7 +14,6 @@ import {validateSignup} from '../../utils';
 import InputField from '../../components/inputField';
 import MiniCustomButton from '../../components/miniCustomButton';
 import MiniCustomButton_W from '../../components/miniCustomButton_W';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import MiniInputField from '../../components/miniInputField';
 import CustomText from '../../components/CustomText';
 import CustomBotton from '../../components/CustomButton';
@@ -28,6 +27,7 @@ import {useNavigation} from '@react-navigation/native';
 import {AuthStackParamList} from '../../navigations/stack/AuthStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {scale, verticalScale} from '../../utils/scale';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 function SignupScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
@@ -146,7 +146,7 @@ function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <KeyboardAwareScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -439,7 +439,7 @@ function SignupScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 
@@ -510,6 +510,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderColor: '#eee',
+    alignItems: 'center',
   },
   modalBackground: {
     flex: 1,

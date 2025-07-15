@@ -7,6 +7,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import BootSplash from 'react-native-bootsplash';
 import {logoutEmitter} from '../../utils/logoutEmitter';
 import {refreshToken} from '../../api/refreshApi';
+import {StatusBar} from 'react-native';
 
 export type RootStackParamList = {
   AuthStack: undefined;
@@ -81,13 +82,20 @@ function RootNavigatorContent() {
   }, [login, logout]);
 
   return (
-    <RootStack.Navigator screenOptions={{headerShown: false}}>
-      {user ? (
-        <RootStack.Screen name="BottomTab" component={BottomTabNavigator} />
-      ) : (
-        <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
-      )}
-    </RootStack.Navigator>
+    <>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content" // 필요에 따라 'light-content'
+      />
+      <RootStack.Navigator screenOptions={{headerShown: false}}>
+        {user ? (
+          <RootStack.Screen name="BottomTab" component={BottomTabNavigator} />
+        ) : (
+          <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
+        )}
+      </RootStack.Navigator>
+    </>
   );
 }
 

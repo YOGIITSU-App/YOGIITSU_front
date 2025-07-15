@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   KeyboardAvoidingView,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +21,7 @@ import {useUser} from '../../contexts/UserContext';
 import {Alert} from 'react-native';
 import authApi from '../../api/authApi';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -73,7 +73,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <KeyboardAvoidingView style={styles.container} behavior="height">
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
@@ -124,7 +124,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

@@ -1,11 +1,12 @@
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import React, {useEffect, useLayoutEffect} from 'react';
-import {BackHandler, SafeAreaView, View, Text, StyleSheet} from 'react-native';
+import {BackHandler, View, Text, StyleSheet} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {authNavigations, colors} from '../../../constants';
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function FindPwCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
@@ -31,7 +32,7 @@ function FindPwCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
       </View>
@@ -45,7 +46,7 @@ function FindPwCompleteScreen() {
           navigation.navigate(authNavigations.AUTH_HOME);
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

@@ -22,6 +22,7 @@ import {defaultTabOptions} from '../../../constants/tabOptions';
 import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import AlertModal from '../../../components/AlertModal';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -90,7 +91,7 @@ function ChangePwCodeConfirmScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         {/* 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
@@ -199,7 +200,7 @@ function ChangePwCodeConfirmScreen() {
           ]}
         />
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

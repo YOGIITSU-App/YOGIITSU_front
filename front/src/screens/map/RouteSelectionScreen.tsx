@@ -14,6 +14,7 @@ import {mapNavigation} from '../../constants/navigation';
 import searchApi, {RecentKeyword} from '../../api/searchApi';
 import {colors} from '../../constants/colors';
 import buildingApi from '../../api/buildingApi';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -128,122 +129,124 @@ function RouteSelectionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.selectBoxWrapper}>
-        {/* 출발지 */}
-        <TouchableOpacity
-          style={styles.inputWrapper}
-          onPress={() => handleSearchLocation('start')}>
-          <View style={styles.inputInner}>
-            <Text
-              style={[
-                styles.inputText,
-                startLocationName === '출발지 선택' && styles.placeholderText,
-              ]}>
-              {startLocationName}
-            </Text>
-            {startLocation && !endLocation && (
-              <TouchableOpacity onPress={swapLocations}>
-                <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* 도착지 */}
-        <TouchableOpacity
-          style={styles.inputWrapper}
-          onPress={() => handleSearchLocation('end')}>
-          <View style={styles.inputInner}>
-            <Text
-              style={[
-                styles.inputText,
-                endLocationName === '도착지 선택' && styles.placeholderText,
-              ]}>
-              {endLocationName}
-            </Text>
-            {endLocation && !startLocation && (
-              <TouchableOpacity onPress={swapLocations}>
-                <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* 최근 검색어 리스트 */}
-      {recentKeywords.length > 0 && (
-        <View style={styles.recentWrapper}>
-          <Text style={styles.recentTitle}>최근 검색어</Text>
-          {recentKeywords.map((item, index) => (
-            <View key={`${item}-${index}`} style={styles.recentItem}>
-              <TouchableOpacity
-                style={styles.recentKeyword}
-                onPress={async () => {
-                  if (!item.buildingId) {
-                    Alert.alert('건물 정보가 없는 검색어예요!');
-                    return;
-                  }
-
-                  try {
-                    const detailRes = await buildingApi.getBuildingDetail(
-                      item.buildingId,
-                    );
-                    const info = detailRes.data.buildingInfo;
-                    const location = `${info.latitude},${info.longitude}`;
-                    const name = info.name;
-
-                    if (!startLocation) {
-                      navigation.navigate(mapNavigation.ROUTE_RESULT, {
-                        startLocation: location,
-                        startLocationName: name,
-                        startBuildingId: item.buildingId,
-                        endLocation,
-                        endLocationName,
-                        endBuildingId: endBuildingId ?? undefined,
-                      });
-                    } else if (!endLocation) {
-                      navigation.navigate(mapNavigation.ROUTE_RESULT, {
-                        startLocation,
-                        startLocationName,
-                        startBuildingId: startBuildingId ?? undefined,
-                        endLocation: location,
-                        endLocationName: name,
-                        endBuildingId: item.buildingId,
-                      });
-                    } else {
-                      Alert.alert(
-                        '이미 출발지와 도착지가 모두 선택되어 있어요!',
-                      );
-                    }
-                  } catch (err) {
-                    Alert.alert('건물 정보를 불러오는 데 실패했습니다');
-                  }
-                }}>
-                <Text style={styles.recentText}>{item.keyword}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={async () => {
-                  try {
-                    await searchApi.deleteRecentKeywordByBuildingId(
-                      item.buildingId,
-                    );
-                    setRecentKeywords(prev =>
-                      prev.filter(k => k.buildingId !== item.buildingId),
-                    );
-                  } catch (err) {
-                    Alert.alert('삭제 실패');
-                  }
-                }}>
-                <Text style={styles.clearIcon}>✕</Text>
-              </TouchableOpacity>
+    <AppScreenLayout disableTopInset>
+      <View style={styles.container}>
+        <View style={styles.selectBoxWrapper}>
+          {/* 출발지 */}
+          <TouchableOpacity
+            style={styles.inputWrapper}
+            onPress={() => handleSearchLocation('start')}>
+            <View style={styles.inputInner}>
+              <Text
+                style={[
+                  styles.inputText,
+                  startLocationName === '출발지 선택' && styles.placeholderText,
+                ]}>
+                {startLocationName}
+              </Text>
+              {startLocation && !endLocation && (
+                <TouchableOpacity onPress={swapLocations}>
+                  <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          ))}
+          </TouchableOpacity>
+
+          {/* 도착지 */}
+          <TouchableOpacity
+            style={styles.inputWrapper}
+            onPress={() => handleSearchLocation('end')}>
+            <View style={styles.inputInner}>
+              <Text
+                style={[
+                  styles.inputText,
+                  endLocationName === '도착지 선택' && styles.placeholderText,
+                ]}>
+                {endLocationName}
+              </Text>
+              {endLocation && !startLocation && (
+                <TouchableOpacity onPress={swapLocations}>
+                  <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        <View style={styles.divider} />
+
+        {/* 최근 검색어 리스트 */}
+        {recentKeywords.length > 0 && (
+          <View style={styles.recentWrapper}>
+            <Text style={styles.recentTitle}>최근 검색어</Text>
+            {recentKeywords.map((item, index) => (
+              <View key={`${item}-${index}`} style={styles.recentItem}>
+                <TouchableOpacity
+                  style={styles.recentKeyword}
+                  onPress={async () => {
+                    if (!item.buildingId) {
+                      Alert.alert('건물 정보가 없는 검색어예요!');
+                      return;
+                    }
+
+                    try {
+                      const detailRes = await buildingApi.getBuildingDetail(
+                        item.buildingId,
+                      );
+                      const info = detailRes.data.buildingInfo;
+                      const location = `${info.latitude},${info.longitude}`;
+                      const name = info.name;
+
+                      if (!startLocation) {
+                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                          startLocation: location,
+                          startLocationName: name,
+                          startBuildingId: item.buildingId,
+                          endLocation,
+                          endLocationName,
+                          endBuildingId: endBuildingId ?? undefined,
+                        });
+                      } else if (!endLocation) {
+                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                          startLocation,
+                          startLocationName,
+                          startBuildingId: startBuildingId ?? undefined,
+                          endLocation: location,
+                          endLocationName: name,
+                          endBuildingId: item.buildingId,
+                        });
+                      } else {
+                        Alert.alert(
+                          '이미 출발지와 도착지가 모두 선택되어 있어요!',
+                        );
+                      }
+                    } catch (err) {
+                      Alert.alert('건물 정보를 불러오는 데 실패했습니다');
+                    }
+                  }}>
+                  <Text style={styles.recentText}>{item.keyword}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      await searchApi.deleteRecentKeywordByBuildingId(
+                        item.buildingId,
+                      );
+                      setRecentKeywords(prev =>
+                        prev.filter(k => k.buildingId !== item.buildingId),
+                      );
+                    } catch (err) {
+                      Alert.alert('삭제 실패');
+                    }
+                  }}>
+                  <Text style={styles.clearIcon}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </AppScreenLayout>
   );
 }
 

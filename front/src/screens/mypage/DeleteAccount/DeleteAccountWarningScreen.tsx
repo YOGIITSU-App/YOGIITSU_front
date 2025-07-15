@@ -1,18 +1,12 @@
 import React, {useLayoutEffect} from 'react';
-import {
-  Dimensions,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Dimensions, Image, StyleSheet, Text, View} from 'react-native';
 import {colors} from '../../../constants';
 import {useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {defaultTabOptions} from '../../../constants/tabOptions';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -31,7 +25,7 @@ function DeleteAccountWarningScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
           <Text style={styles.highlightedText}>잠시만요,</Text>
@@ -64,7 +58,7 @@ function DeleteAccountWarningScreen() {
           onPress={() => navigation.navigate('DeleteAccount')}
         />
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

@@ -2,12 +2,12 @@ import React, {useState} from 'react';
 import {
   Dimensions,
   Modal,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {colors} from '../../constants';
 import {CompositeNavigationProp, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -15,6 +15,7 @@ import {MypageStackParamList} from '../../navigations/stack/MypageStackNavigator
 import CustomBotton from '../../components/CustomButton';
 import {RootStackParamList} from '../../navigations/root/Rootnavigator';
 import {logoutEmitter} from '../../utils/logoutEmitter';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -31,7 +32,7 @@ function MypageHomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.subContainer}>
         <Text style={styles.subTitleText}>계정</Text>
         <TouchableOpacity
@@ -90,6 +91,10 @@ function MypageHomeScreen() {
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}>
+          <StatusBar
+            backgroundColor="rgba(0,0,0,0.5)"
+            barStyle="light-content"
+          />
           <View style={styles.modalBackground}>
             <View style={styles.modalBox}>
               <Text style={styles.modalText}>로그아웃 하시겠어요?</Text>
@@ -113,7 +118,7 @@ function MypageHomeScreen() {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

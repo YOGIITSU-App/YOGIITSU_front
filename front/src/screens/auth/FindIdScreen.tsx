@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {authNavigations, colors} from '../../constants';
 import CustomBotton from '../../components/CustomButton';
 import InputField from '../../components/inputField';
@@ -25,6 +24,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {AuthStackParamList} from '../../navigations/stack/AuthStackNavigator';
 import {scale, verticalScale} from '../../utils/scale';
 import {EmailVerificationPurpose} from '../../constants/emailPurpose';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -88,7 +88,7 @@ function FindIdScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       {/* 안내 문구 */}
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>아이디를 찾기 위해</Text>
@@ -240,7 +240,7 @@ function FindIdScreen() {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

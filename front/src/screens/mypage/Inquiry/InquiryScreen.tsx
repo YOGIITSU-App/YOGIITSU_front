@@ -1,6 +1,5 @@
-import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import React, {useCallback, useLayoutEffect, useState} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -16,6 +15,7 @@ import {MypageStackParamList} from '../../../navigations/stack/MypageStackNaviga
 import {StackNavigationProp} from '@react-navigation/stack';
 import {defaultTabOptions} from '../../../constants/tabOptions';
 import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
@@ -55,7 +55,7 @@ function InquiryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       {isLoading && (
         <View style={styles.spinnerOverlay}>
           <ActivityIndicator size="large" color={colors.BLUE_500} />
@@ -145,7 +145,7 @@ function InquiryScreen() {
           </View>
         </>
       )}
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

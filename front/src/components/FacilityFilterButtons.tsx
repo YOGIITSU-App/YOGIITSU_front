@@ -99,7 +99,7 @@ export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    top: 95,
+    top: 70,
     width: '100%',
     zIndex: 10,
   },

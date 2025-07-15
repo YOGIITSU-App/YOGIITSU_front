@@ -1,12 +1,7 @@
 import React, {useEffect} from 'react';
-import {Dimensions, SafeAreaView, StyleSheet, Text, View} from 'react-native';
-import InputField from '../../components/inputField';
-import CustomBotton from '../../components/CustomButton';
-import CustomText from '../../components/CustomText';
-import {colors} from '../../constants';
-import useForm from '../../hooks/useForms';
-import {validateEmail} from '../../utils';
+import {Dimensions, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -23,7 +18,11 @@ function NoticeScreen() {
     };
   }, [navigation]);
 
-  return <View></View>;
+  return (
+    <AppScreenLayout disableTopInset>
+      <View></View>
+    </AppScreenLayout>
+  );
 }
 
 const styles = StyleSheet.create({});

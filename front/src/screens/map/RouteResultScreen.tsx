@@ -22,6 +22,8 @@ import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
 import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import WebView from 'react-native-webview';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const {height: deviceHeight} = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ interface Coordinate {
 }
 
 function RouteResultScreen() {
+  const insets = useSafeAreaInsets();
   const route = useRoute<RouteResultScreenRouteProp>();
   const navigation = useNavigation<RouteResultScreenNavigationProp>();
   const {
@@ -246,72 +249,73 @@ function RouteResultScreen() {
   }, [routeFeatures]);
 
   return (
-    <View style={styles.container}>
-      {isLoading && (
-        <ActivityIndicator
-          style={styles.loader}
-          size="large"
-          color={colors.BLUE_500}
-        />
-      )}
+    <AppScreenLayout disableTopInset>
+      <View style={styles.container}>
+        {isLoading && (
+          <ActivityIndicator
+            style={styles.loader}
+            size="large"
+            color={colors.BLUE_500}
+          />
+        )}
 
-      {/* 헤더 */}
-      <View
-        style={styles.headerWrapper}
-        onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
-        <View style={styles.headerTop}>
-          <View style={styles.placeholder} />
-          <View style={styles.modeIconWrapper}>
-            <Image
-              source={require('../../assets/walking-icon.png')}
-              style={{width: 48, height: 30}}
-              resizeMode="contain"
-            />
-          </View>
-          <TouchableOpacity
-            hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-            onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-            <Text style={styles.closeBtnText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.inputBox}>
-          <View style={styles.inputCol}>
+        {/* 헤더 */}
+        <View
+          style={[styles.headerWrapper, {paddingTop: insets.top}]}
+          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
+          <View style={styles.headerTop}>
+            <View style={styles.placeholder} />
+            <View style={styles.modeIconWrapper}>
+              <Image
+                source={require('../../assets/walking-icon.png')}
+                style={{width: 48, height: 30}}
+                resizeMode="contain"
+              />
+            </View>
             <TouchableOpacity
-              style={styles.inputRow}
-              onPress={() => navigateToSearch('start')}>
-              <Text style={styles.inputText}>{startLocationName}</Text>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.inputRow}
-              onPress={() => navigateToSearch('end')}>
-              <Text style={styles.inputText}>{endLocationName}</Text>
+              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+              <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.switchBtn} onPress={handleSwap}>
-            <Text style={{fontSize: 16, color: 'white'}}>⇅</Text>
-          </TouchableOpacity>
+          <View style={styles.inputBox}>
+            <View style={styles.inputCol}>
+              <TouchableOpacity
+                style={styles.inputRow}
+                onPress={() => navigateToSearch('start')}>
+                <Text style={styles.inputText}>{startLocationName}</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={styles.inputRow}
+                onPress={() => navigateToSearch('end')}>
+                <Text style={styles.inputText}>{endLocationName}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.switchBtn} onPress={handleSwap}>
+              <Text style={{fontSize: 16, color: 'white'}}>⇅</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* WebView */}
-      <WebView
-        ref={webRef}
-        source={{uri: routeMapUrl}}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: deviceHeight * 0.35,
-        }}
-        javaScriptEnabled
-        domStorageEnabled
-        originWhitelist={['*']}
-        cacheEnabled={true}
-        cacheMode="LOAD_DEFAULT"
-        onLoadEnd={onWebViewLoadEnd}
-        injectedJavaScriptBeforeContentLoaded={`
+        {/* WebView */}
+        <WebView
+          ref={webRef}
+          source={{uri: routeMapUrl}}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: deviceHeight * 0.35,
+          }}
+          javaScriptEnabled
+          domStorageEnabled
+          originWhitelist={['*']}
+          cacheEnabled={true}
+          cacheMode="LOAD_DEFAULT"
+          onLoadEnd={onWebViewLoadEnd}
+          injectedJavaScriptBeforeContentLoaded={`
           (function() {
             document.addEventListener("message", function(e) {
               window.dispatchEvent(new MessageEvent("message", { data: e.data }));
@@ -319,89 +323,92 @@ function RouteResultScreen() {
           })();
           true;
         `}
-      />
-
-      {/* 경로 단계별 안내 */}
-      <BottomSheet
-        snapPoints={snapPoints}
-        index={0}
-        enableContentPanningGesture
-        enableHandlePanningGesture
-        enableOverDrag={false}
-        style={{flex: 1}}
-        onChange={idx => {
-          if (idx === 0)
-            flatListRef.current?.scrollToOffset({offset: 0, animated: true});
-        }}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.headerTitle}>경로 안내</Text>
-          {travelTime !== null && (
-            <Text style={styles.travelTime}>⏱ 약 {travelTime}분 소요</Text>
-          )}
-        </View>
-        <BottomSheetFlatList
-          ref={flatListRef}
-          data={routeSteps}
-          keyExtractor={(_, i) => `step-${i}`}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 20,
-            flexGrow: 1,
-          }}
-          renderItem={({item, index}) => {
-            const {description, distance} = item.properties;
-            const isFirst = index === 0;
-            const isLast = index === routeSteps.length - 1;
-            return (
-              <View style={styles.stepRow}>
-                {/* 타임라인 아이콘 */}
-                <View style={styles.timelineContainer}>
-                  {!isFirst && <View style={styles.verticalLineTop} />}
-                  {isFirst || isLast ? (
-                    <View style={styles.circle}>
-                      <Image
-                        source={
-                          isFirst
-                            ? require('../../assets/start-icon.png')
-                            : require('../../assets/arrival-icon.png')
-                        }
-                        style={styles.startIcon}
-                      />
-                    </View>
-                  ) : (
-                    <View style={styles.donutOuter}>
-                      <View style={styles.donutInner} />
-                    </View>
-                  )}
-                  {!isLast && <View style={styles.verticalLineBottom} />}
-                </View>
-                {/* 안내 텍스트 & 거리 & 이미지 */}
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepTitle}>{description}</Text>
-                  {distance != null && (
-                    <Text style={styles.stepDistance}>{distance}m</Text>
-                  )}
-                  {isFirst && startBuildingDetail?.buildingInfo.imageUrl && (
-                    <Image
-                      source={{uri: startBuildingDetail.buildingInfo.imageUrl}}
-                      style={styles.stepImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                  {isLast && endBuildingDetail?.buildingInfo.imageUrl && (
-                    <Image
-                      source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
-                      style={styles.stepImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                </View>
-              </View>
-            );
-          }}
         />
-      </BottomSheet>
-    </View>
+
+        {/* 경로 단계별 안내 */}
+        <BottomSheet
+          snapPoints={snapPoints}
+          index={0}
+          enableContentPanningGesture
+          enableHandlePanningGesture
+          enableOverDrag={false}
+          style={{flex: 1}}
+          onChange={idx => {
+            if (idx === 0)
+              flatListRef.current?.scrollToOffset({offset: 0, animated: true});
+          }}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.headerTitle}>경로 안내</Text>
+            {travelTime !== null && (
+              <Text style={styles.travelTime}>⏱ 약 {travelTime}분 소요</Text>
+            )}
+          </View>
+          <BottomSheetFlatList
+            ref={flatListRef}
+            data={routeSteps}
+            keyExtractor={(_, i) => `step-${i}`}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: 20,
+              flexGrow: 1,
+            }}
+            renderItem={({item, index}) => {
+              const {description, distance} = item.properties;
+              const isFirst = index === 0;
+              const isLast = index === routeSteps.length - 1;
+              return (
+                <View style={styles.stepRow}>
+                  {/* 타임라인 아이콘 */}
+                  <View style={styles.timelineContainer}>
+                    {!isFirst && <View style={styles.verticalLineTop} />}
+                    {isFirst || isLast ? (
+                      <View style={styles.circle}>
+                        <Image
+                          source={
+                            isFirst
+                              ? require('../../assets/start-icon.png')
+                              : require('../../assets/arrival-icon.png')
+                          }
+                          style={styles.startIcon}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.donutOuter}>
+                        <View style={styles.donutInner} />
+                      </View>
+                    )}
+                    {!isLast && <View style={styles.verticalLineBottom} />}
+                  </View>
+                  {/* 안내 텍스트 & 거리 & 이미지 */}
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>{description}</Text>
+                    {distance != null && (
+                      <Text style={styles.stepDistance}>{distance}m</Text>
+                    )}
+                    {isFirst && startBuildingDetail?.buildingInfo.imageUrl && (
+                      <Image
+                        source={{
+                          uri: startBuildingDetail.buildingInfo.imageUrl,
+                        }}
+                        style={styles.stepImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    {isLast && endBuildingDetail?.buildingInfo.imageUrl && (
+                      <Image
+                        source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
+                        style={styles.stepImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </View>
+                </View>
+              );
+            }}
+          />
+        </BottomSheet>
+      </View>
+    </AppScreenLayout>
   );
 }
 
@@ -419,7 +426,6 @@ const styles = StyleSheet.create({
   },
   headerWrapper: {
     position: 'relative',
-    paddingTop: 5,
     paddingBottom: 20,
     paddingHorizontal: 16,
     backgroundColor: colors.BLUE_700,

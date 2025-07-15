@@ -12,17 +12,19 @@ import {mapNavigation} from '../constants/navigation';
 import {colors} from '../constants/colors';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../navigations/stack/MapStackNavigator';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type Props = {
   buildingName: string;
 };
 
 export default function BuildingHeader({buildingName}: Props) {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<StackNavigationProp<MapStackParamList>>();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, {top: insets.top}]}>
         <TouchableOpacity
           style={styles.searchBar}
           onPress={() => {

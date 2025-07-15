@@ -13,6 +13,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {colors} from '../../constants';
 import {fetchShortcuts, ShortcutSummary} from '../../api/shortcutApi';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 type NavigationProp = StackNavigationProp<MapStackParamList, 'ShortcutList'>;
 
@@ -81,29 +82,31 @@ export default function ShortcutListScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={colors.BLUE_700} />
-        </View>
-      ) : error ? (
-        <View style={styles.loading}>
-          <Text style={{color: 'red', marginBottom: 10}}>{error}</Text>
-          <TouchableOpacity onPress={handleRetry}>
-            <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
-              재시도
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={shortcuts}
-          keyExtractor={item => item.shortcutId.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={styles.list}
-        />
-      )}
-    </View>
+    <AppScreenLayout disableTopInset>
+      <View style={styles.container}>
+        {loading ? (
+          <View style={styles.loading}>
+            <ActivityIndicator size="large" color={colors.BLUE_700} />
+          </View>
+        ) : error ? (
+          <View style={styles.loading}>
+            <Text style={{color: 'red', marginBottom: 10}}>{error}</Text>
+            <TouchableOpacity onPress={handleRetry}>
+              <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
+                재시도
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={shortcuts}
+            keyExtractor={item => item.shortcutId.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={styles.list}
+          />
+        )}
+      </View>
+    </AppScreenLayout>
   );
 }
 

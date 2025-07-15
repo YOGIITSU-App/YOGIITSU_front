@@ -1,5 +1,12 @@
 import React from 'react';
-import {Modal, View, Text, StyleSheet, Dimensions} from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
 import CustomBotton from './CustomButton';
 import {colors} from '../constants';
 
@@ -30,6 +37,7 @@ export default function AlertModal({
       transparent
       visible={visible}
       onRequestClose={onRequestClose}>
+      <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
       <View style={styles.overlay}>
         <View style={styles.box}>
           <Text style={styles.text}>{message}</Text>

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
@@ -19,6 +20,7 @@ import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -142,198 +144,217 @@ export default function BuildingDetailScreen() {
   const {buildingInfo, departments} = buildingDetail;
 
   return (
-    <ScrollView style={styles.container}>
-      <Image source={{uri: buildingInfo.imageUrl}} style={styles.image} />
+    <AppScreenLayout>
+      <ScrollView style={styles.container}>
+        <Image source={{uri: buildingInfo.imageUrl}} style={styles.image} />
 
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{buildingInfo.name}</Text>
-          <TouchableOpacity onPress={toggleFavorite}>
-            <Image
-              source={require('../../assets/bookmark-icon.png')}
-              style={{
-                tintColor: isFavorite ? undefined : colors.GRAY_700,
-                width: 14,
-                height: 18,
-              }}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.tags}>
-          {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
-        </Text>
-
-        <View style={styles.facilityRow}>
-          {buildingInfo.facilities.map(fac => {
-            const icon = facilityIconMap[fac.name.trim()];
-            return icon ? (
-              <Image key={fac.name} source={icon} style={styles.facilityIcon} />
-            ) : null;
-          })}
-        </View>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabContainer}>
-        {departments.map((dep, index) => (
-          <TouchableOpacity
-            key={dep.id}
-            onPress={() => setSelectedDeptIndex(index)}
-            style={[
-              styles.tabItem,
-              index === selectedDeptIndex && styles.activeTabItem,
-            ]}>
-            <Text
-              style={[
-                styles.tabText,
-                index === selectedDeptIndex && styles.activeTabText,
-              ]}>
-              {dep.departmentName}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={styles.content}>
-        <Text style={styles.sectionTitle}>학과정보</Text>
-        <View style={styles.departmentBox}>
-          <View style={styles.departmentRow}>
-            <Text style={styles.departmentLabel}>학과위치</Text>
-            <Text style={styles.departmentValue}>
-              {departments[selectedDeptIndex]?.location}
-            </Text>
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{buildingInfo.name}</Text>
+            <TouchableOpacity onPress={toggleFavorite}>
+              <Image
+                source={require('../../assets/bookmark-icon.png')}
+                style={{
+                  tintColor: isFavorite ? undefined : colors.GRAY_700,
+                  width: 14,
+                  height: 18,
+                }}
+              />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.departmentRow}>
-            <Text style={styles.departmentLabel}>대표전화</Text>
-            <Text style={styles.departmentValue}>
-              {departments[selectedDeptIndex]?.phone}
-            </Text>
-          </View>
+          <Text style={styles.tags}>
+            {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
+          </Text>
 
-          {departments[selectedDeptIndex]?.fax && (
-            <View style={styles.departmentRow}>
-              <Text style={styles.departmentLabel}>FAX</Text>
-              <Text style={styles.departmentValue}>
-                {departments[selectedDeptIndex]?.fax}
-              </Text>
-            </View>
-          )}
-          {departments[selectedDeptIndex]?.officeHours && (
-            <View style={styles.departmentRow}>
-              <Text style={styles.departmentLabel}>업무시간</Text>
-              <Text style={styles.departmentValue}>
-                {departments[selectedDeptIndex]?.officeHours}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {buildingDetail.floorPlans.length > 0 &&
-          buildingDetail.floorPlans[selectedFloorIndex] && (
-            <>
-              <Text style={styles.sectionTitle}>층별안내</Text>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.floorTabContainer}>
-                {buildingDetail.floorPlans.map((plan, index) => (
-                  <TouchableOpacity
-                    key={plan.floor}
-                    style={[
-                      styles.floorTabItem,
-                      index === selectedFloorIndex && styles.activeFloorTabItem,
-                    ]}
-                    onPress={() => setSelectedFloorIndex(index)}>
-                    <Text
-                      style={[
-                        styles.floorTabText,
-                        index === selectedFloorIndex &&
-                          styles.activeFloorTabText,
-                      ]}>
-                      {plan.floor}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <TouchableOpacity onPress={() => setImageModalVisible(true)}>
+          <View style={styles.facilityRow}>
+            {buildingInfo.facilities.map(fac => {
+              const icon = facilityIconMap[fac.name.trim()];
+              return icon ? (
                 <Image
-                  source={{
-                    uri: buildingDetail.floorPlans[selectedFloorIndex].imageUrl,
-                  }}
-                  style={styles.floorImage}
-                  resizeMode="contain"
+                  key={fac.name}
+                  source={icon}
+                  style={styles.facilityIcon}
                 />
-              </TouchableOpacity>
-
-              {/* 팝업 모달 */}
-              <Modal
-                isVisible={isImageModalVisible}
-                onBackdropPress={() => setImageModalVisible(false)}
-                style={{margin: 0}}>
-                <View style={{flex: 1, backgroundColor: 'black'}}>
-                  {/* 닫기 버튼은 모달 바깥 View에 직접 넣는 게 안전해요 */}
-                  <TouchableOpacity
-                    onPress={() => setImageModalVisible(false)}
-                    style={{
-                      position: 'absolute',
-                      top: 23,
-                      right: 10,
-                      zIndex: 10,
-                      padding: 10,
-                    }}>
-                    <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
-                  </TouchableOpacity>
-
-                  <ImageViewer
-                    imageUrls={buildingDetail.floorPlans.map(plan => ({
-                      url: plan.imageUrl,
-                    }))}
-                    index={selectedFloorIndex} // 현재 선택된 층부터 시작!
-                    enableSwipeDown
-                    onSwipeDown={() => setImageModalVisible(false)}
-                    backgroundColor="black"
-                    renderHeader={() => (
-                      <View
-                        style={{
-                          position: 'absolute',
-                          top: 23,
-                          right: 10,
-                          zIndex: 10,
-                          padding: 10,
-                        }}
-                        pointerEvents="box-none">
-                        <TouchableOpacity
-                          onPress={() => setImageModalVisible(false)}>
-                          <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  />
-                </View>
-              </Modal>
-            </>
-          )}
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.startbutton}
-            onPress={() => handleNavigateToRouteSelection('start')}>
-            <Text style={styles.startbuttonText}>출발</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.finishbutton}
-            onPress={() => handleNavigateToRouteSelection('end')}>
-            <Text style={styles.finishbuttonText}>도착</Text>
-          </TouchableOpacity>
+              ) : null;
+            })}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabContainer}>
+          {departments.map((dep, index) => (
+            <TouchableOpacity
+              key={dep.id}
+              onPress={() => setSelectedDeptIndex(index)}
+              style={[
+                styles.tabItem,
+                index === selectedDeptIndex && styles.activeTabItem,
+              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  index === selectedDeptIndex && styles.activeTabText,
+                ]}>
+                {dep.departmentName}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.content}>
+          <Text style={styles.sectionTitle}>학과정보</Text>
+          <View style={styles.departmentBox}>
+            <View style={styles.departmentRow}>
+              <Text style={styles.departmentLabel}>학과위치</Text>
+              <Text style={styles.departmentValue}>
+                {departments[selectedDeptIndex]?.location}
+              </Text>
+            </View>
+
+            <View style={styles.departmentRow}>
+              <Text style={styles.departmentLabel}>대표전화</Text>
+              <Text style={styles.departmentValue}>
+                {departments[selectedDeptIndex]?.phone}
+              </Text>
+            </View>
+
+            {departments[selectedDeptIndex]?.fax && (
+              <View style={styles.departmentRow}>
+                <Text style={styles.departmentLabel}>FAX</Text>
+                <Text style={styles.departmentValue}>
+                  {departments[selectedDeptIndex]?.fax}
+                </Text>
+              </View>
+            )}
+            {departments[selectedDeptIndex]?.officeHours && (
+              <View style={styles.departmentRow}>
+                <Text style={styles.departmentLabel}>업무시간</Text>
+                <Text style={styles.departmentValue}>
+                  {departments[selectedDeptIndex]?.officeHours}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {buildingDetail.floorPlans.length > 0 &&
+            buildingDetail.floorPlans[selectedFloorIndex] && (
+              <>
+                <Text style={styles.sectionTitle}>층별안내</Text>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.floorTabContainer}>
+                  {buildingDetail.floorPlans.map((plan, index) => (
+                    <TouchableOpacity
+                      key={plan.floor}
+                      style={[
+                        styles.floorTabItem,
+                        index === selectedFloorIndex &&
+                          styles.activeFloorTabItem,
+                      ]}
+                      onPress={() => setSelectedFloorIndex(index)}>
+                      <Text
+                        style={[
+                          styles.floorTabText,
+                          index === selectedFloorIndex &&
+                            styles.activeFloorTabText,
+                        ]}>
+                        {plan.floor}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <TouchableOpacity onPress={() => setImageModalVisible(true)}>
+                  <Image
+                    source={{
+                      uri: buildingDetail.floorPlans[selectedFloorIndex]
+                        .imageUrl,
+                    }}
+                    style={styles.floorImage}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+
+                {/* 팝업 모달 */}
+                <Modal
+                  isVisible={isImageModalVisible}
+                  onBackdropPress={() => setImageModalVisible(false)}
+                  style={{margin: 0}}>
+                  <StatusBar
+                    backgroundColor={
+                      isImageModalVisible ? 'black' : 'transparent'
+                    }
+                    barStyle={
+                      isImageModalVisible ? 'light-content' : 'dark-content'
+                    }
+                    animated
+                  />
+                  <View style={{flex: 1, backgroundColor: 'black'}}>
+                    {/* 닫기 버튼은 모달 바깥 View에 직접 넣는 게 안전해요 */}
+                    <TouchableOpacity
+                      onPress={() => setImageModalVisible(false)}
+                      style={{
+                        position: 'absolute',
+                        top: 23,
+                        right: 10,
+                        zIndex: 10,
+                        padding: 10,
+                      }}>
+                      <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
+                    </TouchableOpacity>
+
+                    <ImageViewer
+                      imageUrls={buildingDetail.floorPlans.map(plan => ({
+                        url: plan.imageUrl,
+                      }))}
+                      index={selectedFloorIndex} // 현재 선택된 층부터 시작!
+                      enableSwipeDown
+                      onSwipeDown={() => setImageModalVisible(false)}
+                      backgroundColor="black"
+                      renderHeader={() => (
+                        <View
+                          style={{
+                            position: 'absolute',
+                            top: 23,
+                            right: 10,
+                            zIndex: 10,
+                            padding: 10,
+                          }}
+                          pointerEvents="box-none">
+                          <TouchableOpacity
+                            onPress={() => setImageModalVisible(false)}>
+                            <Text style={{fontSize: 20, color: 'white'}}>
+                              ✕
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    />
+                  </View>
+                </Modal>
+              </>
+            )}
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.startbutton}
+              onPress={() => handleNavigateToRouteSelection('start')}>
+              <Text style={styles.startbuttonText}>출발</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.finishbutton}
+              onPress={() => handleNavigateToRouteSelection('end')}>
+              <Text style={styles.finishbuttonText}>도착</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </AppScreenLayout>
   );
 }
 

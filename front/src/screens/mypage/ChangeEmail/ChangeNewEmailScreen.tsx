@@ -1,12 +1,5 @@
 import React, {useState} from 'react';
-import {
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
@@ -21,6 +14,7 @@ import {MypageStackParamList} from '../../../navigations/stack/MypageStackNaviga
 import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import AlertModal from '../../../components/AlertModal';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -80,7 +74,7 @@ function ChangeNewEmailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         {/* 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
@@ -187,7 +181,7 @@ function ChangeNewEmailScreen() {
           ]}
         />
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

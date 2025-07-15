@@ -16,6 +16,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {fetchShortcutDetail, ShortcutDetail} from '../../api/shortcutApi';
 import {colors, mapNavigation} from '../../constants';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -27,6 +29,7 @@ type NavigationProp = StackNavigationProp<
 >;
 
 export default function ShortcutDetailScreen() {
+  const insets = useSafeAreaInsets();
   const deviceHeight = Dimensions.get('window').height;
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
@@ -118,79 +121,80 @@ export default function ShortcutDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {loading && (
-        <ActivityIndicator
-          style={styles.loader}
-          size="large"
-          color={colors.BLUE_500}
-        />
-      )}
+    <AppScreenLayout disableTopInset>
+      <View style={styles.container}>
+        {loading && (
+          <ActivityIndicator
+            style={styles.loader}
+            size="large"
+            color={colors.BLUE_500}
+          />
+        )}
 
-      {/* Header */}
-      <View
-        style={styles.header}
-        onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
-        <View style={styles.headerTop}>
-          {/* 왼쪽: ← 아이콘 */}
-          <View style={styles.iconWrapper}>
-            <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
-              ←
-            </Text>
+        {/* Header */}
+        <View
+          style={[styles.header, {paddingTop: insets.top}]}
+          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
+          <View style={styles.headerTop}>
+            {/* 왼쪽: ← 아이콘 */}
+            <View style={styles.iconWrapper}>
+              <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
+                ←
+              </Text>
+            </View>
+
+            {/* 중앙: 걷기 아이콘 */}
+            <View style={styles.centerIconWrapper}>
+              <Image
+                source={require('../../assets/walking-icon.png')}
+                style={styles.walkingIcon}
+              />
+            </View>
+
+            {/* 오른쪽: ✕ 아이콘 */}
+            <View style={styles.iconWrapper}>
+              <Text
+                onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
+                style={styles.iconRight}>
+                ✕
+              </Text>
+            </View>
           </View>
-
-          {/* 중앙: 걷기 아이콘 */}
-          <View style={styles.centerIconWrapper}>
-            <Image
-              source={require('../../assets/walking-icon.png')}
-              style={styles.walkingIcon}
-            />
-          </View>
-
-          {/* 오른쪽: ✕ 아이콘 */}
-          <View style={styles.iconWrapper}>
-            <Text
-              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
-              style={styles.iconRight}>
-              ✕
-            </Text>
+          <View style={styles.titleBox}>
+            <View style={{flex: 1, alignItems: 'center'}}>
+              <Text
+                style={[styles.pointText, {textAlign: 'center'}]}
+                numberOfLines={1}
+                ellipsizeMode="tail">
+                {detail?.pointA}
+              </Text>
+            </View>
+            <Text style={[styles.arrowIcon, {marginHorizontal: 16}]}>↔</Text>
+            <View style={{flex: 1, alignItems: 'center'}}>
+              <Text
+                style={[styles.pointText, {textAlign: 'center'}]}
+                numberOfLines={1}
+                ellipsizeMode="tail">
+                {detail?.pointB}
+              </Text>
+            </View>
           </View>
         </View>
-        <View style={styles.titleBox}>
-          <View style={{flex: 1, alignItems: 'center'}}>
-            <Text
-              style={[styles.pointText, {textAlign: 'center'}]}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              {detail?.pointA}
-            </Text>
-          </View>
-          <Text style={[styles.arrowIcon, {marginHorizontal: 16}]}>↔</Text>
-          <View style={{flex: 1, alignItems: 'center'}}>
-            <Text
-              style={[styles.pointText, {textAlign: 'center'}]}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              {detail?.pointB}
-            </Text>
-          </View>
-        </View>
-      </View>
 
-      {/* WebView */}
-      <WebView
-        ref={webRef}
-        source={{uri: shortcutMapUrl}}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: deviceHeight * 0.35,
-        }}
-        cacheEnabled={true}
-        cacheMode="LOAD_DEFAULT"
-        injectedJavaScriptBeforeContentLoaded={`
+        {/* WebView */}
+        <WebView
+          ref={webRef}
+          source={{uri: shortcutMapUrl}}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: deviceHeight * 0.35,
+          }}
+          cacheEnabled={true}
+          cacheMode="LOAD_DEFAULT"
+          injectedJavaScriptBeforeContentLoaded={`
           (function() {
             document.addEventListener("message", function(e) {
               window.dispatchEvent(new MessageEvent("message", { data: e.data }));
@@ -198,77 +202,78 @@ export default function ShortcutDetailScreen() {
           })();
           true;
         `}
-        onLoadEnd={onWebViewLoadEnd}
-      />
-
-      {/* 요약 박스 */}
-      <View style={[styles.summaryBox, {bottom: '37%'}]}>
-        <Text style={styles.summaryText}>
-          {detail?.distance}m · 약 {detail?.duration}분 소요
-        </Text>
-      </View>
-
-      {/* 안내 BottomSheet */}
-      <BottomSheet
-        index={0}
-        snapPoints={snapPoints}
-        enableContentPanningGesture
-        enableHandlePanningGesture
-        enableOverDrag={false}>
-        <BottomSheetFlatList
-          data={detail?.coordinates || []}
-          keyExtractor={c => c.pointOrder.toString()}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 20,
-            flexGrow: 1,
-          }}
-          renderItem={({item, index}) => {
-            const isFirst = index === 0;
-            const isLast = index === (detail?.coordinates.length ?? 0) - 1;
-            return (
-              <View style={styles.stepRow}>
-                <View style={styles.timelineContainer}>
-                  {!isFirst && <View style={styles.verticalLineTop} />}
-                  {isFirst || isLast ? (
-                    <View style={styles.circle}>
-                      <Image
-                        source={
-                          isFirst
-                            ? require('../../assets/start-icon.png')
-                            : require('../../assets/arrival-icon.png')
-                        }
-                        style={styles.startIcon}
-                      />
-                    </View>
-                  ) : (
-                    <View style={styles.donutOuter}>
-                      <View style={styles.donutInner} />
-                    </View>
-                  )}
-                  {!isLast && <View style={styles.verticalLineBottom} />}
-                </View>
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepTitle}>{item.description}</Text>
-                  {item.segmentDistance > 0 && (
-                    <Text style={styles.stepDistance}>
-                      {item.segmentDistance}m 이동
-                    </Text>
-                  )}
-                  {item.imageUrl?.trim() !== '' && (
-                    <Image
-                      source={{uri: item.imageUrl}}
-                      style={styles.image}
-                      resizeMode="cover"
-                    />
-                  )}
-                </View>
-              </View>
-            );
-          }}
+          onLoadEnd={onWebViewLoadEnd}
         />
-      </BottomSheet>
-    </View>
+
+        {/* 요약 박스 */}
+        <View style={[styles.summaryBox, {bottom: '37%'}]}>
+          <Text style={styles.summaryText}>
+            {detail?.distance}m · 약 {detail?.duration}분 소요
+          </Text>
+        </View>
+
+        {/* 안내 BottomSheet */}
+        <BottomSheet
+          index={0}
+          snapPoints={snapPoints}
+          enableContentPanningGesture
+          enableHandlePanningGesture
+          enableOverDrag={false}>
+          <BottomSheetFlatList
+            data={detail?.coordinates || []}
+            keyExtractor={c => c.pointOrder.toString()}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: 20,
+              flexGrow: 1,
+            }}
+            renderItem={({item, index}) => {
+              const isFirst = index === 0;
+              const isLast = index === (detail?.coordinates.length ?? 0) - 1;
+              return (
+                <View style={styles.stepRow}>
+                  <View style={styles.timelineContainer}>
+                    {!isFirst && <View style={styles.verticalLineTop} />}
+                    {isFirst || isLast ? (
+                      <View style={styles.circle}>
+                        <Image
+                          source={
+                            isFirst
+                              ? require('../../assets/start-icon.png')
+                              : require('../../assets/arrival-icon.png')
+                          }
+                          style={styles.startIcon}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.donutOuter}>
+                        <View style={styles.donutInner} />
+                      </View>
+                    )}
+                    {!isLast && <View style={styles.verticalLineBottom} />}
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>{item.description}</Text>
+                    {item.segmentDistance > 0 && (
+                      <Text style={styles.stepDistance}>
+                        {item.segmentDistance}m 이동
+                      </Text>
+                    )}
+                    {item.imageUrl?.trim() !== '' && (
+                      <Image
+                        source={{uri: item.imageUrl}}
+                        style={styles.image}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </View>
+                </View>
+              );
+            }}
+          />
+        </BottomSheet>
+      </View>
+    </AppScreenLayout>
   );
 }
 
