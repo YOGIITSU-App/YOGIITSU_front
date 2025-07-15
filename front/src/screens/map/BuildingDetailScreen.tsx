@@ -17,6 +17,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
+import ImageViewer from 'react-native-image-zoom-viewer';
+import Modal from 'react-native-modal';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -42,6 +44,7 @@ export default function BuildingDetailScreen() {
   const [selectedDeptIndex, setSelectedDeptIndex] = useState(0);
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isImageModalVisible, setImageModalVisible] = useState(false);
 
   // 출발/도착 상태값
   const [startLocation, setStartLocation] = useState('');
@@ -71,27 +74,6 @@ export default function BuildingDetailScreen() {
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
   }, [route.params]);
 
-  // useLayoutEffect(() => {
-  //   if (buildingDetail?.buildingInfo?.name) {
-  //     navigation.setOptions({
-  //       title: buildingDetail.buildingInfo.name,
-  //       headerLeft: () => (
-  //         <TouchableOpacity onPress={() => navigation.goBack()}>
-  //           <Text style={{fontSize: 22}}>{'←'}</Text>
-  //         </TouchableOpacity>
-  //       ),
-  //       headerLeftContainerStyle: {paddingLeft: 15, marginRight: 5},
-  //       headerRight: () => (
-  //         <TouchableOpacity
-  //           onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-  //           <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>
-  //             ✕
-  //           </Text>
-  //         </TouchableOpacity>
-  //       ),
-  //     });
-  //   }
-  // }, [navigation, buildingDetail]);
   useLayoutEffect(() => {
     if (buildingDetail?.buildingInfo?.name) {
       navigation.setOptions({
@@ -279,13 +261,62 @@ export default function BuildingDetailScreen() {
                 ))}
               </ScrollView>
 
-              <Image
-                source={{
-                  uri: buildingDetail.floorPlans[selectedFloorIndex].imageUrl,
-                }}
-                style={styles.floorImage}
-                resizeMode="contain"
-              />
+              <TouchableOpacity onPress={() => setImageModalVisible(true)}>
+                <Image
+                  source={{
+                    uri: buildingDetail.floorPlans[selectedFloorIndex].imageUrl,
+                  }}
+                  style={styles.floorImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+
+              {/* 팝업 모달 */}
+              <Modal
+                isVisible={isImageModalVisible}
+                onBackdropPress={() => setImageModalVisible(false)}
+                style={{margin: 0}}>
+                <View style={{flex: 1, backgroundColor: 'black'}}>
+                  {/* 닫기 버튼은 모달 바깥 View에 직접 넣는 게 안전해요 */}
+                  <TouchableOpacity
+                    onPress={() => setImageModalVisible(false)}
+                    style={{
+                      position: 'absolute',
+                      top: 23,
+                      right: 10,
+                      zIndex: 10,
+                      padding: 10,
+                    }}>
+                    <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
+                  </TouchableOpacity>
+
+                  <ImageViewer
+                    imageUrls={buildingDetail.floorPlans.map(plan => ({
+                      url: plan.imageUrl,
+                    }))}
+                    index={selectedFloorIndex} // 현재 선택된 층부터 시작!
+                    enableSwipeDown
+                    onSwipeDown={() => setImageModalVisible(false)}
+                    backgroundColor="black"
+                    renderHeader={() => (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 23,
+                          right: 10,
+                          zIndex: 10,
+                          padding: 10,
+                        }}
+                        pointerEvents="box-none">
+                        <TouchableOpacity
+                          onPress={() => setImageModalVisible(false)}>
+                          <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  />
+                </View>
+              </Modal>
             </>
           )}
 
