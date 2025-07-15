@@ -16,6 +16,7 @@ import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
+import BuildingHeader from '../../components/BuildingHeader';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -70,23 +71,32 @@ export default function BuildingDetailScreen() {
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
   }, [route.params]);
 
+  // useLayoutEffect(() => {
+  //   if (buildingDetail?.buildingInfo?.name) {
+  //     navigation.setOptions({
+  //       title: buildingDetail.buildingInfo.name,
+  //       headerLeft: () => (
+  //         <TouchableOpacity onPress={() => navigation.goBack()}>
+  //           <Text style={{fontSize: 22}}>{'←'}</Text>
+  //         </TouchableOpacity>
+  //       ),
+  //       headerLeftContainerStyle: {paddingLeft: 15, marginRight: 5},
+  //       headerRight: () => (
+  //         <TouchableOpacity
+  //           onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+  //           <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>
+  //             ✕
+  //           </Text>
+  //         </TouchableOpacity>
+  //       ),
+  //     });
+  //   }
+  // }, [navigation, buildingDetail]);
   useLayoutEffect(() => {
     if (buildingDetail?.buildingInfo?.name) {
       navigation.setOptions({
-        title: buildingDetail.buildingInfo.name,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={{fontSize: 22}}>{'←'}</Text>
-          </TouchableOpacity>
-        ),
-        headerLeftContainerStyle: {paddingLeft: 15, marginRight: 5},
-        headerRight: () => (
-          <TouchableOpacity
-            onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
-            <Text style={{fontSize: 22, color: '#888', marginRight: 15}}>
-              ✕
-            </Text>
-          </TouchableOpacity>
+        header: () => (
+          <BuildingHeader buildingName={buildingDetail.buildingInfo.name} />
         ),
       });
     }
