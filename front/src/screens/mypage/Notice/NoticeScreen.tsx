@@ -34,7 +34,8 @@ function NoticeListScreen() {
     try {
       setIsLoading(true);
       const res = await noticeApi.getAll();
-      const mapped = res.data.map(mapToNotice);
+      const data = Array.isArray(res.data) ? res.data : [];
+      const mapped = data.map(mapToNotice);
       setNotices(mapped);
     } catch (e) {
       console.error('공지사항 목록 불러오기 실패', e);

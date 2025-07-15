@@ -7,11 +7,16 @@ export type Notice = {
   noticeAt: string;
 };
 
-export const mapToNotice = (item: any): Notice => ({
+export const mapToNotice = (item: {
+  noticeId: number;
+  noticeTitle: string;
+  noticeContent?: string;
+  noticeAt: string;
+}): Notice => ({
   noticeId: item.noticeId,
   noticeTitle: item.noticeTitle,
   noticeContent: item.noticeContent ?? undefined,
-  noticeAt: item.noticeAt.split('T')[0].replace(/-/g, '.'),
+  noticeAt: item.noticeAt?.split('T')[0]?.replace(/-/g, '.') || '',
 });
 
 export type NoticeDetail = {
@@ -29,11 +34,23 @@ export const mapToNoticeDetail = (item: any): NoticeDetail => ({
 });
 
 const noticeApi = {
-  getAll: () => {
-    return axiosInstance.get('/notices');
+  getAll: async () => {
+    try {
+      const res = await axiosInstance.get('/notices');
+      return res;
+    } catch (e) {
+      console.error('공지사항 목록 조회 실패:', e);
+      throw e;
+    }
   },
-  getById: (noticeId: number) => {
-    return axiosInstance.get(`/notices/${noticeId}`);
+  getById: async (noticeId: number) => {
+    try {
+      const response = await axiosInstance.get(`/notices/${noticeId}`);
+      return response;
+    } catch (error) {
+      console.error('공지사항 상세 조회 실패:', error);
+      throw error;
+    }
   },
 };
 
