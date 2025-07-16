@@ -187,7 +187,7 @@ function MapHomeScreen() {
           )}
           {/* 검색창 */}
           <TouchableOpacity
-            style={[styles.searchBox, {top: insets.top}]}
+            style={[styles.searchBox, {top: insets.top + 10}]}
             onPress={() =>
               navigation.navigate(mapNavigation.SEARCH, {
                 selectionType: 'start',
