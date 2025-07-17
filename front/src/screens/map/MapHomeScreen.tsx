@@ -11,7 +11,12 @@ import {
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
 import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
 import ShuttleBottomSheetContent from '../../components/ShuttleBottomSheetContent';
 import {
@@ -163,6 +168,20 @@ function MapHomeScreen() {
       globalThis.closeFavoriteBottomSheet = undefined;
     };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (openSheet === 'FAVORITE') {
+      open();
+    }
+  }, [openSheet, open]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (openSheet === 'FAVORITE') {
+        open(); // 화면 복귀 시 즐겨찾기 바텀시트 열려 있으면 무조건 최신화
+      }
+    }, [openSheet, open]),
+  );
 
   useEffect(() => {
     if (pendingFavoriteSheet && selectedCategory === null) {
