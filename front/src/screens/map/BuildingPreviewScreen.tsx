@@ -26,15 +26,16 @@ import {colors} from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import FacilityBadge from '../../components/FacilityBadge';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('window').height;
 
-const facilityIconMap: {[key: string]: any} = {
-  엘리베이터: require('../../assets/elevator-icon.png'),
-  프린터기: require('../../assets/printer-icon.png'),
-  자판기: require('../../assets/vending-icon.png'),
-};
+// const facilityIconMap: {[key: string]: any} = {
+//   엘리베이터: require('../../assets/elevator-icon.png'),
+//   프린터기: require('../../assets/printer-icon.png'),
+//   자판기: require('../../assets/vending-icon.png'),
+// };
 
 type RouteType = RouteProp<
   MapStackParamList,
@@ -232,7 +233,8 @@ export default function BuildingPreviewScreen() {
           ref={bottomSheetRef}
           index={0}
           snapPoints={snapPoints}
-          enableContentPanningGesture={true}
+          // enableContentPanningGesture={true}
+          enableContentPanningGesture={false}
           enableHandlePanningGesture={true}
           enableOverDrag={false}
           style={{flex: 1}}
@@ -261,7 +263,7 @@ export default function BuildingPreviewScreen() {
                 {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
               </Text>
 
-              <View style={styles.facilityRow}>
+              {/* <View style={styles.facilityRow}>
                 {buildingInfo.facilities.map(fac => {
                   const icon = facilityIconMap[fac.name.trim()];
                   return icon ? (
@@ -272,7 +274,8 @@ export default function BuildingPreviewScreen() {
                     />
                   ) : null;
                 })}
-              </View>
+              </View> */}
+              <FacilityBadge facilities={buildingInfo.facilities} />
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
@@ -337,17 +340,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     flexWrap: 'wrap',
     width: '100%',
-  },
-  facilityRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 20,
-  },
-  facilityIcon: {
-    resizeMode: 'contain',
   },
   buttonRow: {
     flexDirection: 'row',
