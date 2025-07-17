@@ -1,6 +1,7 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet, ImageSourcePropType} from 'react-native';
+import {View, Text, Image, StyleSheet} from 'react-native';
 import {colors} from '../constants';
+import {defaultFacilityIcon, facilityIconMap} from '../constants/facilityIcons';
 
 type Facility = {
   name: string;
@@ -11,27 +12,11 @@ type Props = {
   facilities: Facility[];
 };
 
-const facilityIconMap: {[key: string]: ImageSourcePropType} = {
-  카페: require('../assets/facilities-icon/cafe.png'),
-  편의점: require('../assets/facilities-icon/convenience-store.png'),
-  기숙사: require('../assets/facilities-icon/dormitory.png'),
-  엘리베이터: require('../assets/facilities-icon/elevator.png'),
-  헬스장: require('../assets/facilities-icon/gym.png'),
-  주차장: require('../assets/facilities-icon/parking.png'),
-  프린터기: require('../assets/facilities-icon/printer.png'),
-  열람실: require('../assets/facilities-icon/reading-room.png'),
-  식당: require('../assets/facilities-icon/restaurant.png'),
-  스터디룸: require('../assets/facilities-icon/studyroom.png'),
-  자판기: require('../assets/facilities-icon/vending-machine.png'),
-  정수기: require('../assets/facilities-icon/water-purifier.png'),
-};
-const defaultIcon = require('../assets/facilities-icon/vending-machine.png');
-
-const FacilityList = ({facilities}: Props) => (
+const FacilityBadgeWithFloor = ({facilities}: Props) => (
   <View style={styles.wrapper}>
     <View style={styles.row}>
       {facilities.map(fac => {
-        const icon = facilityIconMap[fac.name] || defaultIcon;
+        const icon = facilityIconMap[fac.name] || defaultFacilityIcon;
         return (
           <View key={fac.name + (fac.floor || '')} style={styles.item}>
             <Image source={icon} style={styles.icon} />
@@ -78,4 +63,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FacilityList;
+export default FacilityBadgeWithFloor;
