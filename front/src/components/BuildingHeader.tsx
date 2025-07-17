@@ -22,24 +22,36 @@ export default function BuildingHeader({buildingName}: Props) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<StackNavigationProp<MapStackParamList>>();
 
+  const handleBack = () => navigation.goBack();
+
+  // X 버튼 동작
+  const handleClearAndGoSearch = () => {
+    navigation.navigate(mapNavigation.MAPHOME);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={[styles.wrapper, {top: insets.top}]}>
+        {/* ← 뒤로가기 버튼 */}
         <TouchableOpacity
-          style={styles.searchBar}
-          onPress={() => {
-            navigation.navigate(mapNavigation.SEARCH, {
-              selectionType: 'start',
-              fromResultScreen: false,
-            });
-          }}>
+          onPress={handleBack}
+          style={{paddingRight: 6, paddingVertical: 6}}>
           <Image
             source={require('../assets/back-icon.png')}
             style={styles.backIcon}
           />
+        </TouchableOpacity>
+        {/* 가운데: 건물 이름(탭해도 뒤로가기) */}
+        <TouchableOpacity onPress={handleBack} style={{flex: 1}}>
           <Text style={styles.titleText} numberOfLines={1}>
             {buildingName || '건물 선택'}
           </Text>
+        </TouchableOpacity>
+        {/* 오른쪽: X 아이콘 */}
+        <TouchableOpacity
+          onPress={handleClearAndGoSearch}
+          style={{paddingLeft: 6, paddingVertical: 6}}>
+          <Text style={styles.closeIcon}>x</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -51,12 +63,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
   },
   wrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.GRAY_100,
     borderRadius: 8,
     marginHorizontal: 20,
     marginVertical: 14,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 5,
   },
   searchBar: {
     flexDirection: 'row',
@@ -67,11 +81,14 @@ const styles = StyleSheet.create({
     height: 15,
     marginRight: 15,
   },
+  closeIcon: {
+    fontSize: 20,
+    lineHeight: 24,
+  },
   titleText: {
-    flex: 1,
     fontSize: 16,
-    fontWeight: '500',
     lineHeight: 22,
+    fontWeight: '500',
     color: colors.BLACK_900,
   },
 });

@@ -21,15 +21,11 @@ import BuildingHeader from '../../components/BuildingHeader';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import FacilityBadge from '../../components/FacilityBadge';
+import FacilityBadgeWithFloor from '../../components/FacilityBadgeWithFloor';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
-
-const facilityIconMap: {[key: string]: any} = {
-  엘리베이터: require('../../assets/elevator-icon.png'),
-  프린터기: require('../../assets/printer-icon.png'),
-  자판기: require('../../assets/vending-icon.png'),
-};
 
 type RouteType = RouteProp<
   MapStackParamList,
@@ -167,18 +163,7 @@ export default function BuildingDetailScreen() {
             {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
           </Text>
 
-          <View style={styles.facilityRow}>
-            {buildingInfo.facilities.map(fac => {
-              const icon = facilityIconMap[fac.name.trim()];
-              return icon ? (
-                <Image
-                  key={fac.name}
-                  source={icon}
-                  style={styles.facilityIcon}
-                />
-              ) : null;
-            })}
-          </View>
+          <FacilityBadge facilities={buildingInfo.facilities} />
         </View>
 
         <ScrollView
@@ -238,7 +223,12 @@ export default function BuildingDetailScreen() {
               </View>
             )}
           </View>
-
+          <View style={styles.divider} />
+          <View>
+            <Text style={styles.sectionTitle}>시설정보</Text>
+            <FacilityBadgeWithFloor facilities={buildingInfo.facilities} />
+          </View>
+          <View style={styles.divider} />
           {buildingDetail.floorPlans.length > 0 &&
             buildingDetail.floorPlans[selectedFloorIndex] && (
               <>
@@ -295,7 +285,6 @@ export default function BuildingDetailScreen() {
                     animated
                   />
                   <View style={{flex: 1, backgroundColor: 'black'}}>
-                    {/* 닫기 버튼은 모달 바깥 View에 직접 넣는 게 안전해요 */}
                     <TouchableOpacity
                       onPress={() => setImageModalVisible(false)}
                       style={{
@@ -312,7 +301,7 @@ export default function BuildingDetailScreen() {
                       imageUrls={buildingDetail.floorPlans.map(plan => ({
                         url: plan.imageUrl,
                       }))}
-                      index={selectedFloorIndex} // 현재 선택된 층부터 시작!
+                      index={selectedFloorIndex} // 현재 선택된 층부터 시작
                       enableSwipeDown
                       onSwipeDown={() => setImageModalVisible(false)}
                       backgroundColor="black"
@@ -383,15 +372,6 @@ const styles = StyleSheet.create({
     color: colors.BLACK_700,
     marginBottom: 12,
   },
-  facilityRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 5,
-  },
-  facilityIcon: {
-    resizeMode: 'contain',
-  },
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 2,
@@ -416,6 +396,11 @@ const styles = StyleSheet.create({
     color: colors.BLACK_700,
     fontWeight: '600',
   },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    marginBottom: 28,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -423,10 +408,7 @@ const styles = StyleSheet.create({
     color: colors.BLACK_700,
   },
   departmentBox: {
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 12,
+    marginBottom: 28,
   },
   departmentRow: {
     flexDirection: 'row',
