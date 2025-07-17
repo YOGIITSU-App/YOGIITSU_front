@@ -133,15 +133,18 @@ export default function ShortcutDetailScreen() {
 
         {/* Header */}
         <View
-          style={[styles.header, {paddingTop: insets.top}]}
+          style={[styles.header, {paddingTop: insets.top + 5}]}
           onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
           <View style={styles.headerTop}>
-            {/* 왼쪽: ← 아이콘 */}
-            <View style={styles.iconWrapper}>
-              <Text onPress={() => navigation.goBack()} style={styles.iconLeft}>
-                ←
-              </Text>
-            </View>
+            {/* 왼쪽: < 아이콘 */}
+            <TouchableOpacity
+              style={styles.iconWrapper}
+              onPress={() => navigation.goBack()}>
+              <Image
+                source={require('../../assets/back-icon.png')}
+                style={styles.iconLeft}
+              />
+            </TouchableOpacity>
 
             {/* 중앙: 걷기 아이콘 */}
             <View style={styles.centerIconWrapper}>
@@ -312,16 +315,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconLeft: {
-    color: 'white',
-    fontSize: 30,
-    marginRight: 10,
-    lineHeight: 34,
+    width: 10,
+    height: 16,
+    marginRight: 25,
+    tintColor: colors.WHITE,
   },
   iconRight: {
     color: 'white',
     fontSize: 22,
     marginLeft: 10,
-    lineHeight: 28,
+    lineHeight: 26,
   },
   walkingIcon: {
     width: 48,
