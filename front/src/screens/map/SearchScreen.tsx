@@ -14,7 +14,12 @@ import {
   Platform,
   TouchableWithoutFeedback,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
@@ -35,7 +40,7 @@ type SearchScreenRouteProp = RouteProp<
 function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(route.params?.keyword ?? '');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,6 +48,21 @@ function SearchScreen() {
 
   // 유틸 훅 가져오기
   const {onSelect} = useSelectBuilding();
+
+  // 1. route.params.keyword가 바뀔 때는 기존처럼 setSearchText 해주고
+  useEffect(() => {
+    if (route.params?.keyword !== undefined) {
+      setSearchText(route.params.keyword);
+    }
+  }, [route.params?.keyword]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (searchText.trim()) {
+        fetchSuggestions(searchText);
+      }
+    }, []),
+  );
 
   useEffect(() => {
     loadRecent();
@@ -113,6 +133,18 @@ function SearchScreen() {
                   autoFocus
                   autoCorrect={false}
                 />
+                {/* X 버튼 추가! */}
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchText('');
+                      setResults([]);
+                    }}
+                    style={styles.clearButton}>
+                    {/* 아이콘 교체 가능 */}
+                    <Text style={styles.closeIcon}>✕</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
             <View style={styles.divider} />
@@ -238,6 +270,14 @@ const styles = StyleSheet.create({
     color: colors.BLACK_500,
     textAlignVertical: 'center',
   },
+  clearButton: {
+    marginLeft: 6,
+    padding: 6,
+  },
+  closeIcon: {
+    fontSize: 15,
+    lineHeight: 19,
+  },
   divider: {
     height: 1,
     marginTop: 15,
@@ -258,8 +298,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.GRAY_800,
   },
-  tagText: {fontSize: 12, color: colors.GRAY_800, marginTop: 4},
-
+  tagText: {
+    fontSize: 12,
+    color: colors.GRAY_800,
+    marginTop: 4,
+  },
   recentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
