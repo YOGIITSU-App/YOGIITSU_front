@@ -209,7 +209,7 @@ export default function ShortcutDetailScreen() {
         />
 
         {/* 요약 박스 */}
-        <View style={[styles.summaryBox, {bottom: '37%'}]}>
+        <View style={[styles.summaryBox, {bottom: '34.5%'}]}>
           <Text style={styles.summaryText}>
             {detail?.distance}m · 약 {detail?.duration}분 소요
           </Text>
@@ -349,7 +349,6 @@ const styles = StyleSheet.create({
   arrowIcon: {
     color: colors.BLUE_700,
     fontSize: 22,
-    lineHeight: 24,
   },
   summaryBox: {
     position: 'absolute',

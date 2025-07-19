@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     fontSize: 16,
-    lineHeight: 20,
     fontWeight: '600',
     marginBottom: 6,
     paddingHorizontal: 2,
