@@ -14,6 +14,7 @@ const mapNavigation = {
   BUILDING_DETAIL: 'BuildingDetail',
   ROUTE_SELECTION: 'RouteSelection',
   ROUTE_RESULT: 'RouteResult',
+  SHUTTLE_DETAIL: 'ShuttleDetail',
   SHORTCUT_LIST: 'ShortcutList',
   SHORTCUT_DETAIL: 'ShortcutDetail',
 } as const;

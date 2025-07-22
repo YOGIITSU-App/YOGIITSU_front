@@ -50,6 +50,7 @@ const ShuttleBottomSheet = ({data, currentStopName}: Props) => {
           );
         })}
       </View>
+      <Text style={styles.message}>* 위의 시간은 인문대 승차시간 기준</Text>
       {/* 노선 타임라인 */}
       <FlatList
         data={extendedRoute}
@@ -92,6 +93,13 @@ const ShuttleBottomSheet = ({data, currentStopName}: Props) => {
 };
 
 const styles = StyleSheet.create({
+  message: {
+    fontSize: 11,
+    fontWeight: '500',
+    alignSelf: 'flex-end',
+    color: colors.GRAY_700,
+    marginBottom: 5,
+  },
   container: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -100,7 +108,7 @@ const styles = StyleSheet.create({
   timeSelector: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 10,
     gap: 12,
   },
   timeButton: {

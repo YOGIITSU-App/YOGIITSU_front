@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -267,43 +267,45 @@ function MapHomeScreen() {
             />
             <Text style={styles.shortcutButtonText}>지름길</Text>
           </TouchableOpacity>
-
-          {openSheet === 'SHUTTLE' && shuttleSchedule && (
-            <BottomSheet
-              ref={shuttleSheetRef}
-              index={0}
-              snapPoints={['65%', '100%']}
-              enablePanDownToClose
-              onClose={() => setOpenSheet(null)}
-              onChange={index => {
-                // index가 1이면 100%로 올라간 상태
-                if (index === 1) {
-                  // navigation.navigate(mapNavigation.SHUTTLE_DETAIL);
-                  // 시트 닫기
-                  shuttleSheetRef.current?.close();
-                }
-              }}>
-              <ShuttleBottomSheetContent
-                data={shuttleSchedule}
-                currentStopName={selectedStopName}
-              />
-            </BottomSheet>
-          )}
-          {openSheet === 'FAVORITE' && (
-            <BottomSheet
-              index={0}
-              snapPoints={['40%', '80%']}
-              enablePanDownToClose
-              onClose={() => setOpenSheet(null)}>
-              <FavoriteBottomSheetContent
-                favorites={favorites}
-                onRefresh={open}
-                onSelect={handleSelectFavorite}
-              />
-            </BottomSheet>
-          )}
         </View>
       </AppScreenLayout>
+      {openSheet === 'SHUTTLE' && shuttleSchedule && (
+        <BottomSheet
+          ref={shuttleSheetRef}
+          index={0}
+          snapPoints={['60%', '100%']}
+          enablePanDownToClose
+          onClose={() => setOpenSheet(null)}
+          onChange={index => {
+            // index가 1이면 100%로 올라간 상태
+            if (index === 1) {
+              navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
+                shuttleSchedule: shuttleSchedule,
+                selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
+                currentStopName: selectedStopName,
+              });
+              shuttleSheetRef.current?.close();
+            }
+          }}>
+          <ShuttleBottomSheetContent
+            data={shuttleSchedule}
+            currentStopName={selectedStopName}
+          />
+        </BottomSheet>
+      )}
+      {openSheet === 'FAVORITE' && (
+        <BottomSheet
+          index={0}
+          snapPoints={['40%', '75%']}
+          enablePanDownToClose
+          onClose={() => setOpenSheet(null)}>
+          <FavoriteBottomSheetContent
+            favorites={favorites}
+            onRefresh={open}
+            onSelect={handleSelectFavorite}
+          />
+        </BottomSheet>
+      )}
     </GestureHandlerRootView>
   );
 }

@@ -9,6 +9,8 @@ import BuildingPreviewScreen from '../../screens/map/BuildingPreviewScreen';
 import BuildingDetailScreen from '../../screens/map/BuildingDetailScreen';
 import ShortcutListScreen from '../../screens/map/ShortcutListScreen';
 import ShortcutDetailScreen from '../../screens/map/ShortcutDetailScreen';
+import ShuttleDetailScreen from '../../screens/map/ShuttleDetailScreen';
+import {ShuttleSchedule} from '../../api/shuttleApi';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -71,6 +73,11 @@ export type MapStackParamList = {
     startBuildingId?: number;
     endBuildingId?: number;
   };
+  [mapNavigation.SHUTTLE_DETAIL]: {
+    shuttleSchedule: ShuttleSchedule;
+    selectedTime: string;
+    currentStopName?: string;
+  };
   [mapNavigation.SHORTCUT_LIST]: undefined;
   [mapNavigation.SHORTCUT_DETAIL]: {
     shortcutId: number;
@@ -111,6 +118,15 @@ function MapStackNavigator() {
         name={mapNavigation.ROUTE_RESULT}
         component={RouteResultScreen}
         options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name={mapNavigation.SHUTTLE_DETAIL}
+        component={ShuttleDetailScreen}
+        options={{
+          title: '셔틀버스',
+          headerTitleStyle: {fontSize: 16, fontWeight: '600'},
+          headerTitleAlign: 'center',
+        }}
       />
       <Stack.Screen
         name={mapNavigation.SHORTCUT_LIST}
