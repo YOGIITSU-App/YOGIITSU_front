@@ -33,6 +33,7 @@ import {fetchShuttleSchedule, ShuttleSchedule} from '../../api/shuttleApi';
 import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import buildingApi from '../../api/buildingApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -138,12 +139,22 @@ function MapHomeScreen() {
     mapWebViewRef.current.postMessage(msg);
   }, [selectedCategory]);
 
-  const handleSelectFavorite = (item: FavoriteItem) => {
-    navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      endLocation: item.id.toString(),
-      endLocationName: item.name,
-    });
-    close();
+  const handleSelectFavorite = async (item: FavoriteItem) => {
+    try {
+      const res = await buildingApi.getBuildingDetail(item.id);
+      const info = res.data.buildingInfo;
+      const location = `${info.latitude},${info.longitude}`;
+      const name = info.name;
+
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        endLocation: location,
+        endLocationName: name,
+        endBuildingId: item.id,
+      });
+      close();
+    } catch (err) {
+      Alert.alert('건물 위치 정보를 불러올 수 없습니다');
+    }
   };
 
   useEffect(() => {
