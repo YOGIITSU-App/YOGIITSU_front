@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import favoriteApi from '../api/favoriteApi';
 import {useNavigation} from '@react-navigation/native';
@@ -26,12 +27,14 @@ interface Props {
   favorites: FavoriteItem[];
   onRefresh: () => void; // 리스트 갱신
   onSelect: (item: FavoriteItem) => void;
+  isLoading?: boolean;
 }
 
 export default function FavoriteBottomSheetContent({
   favorites,
   onRefresh,
   onSelect,
+  isLoading = false,
 }: Props) {
   const navigation = useNavigation<StackNavigationProp<MapStackParamList>>();
 
@@ -51,7 +54,11 @@ export default function FavoriteBottomSheetContent({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>즐겨찾기</Text>
-      {favorites.length === 0 ? (
+      {isLoading ? (
+        <View style={{alignItems: 'center', paddingVertical: 24}}>
+          <ActivityIndicator size="large" color={colors.BLUE_500} />
+        </View>
+      ) : favorites.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.iconContainer}>
             <Image

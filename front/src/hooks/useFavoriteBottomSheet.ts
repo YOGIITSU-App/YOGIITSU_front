@@ -11,9 +11,11 @@ export type FavoriteItem = {
 export const useFavoriteBottomSheet = () => {
   const [visible, setVisible] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false); // 추가!
 
   // 열기
   const open = useCallback(async () => {
+    setIsLoading(true);
     try {
       const res = await favoriteApi.getFavorites();
       const list = res.data.buildings.map((b: any) => ({
@@ -26,6 +28,8 @@ export const useFavoriteBottomSheet = () => {
       setVisible(true);
     } catch (e) {
       console.error('즐겨찾기 불러오기 실패', e);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -49,5 +53,6 @@ export const useFavoriteBottomSheet = () => {
     open,
     close,
     favorites,
+    isLoading,
   };
 };

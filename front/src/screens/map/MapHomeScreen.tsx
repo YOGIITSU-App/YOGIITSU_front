@@ -48,7 +48,7 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
-  const {open, close, favorites} = useFavoriteBottomSheet();
+  const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
   const [shuttleSchedule, setShuttleSchedule] =
@@ -314,6 +314,7 @@ function MapHomeScreen() {
             favorites={favorites}
             onRefresh={open}
             onSelect={handleSelectFavorite}
+            isLoading={isLoading}
           />
         </BottomSheet>
       )}
