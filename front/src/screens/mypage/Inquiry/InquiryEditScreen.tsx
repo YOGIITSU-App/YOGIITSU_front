@@ -54,67 +54,69 @@ function InquiryEditScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <AppScreenLayout disableTopInset>
-        <TextInput
-          style={styles.titleInput}
-          placeholder="제목을 입력하세요"
-          placeholderTextColor={colors.GRAY_500}
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <Text style={styles.dateText}>{inquiry.date.replace(/-/g, '.')}</Text>
-
-        <View style={styles.textAreaContainer}>
+        <View style={styles.container}>
           <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder={`내용 입력\n(tip. 내용을 구체적으로 작성할수록 빠르고 원활한 답변이 가능해요)`}
+            style={styles.titleInput}
+            placeholder="제목을 입력하세요"
             placeholderTextColor={colors.GRAY_500}
-            value={content}
-            onChangeText={setContent}
+            value={title}
+            onChangeText={setTitle}
           />
-        </View>
 
-        <View style={styles.buttonContainer}>
-          <CustomButton
-            label="수정 완료하기"
-            onPress={() => {
-              if (!title || !content) {
-                Alert.alert('알림', '제목과 내용을 입력해주세요!');
-                return;
-              }
-              setModalVisible(true);
-            }}
-          />
-        </View>
+          <Text style={styles.dateText}>{inquiry.date.replace(/-/g, '.')}</Text>
 
-        <Modal
-          animationType="fade"
-          transparent
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <StatusBar
-            backgroundColor="rgba(0,0,0,0.5)"
-            barStyle="light-content"
-          />
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>수정 내용을 저장할까요?</Text>
-              <View style={styles.modalbuttonContainer}>
-                <CustomButton
-                  label="아니요"
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setModalVisible(false)}
-                />
-                <CustomButton
-                  label="네"
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirmEdit}
-                />
+          <View style={styles.textAreaContainer}>
+            <TextInput
+              style={styles.textArea}
+              multiline
+              placeholder={`내용 입력\n(tip. 내용을 구체적으로 작성할수록 빠르고 원활한 답변이 가능해요)`}
+              placeholderTextColor={colors.GRAY_500}
+              value={content}
+              onChangeText={setContent}
+            />
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <CustomButton
+              label="수정 완료하기"
+              onPress={() => {
+                if (!title || !content) {
+                  Alert.alert('알림', '제목과 내용을 입력해주세요!');
+                  return;
+                }
+                setModalVisible(true);
+              }}
+            />
+          </View>
+
+          <Modal
+            animationType="fade"
+            transparent
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}>
+            <StatusBar
+              backgroundColor="rgba(0,0,0,0.5)"
+              barStyle="light-content"
+            />
+            <View style={styles.modalBackground}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalText}>수정 내용을 저장할까요?</Text>
+                <View style={styles.modalbuttonContainer}>
+                  <CustomButton
+                    label="아니요"
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setModalVisible(false)}
+                  />
+                  <CustomButton
+                    label="네"
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleConfirmEdit}
+                  />
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        </View>
       </AppScreenLayout>
     </TouchableWithoutFeedback>
   );
