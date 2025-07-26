@@ -33,28 +33,30 @@ function DeleteAccountCompleteScreen() {
 
   return (
     <AppScreenLayout disableTopInset>
-      {/* 체크 아이콘 */}
-      <View style={styles.iconContainer}>
-        <Image
-          style={styles.warningIcon}
-          source={require('../../../assets/Warning-icon-gray.png')}
+      <View style={styles.container}>
+        {/* 체크 아이콘 */}
+        <View style={styles.iconContainer}>
+          <Image
+            style={styles.warningIcon}
+            source={require('../../../assets/Warning-icon-gray.png')}
+          />
+        </View>
+
+        {/* 안내 문구 */}
+        <Text style={styles.title}>회원탈퇴가 완료되었습니다</Text>
+        <Text style={styles.subtitle}>요기있수를 이용해주셔서 감사합니다</Text>
+        <Text style={styles.subtitleBottom}>꼭 다시 만나요!</Text>
+
+        {/* 확인 버튼 */}
+        <CustomBotton
+          label="로그인 화면으로"
+          variant="filled"
+          size="large"
+          onPress={() => {
+            logoutEmitter.emit('force-logout');
+          }}
         />
       </View>
-
-      {/* 안내 문구 */}
-      <Text style={styles.title}>회원탈퇴가 완료되었습니다</Text>
-      <Text style={styles.subtitle}>요기있수를 이용해주셔서 감사합니다</Text>
-      <Text style={styles.subtitleBottom}>꼭 다시 만나요!</Text>
-
-      {/* 확인 버튼 */}
-      <CustomBotton
-        label="로그인 화면으로"
-        variant="filled"
-        size="large"
-        onPress={() => {
-          logoutEmitter.emit('force-logout');
-        }}
-      />
     </AppScreenLayout>
   );
 }

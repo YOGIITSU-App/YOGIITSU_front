@@ -33,18 +33,20 @@ function ChangeEmailCompleteScreen() {
 
   return (
     <AppScreenLayout disableTopInset>
-      <View style={styles.iconContainer}>
-        <CompleteCheck width={38} height={38} />
+      <View style={styles.container}>
+        <View style={styles.iconContainer}>
+          <CompleteCheck width={38} height={38} />
+        </View>
+        <Text style={styles.title}>변경이 완료되었습니다</Text>
+        <CustomBotton
+          label="확인"
+          variant="filled"
+          size="large"
+          onPress={() => {
+            navigation.navigate('MypageHome');
+          }}
+        />
       </View>
-      <Text style={styles.title}>변경이 완료되었습니다</Text>
-      <CustomBotton
-        label="확인"
-        variant="filled"
-        size="large"
-        onPress={() => {
-          navigation.navigate('MypageHome');
-        }}
-      />
     </AppScreenLayout>
   );
 }
