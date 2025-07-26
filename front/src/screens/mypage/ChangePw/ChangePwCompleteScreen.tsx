@@ -34,19 +34,21 @@ function ChangePwCompleteScreen() {
 
   return (
     <AppScreenLayout disableTopInset>
-      <View style={styles.iconContainer}>
-        <CompleteCheck width={38} height={38} />
+      <View style={styles.container}>
+        <View style={styles.iconContainer}>
+          <CompleteCheck width={38} height={38} />
+        </View>
+        <Text style={styles.title}>변경이 완료되었습니다</Text>
+        <Text style={styles.subtitle}>새로운 비밀번호로 로그인해 주세요</Text>
+        <CustomBotton
+          label="확인"
+          variant="filled"
+          size="large"
+          onPress={() => {
+            logoutEmitter.emit('force-logout');
+          }}
+        />
       </View>
-      <Text style={styles.title}>변경이 완료되었습니다</Text>
-      <Text style={styles.subtitle}>새로운 비밀번호로 로그인해 주세요</Text>
-      <CustomBotton
-        label="확인"
-        variant="filled"
-        size="large"
-        onPress={() => {
-          logoutEmitter.emit('force-logout');
-        }}
-      />
     </AppScreenLayout>
   );
 }

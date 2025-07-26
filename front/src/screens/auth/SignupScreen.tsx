@@ -286,7 +286,7 @@ function SignupScreen() {
             </View>
             <View style={styles.errorMessageContainer}>
               <CustomText
-                text="영문, 숫자, 특수문자를 포함한 8~16자리"
+                text="영문, 숫자, 특수문자(!@#$%)를 포함한 8~16자리"
                 touched={signup.touched.password}
                 error={signup.errors.password}
               />

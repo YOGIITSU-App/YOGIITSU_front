@@ -50,56 +50,58 @@ function InquiryWriteScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <AppScreenLayout disableTopInset>
-        <TextInput
-          style={styles.titleInput}
-          placeholder="제목을 입력하세요"
-          placeholderTextColor={colors.GRAY_500}
-          value={title}
-          onChangeText={setTitle}
-        />
-        <Text style={styles.dateText}>
-          {new Date().toISOString().slice(0, 10).replace(/-/g, '.')}
-        </Text>
-        <View style={styles.textAreaContainer}>
+        <View style={styles.container}>
           <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder={`내용 입력\n(tip. 내용을 구체적으로 작성할수록 빠르고 원활한 답변이 가능해요)`}
+            style={styles.titleInput}
+            placeholder="제목을 입력하세요"
             placeholderTextColor={colors.GRAY_500}
-            value={content}
-            onChangeText={setContent}
+            value={title}
+            onChangeText={setTitle}
           />
-        </View>
-        <View style={styles.buttonContainer}>
-          <CustomBotton label="문의 등록하기" onPress={handleSubmit} />
-        </View>
-        <Modal
-          animationType="fade"
-          transparent
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <StatusBar
-            backgroundColor="rgba(0,0,0,0.5)"
-            barStyle="light-content"
-          />
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>문의를 등록하시겠어요?</Text>
-              <View style={styles.modalbuttonContainer}>
-                <CustomBotton
-                  label="아니요"
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setModalVisible(false)}
-                />
-                <CustomBotton
-                  label="네"
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirm}
-                />
+          <Text style={styles.dateText}>
+            {new Date().toISOString().slice(0, 10).replace(/-/g, '.')}
+          </Text>
+          <View style={styles.textAreaContainer}>
+            <TextInput
+              style={styles.textArea}
+              multiline
+              placeholder={`내용 입력\n(tip. 내용을 구체적으로 작성할수록 빠르고 원활한 답변이 가능해요)`}
+              placeholderTextColor={colors.GRAY_500}
+              value={content}
+              onChangeText={setContent}
+            />
+          </View>
+          <View style={styles.buttonContainer}>
+            <CustomBotton label="문의 등록하기" onPress={handleSubmit} />
+          </View>
+          <Modal
+            animationType="fade"
+            transparent
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}>
+            <StatusBar
+              backgroundColor="rgba(0,0,0,0.5)"
+              barStyle="light-content"
+            />
+            <View style={styles.modalBackground}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalText}>문의를 등록하시겠어요?</Text>
+                <View style={styles.modalbuttonContainer}>
+                  <CustomBotton
+                    label="아니요"
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setModalVisible(false)}
+                  />
+                  <CustomBotton
+                    label="네"
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleConfirm}
+                  />
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        </View>
       </AppScreenLayout>
     </TouchableWithoutFeedback>
   );
