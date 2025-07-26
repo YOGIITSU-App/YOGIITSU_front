@@ -1,17 +1,12 @@
-import React, {useEffect} from 'react';
-import {
-  Dimensions,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, {useLayoutEffect} from 'react';
+import {Dimensions, Image, StyleSheet, Text, View} from 'react-native';
 import {colors} from '../../../constants';
 import {useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import {defaultTabOptions} from '../../../constants/tabOptions';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -20,18 +15,17 @@ const deviceHeight = Dimensions.get('screen').height;
 function DeleteAccountWarningScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
-  useEffect(() => {
-    // ✅ 화면에 들어오면 바텀 탭 숨기기
-    navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      // ✅ 화면을 떠나면 바텀 탭 다시 보이게 설정
-      navigation.getParent()?.setOptions({tabBarStyle: undefined});
+      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
     };
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
           <Text style={styles.highlightedText}>잠시만요,</Text>
@@ -64,7 +58,7 @@ function DeleteAccountWarningScreen() {
           onPress={() => navigation.navigate('DeleteAccount')}
         />
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 
@@ -108,7 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#999999',
-    lineHeight: 20, // ✅ 아이콘 크기와 맞추기 위해 줄 간격 설정
+    lineHeight: 20, // 아이콘 크기와 맞추기 위해 줄 간격 설정
   },
   infoText: {
     fontSize: 14,

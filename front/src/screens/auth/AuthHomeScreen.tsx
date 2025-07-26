@@ -1,8 +1,6 @@
-import React, {useContext} from 'react';
-
+import React from 'react';
 import {
   KeyboardAvoidingView,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,8 +17,11 @@ import {validateLogin} from '../../utils';
 import {colors} from '../../constants/colors';
 import {RootStackParamList} from '../../navigations/root/Rootnavigator';
 import Yogiitsu from '../../assets/Yogiitsu.svg';
-import {useUser} from '../../contexts/UserContext'; // ✅ 유저 컨텍스트 추가
-import {Alert} from 'react-native'; // ✅ 알림창 위해 추가
+import {useUser} from '../../contexts/UserContext';
+import {Alert} from 'react-native';
+import authApi from '../../api/authApi';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 type AuthHomeScreenProps = StackScreenProps<
   AuthStackParamList & RootStackParamList,
@@ -28,7 +29,7 @@ type AuthHomeScreenProps = StackScreenProps<
 >;
 
 function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
-  const {login} = useUser(); // ✅ UserContext의 login 함수 가져오기
+  const {login} = useUser(); // UserContext의 login 함수 가져오기
 
   const loginForm = useForm({
     initialValue: {
@@ -38,23 +39,41 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
     validate: validateLogin,
   });
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const {id, password} = loginForm.values;
 
-    if (id === 'test123' && password === 'yogi1234@@') {
-      login({
-        // 더미 테스트 유저 정보
-        id: 'test123',
-        username: '김테스트',
-        email: 'test@dev.com',
-      });
-    } else {
+    try {
+      // 로그인 요청
+      const res = await authApi.login(id, password);
+      // 헤더에서 토큰 꺼내기
+      const accessToken = res.headers.authorization?.split(' ')[1];
+      const refreshToken = res.headers['x-refresh-token'];
+
+      if (!accessToken || !refreshToken) {
+        throw new Error('토큰이 존재하지 않아요!');
+      }
+
+      // 바디에서 유저 정보 꺼내기
+      const {userId, role} = res.data;
+
+      // 토큰 저장
+      await EncryptedStorage.setItem('accessToken', accessToken);
+      await EncryptedStorage.setItem('refreshToken', refreshToken);
+
+      // 유저 정보도 EncryptedStorage에 저장 (자동 로그인용)
+      await EncryptedStorage.setItem('userId', String(userId));
+      await EncryptedStorage.setItem('role', role);
+
+      // context에 저장
+      login({userId, role});
+    } catch (err) {
+      console.error('로그인 실패:', err);
       Alert.alert('로그인 실패', '아이디 또는 비밀번호가 올바르지 않아요!');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <KeyboardAvoidingView style={styles.container} behavior="height">
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
@@ -105,7 +124,7 @@ function AuthHomeScreen({navigation}: AuthHomeScreenProps) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

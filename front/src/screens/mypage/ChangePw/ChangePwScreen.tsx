@@ -1,14 +1,16 @@
-import React, {useEffect} from 'react';
-import {Dimensions, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import React from 'react';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
 import {colors} from '../../../constants';
 import useForm from '../../../hooks/useForms';
-import {validateEmail, validatePw, validatePwConfirm} from '../../../utils';
+import {validatePwConfirm} from '../../../utils';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import authApi from '../../../api/authApi';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -23,18 +25,8 @@ function ChangePwScreen() {
     validate: validatePwConfirm,
   });
 
-  useEffect(() => {
-    // ✅ 화면에 들어오면 바텀 탭 숨기기
-    navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
-
-    return () => {
-      // ✅ 화면을 떠나면 바텀 탭 다시 보이게 설정
-      navigation.getParent()?.setOptions({tabBarStyle: undefined});
-    };
-  }, [navigation]);
-
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
         <Text style={styles.guideText}>
           <Text style={styles.highlightedText}>새로운 비밀번호</Text>
@@ -82,15 +74,23 @@ function ChangePwScreen() {
             variant="filled"
             size="large"
             inValid={!pwconfirmcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-            onPress={() => {
+            onPress={async () => {
               if (pwconfirmcheak.isFormValid) {
-                navigation.navigate('ChangePwComplete'); // ✅ ChangePwCompleteScreen으로 이동
+                try {
+                  const {password, passwordConfirm} = pwconfirmcheak.values;
+                  await authApi.changePassword(password, passwordConfirm);
+                  navigation.navigate('ChangePwComplete');
+                } catch (error: any) {
+                  const msg =
+                    error.response?.data?.message ?? '비밀번호 변경 실패';
+                  Alert.alert('에러', msg);
+                }
               }
             }}
           />
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

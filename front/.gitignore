@@ -66,4 +66,7 @@ yarn-error.log
 /coverage
 
 # .env 파일 깃허브에서 제외
-.env
+.env*
+
+# html
+*.html

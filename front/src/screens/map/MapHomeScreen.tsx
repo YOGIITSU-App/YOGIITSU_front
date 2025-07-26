@@ -1,278 +1,386 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
-  StyleSheet,
   View,
-  TextInput,
+  Text,
+  StyleSheet,
   TouchableOpacity,
   Dimensions,
-  PermissionsAndroid,
-  Platform,
-  Animated,
-  Text,
   Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import MapView, {PROVIDER_GOOGLE, Marker, Region} from 'react-native-maps';
-import Geolocation from 'react-native-geolocation-service';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
+import BottomSheet from '@gorhom/bottom-sheet';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import FavoriteBottomSheetContent from '../../components/FavoriteBottomSheetContent';
+import ShuttleBottomSheetContent from '../../components/ShuttleBottomSheetContent';
+import {
+  FavoriteItem,
+  useFavoriteBottomSheet,
+} from '../../hooks/useFavoriteBottomSheet';
 import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
 import {mapNavigation} from '../../constants/navigation';
 import {colors} from '../../constants';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {FacilityFilterButtons} from '../../components/FacilityFilterButtons';
+import {useFacilities} from '../../hooks/useFacilities';
+import {fetchShuttleSchedule, ShuttleSchedule} from '../../api/shuttleApi';
+import WebView from 'react-native-webview';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import buildingApi from '../../api/buildingApi';
+import {MAP_HOME_HTML_URL} from '@env';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('screen').height;
 
-// 네비게이션 타입 지정
-type MapHomeScreenNavigationProp = StackNavigationProp<
+type NavigationProp = StackNavigationProp<
   MapStackParamList,
   typeof mapNavigation.MAPHOME
 >;
-type MapHomeScreenRouteProp = RouteProp<
-  MapStackParamList,
-  typeof mapNavigation.MAPHOME
->;
+type RoutePropType = RouteProp<MapStackParamList, typeof mapNavigation.MAPHOME>;
 
 function MapHomeScreen() {
-  const navigation = useNavigation<MapHomeScreenNavigationProp>();
-  const route = useRoute<MapHomeScreenRouteProp>();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RoutePropType>();
 
-  // ✅ selectedPlace가 없을 경우 기본값 설정
-  const selectedLocation = route.params?.startLocation;
-  const selectedPlace = route.params?.selectedPlace || '선택한 장소';
+  const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const facilities = useFacilities(selectedCategory);
+  const [shuttleSchedule, setShuttleSchedule] =
+    useState<ShuttleSchedule | null>(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const [showShuttleBottomSheet, setShowShuttleBottomSheet] = useState(false);
+  const shuttleSheetRef = useRef<BottomSheet>(null);
+  const [selectedStopName, setSelectedStopName] = useState<string>('');
+  const [openSheet, setOpenSheet] = useState<null | 'FAVORITE' | 'SHUTTLE'>(
+    null,
+  );
+  const [pendingFavoriteSheet, setPendingFavoriteSheet] = useState(false);
 
-  const [location, setLocation] = useState<Region | null>(null);
-  const [markerLocation, setMarkerLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
-  const bottomSheetHeight = useState(new Animated.Value(0))[0];
+  const mapWebViewRef = useRef<WebView>(null);
+  const MAP_HTML_URL = MAP_HOME_HTML_URL;
 
-  // 기본 위치 (서울)
-  const DEFAULT_LOCATION: Region = {
-    latitude: 37.5665,
-    longitude: 126.978,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
-
-  // 위치 권한 요청 함수
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    }
-    return true;
-  };
-
-  // 현재 위치 가져오기
-  const getCurrentLocation = async () => {
-    const hasPermission = await requestLocationPermission();
-    if (hasPermission) {
-      Geolocation.getCurrentPosition(
-        position => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          });
-          setMarkerLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        error => {
-          console.log('위치 가져오기 실패:', error);
-          setLocation(DEFAULT_LOCATION);
-          setMarkerLocation({
-            latitude: DEFAULT_LOCATION.latitude,
-            longitude: DEFAULT_LOCATION.longitude,
-          });
-        },
-        {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
-      );
-    } else {
-      setLocation(DEFAULT_LOCATION);
-      setMarkerLocation({
-        latitude: DEFAULT_LOCATION.latitude,
-        longitude: DEFAULT_LOCATION.longitude,
-      });
-    }
-  };
-
-  // ✅ 검색 결과 받아서 지도 이동 & 마커 추가 & BottomSheet 표시
   useEffect(() => {
-    if (selectedLocation) {
-      const coords = selectedLocation.split(',').map(Number);
+    if (!mapWebViewRef.current) return;
 
-      if (!isNaN(coords[0]) && !isNaN(coords[1])) {
-        setLocation({
-          latitude: coords[0],
-          longitude: coords[1],
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
+    const msg = JSON.stringify({
+      type: 'setFacilities',
+      data:
+        selectedCategory && facilities.length > 0
+          ? facilities.map(f => ({...f, category: f.type}))
+          : [],
+    });
+
+    mapWebViewRef.current.postMessage(msg);
+  }, [facilities, selectedCategory]);
+
+  const handleWebViewMessage = async (e: any) => {
+    try {
+      const data = JSON.parse(e.nativeEvent.data);
+
+      if (data.type === 'selectFacility' && data.buildingId) {
+        navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+          buildingId: data.buildingId,
         });
-        setMarkerLocation({latitude: coords[0], longitude: coords[1]});
-
-        setBottomSheetVisible(true);
-        Animated.timing(bottomSheetHeight, {
-          toValue: 250,
-          duration: 300,
-          useNativeDriver: false,
-        }).start();
+      } else if (data.type === 'shuttleClicked') {
+        setLoadingSchedule(true);
+        try {
+          const res = await fetchShuttleSchedule();
+          setShuttleSchedule(res);
+          setSelectedStopName(data.name);
+          setOpenSheet('SHUTTLE');
+        } catch (err) {
+          Alert.alert('오류', '셔틀버스 스케줄을 불러올 수 없습니다.');
+        } finally {
+          setLoadingSchedule(false);
+        }
       }
-    } else {
-      getCurrentLocation();
+    } catch (err) {
+      console.error('웹뷰 메시지 처리 실패:', err);
     }
-  }, [selectedLocation]);
-
-  // ✅ 출발/도착 버튼 클릭 시 `RouteSelectionScreen`으로 이동
-  const handleNavigateToRouteSelection = (type: 'start' | 'end') => {
-    if (!markerLocation) return;
-
-    navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-      startLocation:
-        type === 'start'
-          ? `${markerLocation.latitude},${markerLocation.longitude}`
-          : route.params?.startLocation,
-      endLocation:
-        type === 'end'
-          ? `${markerLocation.latitude},${markerLocation.longitude}`
-          : route.params?.endLocation,
-      startLocationName:
-        type === 'start' ? selectedPlace : route.params?.startLocationName,
-      endLocationName:
-        type === 'end' ? selectedPlace : route.params?.endLocationName,
-    });
-
-    handleCloseBottomSheet(); // ✅ BottomSheet 닫기
   };
 
-  // ✅ BottomSheet 닫기
-  const handleCloseBottomSheet = () => {
-    Animated.timing(bottomSheetHeight, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start(() => {
-      setBottomSheetVisible(false);
-    });
+  const handleWebViewLoad = () => {
+    if (!mapWebViewRef.current) return;
+
+    if (facilities.length > 0) {
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({
+          type: 'setFacilities',
+          data: facilities.map(f => ({...f, category: f.type})),
+        }),
+      );
+    }
+
+    if (selectedCategory) {
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({
+          type: 'filterCategory',
+          category: selectedCategory,
+        }),
+      );
+    }
   };
+
+  useEffect(() => {
+    if (!mapWebViewRef.current) return;
+
+    const msg = JSON.stringify({
+      type: 'filterCategory',
+      category: selectedCategory,
+    });
+
+    mapWebViewRef.current.postMessage(msg);
+  }, [selectedCategory]);
+
+  const handleSelectFavorite = async (item: FavoriteItem) => {
+    try {
+      const res = await buildingApi.getBuildingDetail(item.id);
+      const info = res.data.buildingInfo;
+      const location = `${info.latitude},${info.longitude}`;
+      const name = info.name;
+
+      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+        endLocation: location,
+        endLocationName: name,
+        endBuildingId: item.id,
+      });
+      close();
+    } catch (err) {
+      Alert.alert('건물 위치 정보를 불러올 수 없습니다');
+    }
+  };
+
+  useEffect(() => {
+    const buildingId = route.params?.buildingId;
+    if (typeof buildingId === 'number') {
+      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
+    }
+  }, [route.params]);
+
+  useEffect(() => {
+    globalThis.openFavoriteBottomSheet = () => {
+      if (selectedCategory !== null) {
+        setSelectedCategory(null);
+        setPendingFavoriteSheet(true);
+      } else {
+        setOpenSheet('FAVORITE');
+      }
+    };
+    globalThis.closeFavoriteBottomSheet = () => setOpenSheet(null);
+    return () => {
+      globalThis.openFavoriteBottomSheet = undefined;
+      globalThis.closeFavoriteBottomSheet = undefined;
+    };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (openSheet === 'FAVORITE') {
+      open();
+    }
+  }, [openSheet, open]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (openSheet === 'FAVORITE') {
+        open(); // 화면 복귀 시 즐겨찾기 바텀시트 열려 있으면 무조건 최신화
+      }
+    }, [openSheet, open]),
+  );
+
+  useEffect(() => {
+    if (pendingFavoriteSheet && selectedCategory === null) {
+      setOpenSheet('FAVORITE');
+      setPendingFavoriteSheet(false);
+    }
+  }, [pendingFavoriteSheet, selectedCategory]);
+
+  useEffect(() => {
+    setShowShuttleBottomSheet(false);
+    setOpenSheet(null);
+  }, [selectedCategory]);
 
   return (
-    <View style={styles.container}>
-      {/* ✅ 검색창 (올바른 `selectionType` 전달) */}
-      <TouchableOpacity
-        style={styles.searchBox}
-        onPress={
-          () =>
-            navigation.navigate(mapNavigation.SEARCH, {selectionType: 'start'}) // ✅ 타입 오류 해결
-        }>
-        <View style={styles.searchBoxInput}>
-          <Image
-            source={require('../../assets/Search-icon.png')}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="어디로 떠나볼까요?"
-            editable={false}
-          />
-        </View>
-      </TouchableOpacity>
-      {/* ✅ 지도 */}
-      <MapView
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        region={location || DEFAULT_LOCATION}>
-        {markerLocation && (
-          <Marker coordinate={markerLocation} title={selectedPlace} />
-        )}
-      </MapView>
+    <GestureHandlerRootView style={{flex: 1}}>
+      <AppScreenLayout disableTopInset>
+        <View style={styles.container}>
+          {loadingSchedule && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={colors.BLUE_700} />
+            </View>
+          )}
+          {/* 검색창 */}
+          <TouchableOpacity
+            style={[styles.searchBox, {top: insets.top + 10}]}
+            onPress={() =>
+              navigation.navigate(mapNavigation.SEARCH, {
+                selectionType: 'start',
+                fromResultScreen: false,
+              })
+            }>
+            <View style={styles.searchBoxInput}>
+              <Image
+                source={require('../../assets/Search-icon.png')}
+                style={styles.searchIcon}
+              />
+              <Text style={styles.searchInput}>어디로 떠나볼까요?</Text>
+            </View>
+          </TouchableOpacity>
 
-      {/* ✅ BottomSheet (검색했을 때만 표시) */}
-      {bottomSheetVisible && (
-        <Animated.View
-          style={[styles.bottomSheet, {height: bottomSheetHeight}]}>
-          <Text style={styles.title}>{selectedPlace}</Text>
-
-          {/* 출발 / 도착 버튼 */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => handleNavigateToRouteSelection('start')}>
-              <Text style={styles.buttonText}>출발</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => handleNavigateToRouteSelection('end')}>
-              <Text style={styles.buttonText}>도착</Text>
-            </TouchableOpacity>
+          {/* 카테고리 탭 */}
+          <View style={[{top: insets.top}]}>
+            <FacilityFilterButtons
+              selected={selectedCategory}
+              onSelect={category => {
+                if (globalThis.setTabToHome) globalThis.setTabToHome();
+                setSelectedCategory(
+                  category === selectedCategory ? null : category,
+                );
+              }}
+            />
           </View>
-        </Animated.View>
+
+          {/* 지도 */}
+          <WebView
+            ref={mapWebViewRef}
+            source={{uri: MAP_HTML_URL}}
+            originWhitelist={['*']}
+            javaScriptEnabled
+            domStorageEnabled
+            style={{flex: 1, marginTop: -insets.top}}
+            cacheEnabled={true}
+            cacheMode="LOAD_DEFAULT"
+            onLoadEnd={handleWebViewLoad}
+            onMessage={handleWebViewMessage}
+            injectedJavaScriptBeforeContentLoaded={`
+            (function() {
+              document.addEventListener("message", function(e) {
+                window.dispatchEvent(new MessageEvent("message", { data: e.data }));
+              });
+            })();
+            true;
+          `}
+          />
+
+          <TouchableOpacity
+            style={styles.shortcutButton}
+            onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}>
+            <Image
+              source={require('../../assets/shortcut-icon.png')}
+              style={{width: 24, height: 24, marginBottom: 4}}
+              resizeMode="contain"
+            />
+            <Text style={styles.shortcutButtonText}>지름길</Text>
+          </TouchableOpacity>
+        </View>
+      </AppScreenLayout>
+      {openSheet === 'SHUTTLE' && shuttleSchedule && (
+        <BottomSheet
+          ref={shuttleSheetRef}
+          index={0}
+          snapPoints={['60%', '100%']}
+          enablePanDownToClose
+          onClose={() => setOpenSheet(null)}
+          onChange={index => {
+            // index가 1이면 100%로 올라간 상태
+            if (index === 1) {
+              navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
+                shuttleSchedule: shuttleSchedule,
+                selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
+                currentStopName: selectedStopName,
+              });
+              shuttleSheetRef.current?.close();
+            }
+          }}>
+          <ShuttleBottomSheetContent
+            data={shuttleSchedule}
+            currentStopName={selectedStopName}
+          />
+        </BottomSheet>
       )}
-    </View>
+      {openSheet === 'FAVORITE' && (
+        <BottomSheet
+          index={0}
+          snapPoints={['40%', '75%']}
+          enablePanDownToClose
+          onClose={() => setOpenSheet(null)}>
+          <FavoriteBottomSheetContent
+            favorites={favorites}
+            onRefresh={open}
+            onSelect={handleSelectFavorite}
+            isLoading={isLoading}
+          />
+        </BottomSheet>
+      )}
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, // 화면 전체를 차지
+  container: {flex: 1},
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
   },
-
+  map: {flex: 1},
   searchBox: {
     position: 'absolute',
     top: 30,
     left: '5%',
     width: deviceWidth * 0.9,
-    height: deviceHeight * 0.06,
-    paddingHorizontal: 10,
+    height: 50,
+    paddingHorizontal: 18,
     backgroundColor: 'white',
-    borderRadius: 5,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
     zIndex: 10,
+    justifyContent: 'center',
   },
   searchBoxInput: {
     flexDirection: 'row',
-    alignItems: 'center', // ✅ 세로 중앙 정렬
+    alignItems: 'center',
   },
   searchIcon: {
-    width: 20, // ✅ 아이콘 크기 조정
-    height: 20,
-    marginRight: 8, // ✅ 아이콘과 텍스트 간격 조정
+    width: 16,
+    height: 16,
+    marginRight: 12,
   },
   searchInput: {
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.GRAY_500,
-    flex: 1, // ✅ 남은 공간을 차지하도록 설정
+    fontWeight: '500',
+    color: colors.GRAY_1000,
+    lineHeight: 20,
   },
-  map: {flex: 1},
-  bottomSheet: {
+  shortcutButton: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    padding: 20,
-  },
-  title: {fontSize: 24, fontWeight: 'bold'},
-  buttonContainer: {flexDirection: 'row', justifyContent: 'space-around'},
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
+    bottom: 20,
+    right: 16,
+    width: 56,
+    height: 70,
+    backgroundColor: colors.BLUE_700,
     borderRadius: 10,
-    width: 100,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: {color: 'white', fontSize: 16},
+  shortcutButtonText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
+  },
 });
 
 export default MapHomeScreen;

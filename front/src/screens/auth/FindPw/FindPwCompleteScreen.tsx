@@ -1,18 +1,18 @@
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import React, {useEffect, useLayoutEffect} from 'react';
-import {BackHandler, SafeAreaView, View, Text, StyleSheet} from 'react-native';
+import {BackHandler, View, Text, StyleSheet} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {authNavigations, colors} from '../../../constants';
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
 import {AuthStackParamList} from '../../../navigations/stack/AuthStackNavigator';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function FindPwCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
 
-  // ✅ InquiryCompleteScreen 컴포넌트 내부에서
   useEffect(() => {
-    // ✅ 안드로이드 하드웨어 뒤로가기 차단
+    // 안드로이드 하드웨어 뒤로가기 차단
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
@@ -24,7 +24,7 @@ function FindPwCompleteScreen() {
     };
   }, [navigation]);
 
-  // ✅ 헤더 왼쪽 ← 버튼 없애기
+  // 헤더 왼쪽 ← 버튼 없애기
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => null, // ← 버튼 제거!
@@ -32,17 +32,12 @@ function FindPwCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* ✅ 체크 아이콘 */}
+    <AppScreenLayout disableTopInset>
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
       </View>
-
-      {/* ✅ 안내 문구 */}
       <Text style={styles.title}>변경이 완료되었습니다</Text>
       <Text style={styles.subtitle}>새로운 비밀번호로 로그인해 주세요</Text>
-
-      {/* ✅ 확인 버튼 */}
       <CustomBotton
         label="확인"
         variant="filled"
@@ -51,7 +46,7 @@ function FindPwCompleteScreen() {
           navigation.navigate(authNavigations.AUTH_HOME);
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

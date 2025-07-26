@@ -1,12 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {
-  Dimensions,
-  Modal,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, {useState} from 'react';
+import {Alert, Dimensions, StyleSheet, Text, View} from 'react-native';
 import InputField from '../../../components/inputField';
 import CustomBotton from '../../../components/CustomButton';
 import CustomText from '../../../components/CustomText';
@@ -18,6 +11,10 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import MiniInputField from '../../../components/miniInputField';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import emailApi from '../../../api/emailApi';
+import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
+import AlertModal from '../../../components/AlertModal';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -37,27 +34,49 @@ function ChangeNewEmailScreen() {
     validate: validateCodeMessage,
   });
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
+  const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
 
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
-  useEffect(() => {
-    // ✅ 화면에 들어오면 바텀 탭 숨기기
-    navigation.getParent()?.setOptions({tabBarStyle: {display: 'none'}});
+  // 인증번호 전송
+  const handleSendCode = async () => {
+    try {
+      const res = await emailApi.sendCode(
+        emailcheak.values.email,
+        EmailVerificationPurpose.EMAIL_CHANGE_NEW,
+      );
+      console.log('응답 확인 👉', res.data);
+      setSendCodeModalVisible(true);
+    } catch (error: any) {
+      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
+      Alert.alert('에러', msg);
+    }
+  };
 
-    return () => {
-      // ✅ 화면을 떠나면 바텀 탭 다시 보이게 설정
-      navigation.getParent()?.setOptions({tabBarStyle: undefined});
-    };
-  }, [navigation]);
+  // 인증번호 확인
+  const handleVerifyCode = async () => {
+    try {
+      await emailApi.verifyCode(codemessagecheck.values.codemessage);
+      navigation.navigate('ChangeEmailComplete');
+    } catch (error: any) {
+      setCodeWrongModalVisible(true);
+    }
+  };
+
+  // 인증번호 재전송
+  const handleReSend = () => {
+    setCodeWrongModalVisible(false);
+    handleSendCode();
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       <View style={styles.guideContainer}>
-        {/* ✅ 상태에 따라 문구 변경 */}
+        {/* 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
           <>
             <Text style={styles.guideText}>
@@ -98,33 +117,28 @@ function ChangeNewEmailScreen() {
             variant="filled"
             size="large"
             inValid={!emailcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
-            onPress={() => {
-              setModalVisible(true); // 모달 표시
-            }}
+            onPress={handleSendCode}
           />
         )}
-        {/* ✅ 모달 (인증번호 전송 안내) */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>인증번호가 전송되었습니다</Text>
-              <CustomBotton
-                label="확인"
-                style={styles.confirmButton}
-                onPress={() => {
-                  setModalVisible(false); // 모달 닫기
-                  setSendButtonVisible(false); // 버튼 숨기기
-                  setGuideTextType('code'); // 안내 문구 변경
-                  setCodeFieldVisible(true); // 인증번호 입력란 보이기
-                }}></CustomBotton>
-            </View>
-          </View>
-        </Modal>
-        {/* ✅ 인증번호 입력란 (모달 확인 버튼 클릭 시 표시됨) */}
+        {/* 인증번호 전송 안내 모달 */}
+        <AlertModal
+          visible={sendCodeModalVisible}
+          onRequestClose={() => setSendCodeModalVisible(false)}
+          message="인증번호가 전송되었습니다"
+          buttons={[
+            {
+              label: '확인',
+              onPress: () => {
+                setSendCodeModalVisible(false);
+                setSendButtonVisible(false);
+                setGuideTextType('code');
+                setCodeFieldVisible(true);
+              },
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
+        {/* 인증번호 입력란 (모달 확인 버튼 클릭 시 표시됨) */}
         {isCodeFieldVisible && (
           <View style={styles.smallContainer}>
             <MiniInputField
@@ -133,7 +147,7 @@ function ChangeNewEmailScreen() {
               focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
               onChangeText={text => {
-                const upperText = text.toUpperCase(); // ✅ 입력값을 대문자로 변환
+                const upperText = text.toUpperCase(); // 입력값을 대문자로 변환
                 if (upperText.length <= 6) {
                   codemessagecheck
                     .getTextInputProps('codemessage')
@@ -144,16 +158,30 @@ function ChangeNewEmailScreen() {
             <MiniCustomButton_W
               label="확인"
               inValid={!codemessagecheck.isFormValid}
-              onPress={() => {
-                if (codemessagecheck.isFormValid) {
-                  navigation.navigate('ChangeEmailComplete'); // ✅ ChangeEmailCompleteScreen으로 이동
-                }
-              }}
+              onPress={handleVerifyCode}
             />
           </View>
         )}
+        {/* 인증번호 틀림 모달 */}
+        <AlertModal
+          visible={codeWrongModalVisible}
+          onRequestClose={() => setCodeWrongModalVisible(false)}
+          message="인증번호가 틀렸습니다"
+          buttons={[
+            {
+              label: '다시 입력',
+              onPress: () => setCodeWrongModalVisible(false),
+              style: {backgroundColor: colors.GRAY_300},
+            },
+            {
+              label: '재전송',
+              onPress: handleReSend,
+              style: {backgroundColor: colors.BLUE_700},
+            },
+          ]}
+        />
       </View>
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 
@@ -197,7 +225,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // ✅ 반투명 배경
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // 반투명 배경
   },
   modalBox: {
     width: deviceWidth * 0.85,
@@ -221,7 +249,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 15, // ✅ 버튼과 텍스트 간격 조정
+    marginTop: 15, // 버튼과 텍스트 간격 조정
   },
   smallContainer: {
     width: deviceWidth * 0.84,

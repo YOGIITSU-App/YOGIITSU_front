@@ -1,26 +1,18 @@
 import React, {useEffect, useLayoutEffect} from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  BackHandler,
-} from 'react-native';
+import {StyleSheet, Text, View, Image, BackHandler} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {RootStackParamList} from '../../../navigations/root/Rootnavigator';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {useUser} from '../../../contexts/UserContext';
+import {logoutEmitter} from '../../../utils/logoutEmitter';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function DeleteAccountCompleteScreen() {
-  const {logout} = useUser(); // ✅ logout 함수 가져오기
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // ✅ InquiryCompleteScreen 컴포넌트 내부에서
   useEffect(() => {
-    // ✅ 안드로이드 하드웨어 뒤로가기 차단
+    // 안드로이드 하드웨어 뒤로가기 차단
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
@@ -32,7 +24,7 @@ function DeleteAccountCompleteScreen() {
     };
   }, [navigation]);
 
-  // ✅ 헤더 왼쪽 ← 버튼 없애기
+  // 헤더 왼쪽 ← 버튼 없애기
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => null, // ← 버튼 제거!
@@ -40,8 +32,8 @@ function DeleteAccountCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* ✅ 체크 아이콘 */}
+    <AppScreenLayout disableTopInset>
+      {/* 체크 아이콘 */}
       <View style={styles.iconContainer}>
         <Image
           style={styles.warningIcon}
@@ -49,21 +41,21 @@ function DeleteAccountCompleteScreen() {
         />
       </View>
 
-      {/* ✅ 안내 문구 */}
+      {/* 안내 문구 */}
       <Text style={styles.title}>회원탈퇴가 완료되었습니다</Text>
       <Text style={styles.subtitle}>요기있수를 이용해주셔서 감사합니다</Text>
       <Text style={styles.subtitleBottom}>꼭 다시 만나요!</Text>
 
-      {/* ✅ 확인 버튼 */}
+      {/* 확인 버튼 */}
       <CustomBotton
         label="로그인 화면으로"
         variant="filled"
         size="large"
         onPress={() => {
-          logout(); // ✅ 유저 정보 초기화
+          logoutEmitter.emit('force-logout');
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 

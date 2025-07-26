@@ -1,11 +1,12 @@
 import React, {useEffect, useLayoutEffect} from 'react';
-import {SafeAreaView, StyleSheet, Text, View, BackHandler} from 'react-native';
+import {StyleSheet, Text, View, BackHandler} from 'react-native';
 import CustomBotton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import CompleteCheck from '../../../assets/CompleteCheck.svg';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function InquiryCompleteScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
@@ -32,7 +33,7 @@ function InquiryCompleteScreen() {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AppScreenLayout disableTopInset>
       {/* ✅ 체크 아이콘 */}
       <View style={styles.iconContainer}>
         <CompleteCheck width={38} height={38} />
@@ -54,7 +55,7 @@ function InquiryCompleteScreen() {
           navigation.navigate('Inquiry');
         }}
       />
-    </SafeAreaView>
+    </AppScreenLayout>
   );
 }
 
