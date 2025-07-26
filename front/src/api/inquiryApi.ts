@@ -8,6 +8,7 @@ export type Inquiry = {
   status: 'PROCESSING' | 'COMPLETED';
   author: string;
   authorId: number;
+  responseTitle?: string;
   response?: string;
   responseDate?: string;
 };
@@ -20,9 +21,10 @@ export const mapToInquiry = (item: any): Inquiry => ({
   status: item.inquiryState,
   author: item.authorName,
   authorId: item.authorId,
-  response: item.response ?? undefined,
-  responseDate: item.responseAt
-    ? item.responseAt.split('T')[0].replace(/-/g, '.')
+  responseTitle: item.answerTitle ?? undefined,
+  response: item.answerContent ?? undefined,
+  responseDate: item.answerAt
+    ? item.answerAt.split('T')[0].replace(/-/g, '.')
     : undefined,
 });
 

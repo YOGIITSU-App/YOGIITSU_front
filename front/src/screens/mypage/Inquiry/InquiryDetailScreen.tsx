@@ -135,16 +135,18 @@ function InquiryDetailScreen() {
           <Text style={styles.contentText}>{inquiry.content}</Text>
         </View>
 
+        <View style={styles.divider} />
+
         {inquiry.status === 'COMPLETED' && inquiry.response && (
           <>
-            <Text style={styles.answerLabel}>답변 드립니다</Text>
+            <Text style={styles.answerLabel}>{inquiry.responseTitle}</Text>
+            {inquiry.responseDate && (
+              <Text style={styles.meta}>
+                {inquiry.responseDate.replace(/-/g, '.')}
+              </Text>
+            )}
             <View style={styles.answerBox}>
               <Text style={styles.answerText}>{inquiry.response}</Text>
-              {inquiry.responseDate && (
-                <Text style={styles.answerDate}>
-                  답변일자: {inquiry.responseDate}
-                </Text>
-              )}
             </View>
           </>
         )}
@@ -197,7 +199,6 @@ function InquiryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  // 🎨 스타일은 동일하게 유지
   container: {flex: 1, backgroundColor: colors.WHITE},
   scrollContent: {padding: 20},
   headerRow: {
@@ -230,12 +231,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.GRAY_50,
     borderRadius: 6,
     padding: 16,
-    marginBottom: 30,
   },
   contentText: {
     fontSize: 16,
     lineHeight: 24,
     color: colors.BLACK_500,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.GRAY_50,
+    marginVertical: 40,
+    width: '100%',
   },
   answerLabel: {
     fontSize: 18,
