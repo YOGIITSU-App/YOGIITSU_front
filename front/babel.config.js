@@ -9,6 +9,9 @@ module.exports = {
         allowUndefined: true,
       },
     ],
-    'react-native-reanimated/plugin', // 항상 마지막에 위치해야 함
+    ...(process.env.NODE_ENV === 'production'
+      ? [['transform-remove-console', {exclude: ['error', 'warn']}]]
+      : []),
+    'react-native-reanimated/plugin', // 항상 마지막에 위치!
   ],
 };
