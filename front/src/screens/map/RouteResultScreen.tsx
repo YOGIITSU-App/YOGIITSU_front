@@ -24,6 +24,7 @@ import buildingApi, {BuildingDetail} from '../../api/buildingApi';
 import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {MAP_RESULT_HTML_URL} from '@env';
 
 const {height: deviceHeight} = Dimensions.get('window');
 
@@ -111,10 +112,7 @@ function RouteResultScreen() {
   const [endLat, endLon] = endCoord;
 
   // 맵 페이지 URL
-  const routeMapUrl = useMemo(
-    () => `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-route.html`,
-    [],
-  );
+  const MAP_HTML_URL = MAP_RESULT_HTML_URL;
 
   // 1) 경로 API 호출
   useEffect(() => {
@@ -301,7 +299,7 @@ function RouteResultScreen() {
         {/* WebView */}
         <WebView
           ref={webRef}
-          source={{uri: routeMapUrl}}
+          source={{uri: MAP_HTML_URL}}
           style={{
             position: 'absolute',
             top: 0,

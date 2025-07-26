@@ -27,15 +27,10 @@ import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import FacilityBadge from '../../components/FacilityBadge';
+import {MAP_PREVIEW_HTML_URL} from '@env';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('window').height;
-
-// const facilityIconMap: {[key: string]: any} = {
-//   엘리베이터: require('../../assets/elevator-icon.png'),
-//   프린터기: require('../../assets/printer-icon.png'),
-//   자판기: require('../../assets/vending-icon.png'),
-// };
 
 type RouteType = RouteProp<
   MapStackParamList,
@@ -52,11 +47,7 @@ export default function BuildingPreviewScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const mapHtmlUrl = useMemo(
-    () =>
-      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-preview.html`,
-    [],
-  );
+  const MAP_HTML_URL = MAP_PREVIEW_HTML_URL;
   const mapWebViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
 
@@ -205,7 +196,7 @@ export default function BuildingPreviewScreen() {
         )}
         <WebView
           ref={mapWebViewRef}
-          source={{uri: mapHtmlUrl}}
+          source={{uri: MAP_HTML_URL}}
           originWhitelist={['*']}
           javaScriptEnabled
           domStorageEnabled

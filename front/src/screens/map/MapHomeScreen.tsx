@@ -34,6 +34,7 @@ import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import buildingApi from '../../api/buildingApi';
+import {MAP_HOME_HTML_URL} from '@env';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -63,8 +64,7 @@ function MapHomeScreen() {
   const [pendingFavoriteSheet, setPendingFavoriteSheet] = useState(false);
 
   const mapWebViewRef = useRef<WebView>(null);
-  const MAP_HTML_URL =
-    'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-home.html';
+  const MAP_HTML_URL = MAP_HOME_HTML_URL;
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;

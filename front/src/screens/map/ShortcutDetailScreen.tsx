@@ -18,6 +18,7 @@ import {fetchShortcutDetail, ShortcutDetail} from '../../api/shortcutApi';
 import {colors, mapNavigation} from '../../constants';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {MAP_SHORTCUT_HTML_URL} from '@env';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -45,11 +46,7 @@ export default function ShortcutDetailScreen() {
   const webRef = useRef<WebView>(null);
 
   // 맵 페이지 URL
-  const shortcutMapUrl = useMemo(
-    () =>
-      `https://yogiitsu.s3.ap-northeast-2.amazonaws.com/map/map-shortcut.html`,
-    [],
-  );
+  const MAP_HTML_URL = MAP_SHORTCUT_HTML_URL;
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -187,7 +184,7 @@ export default function ShortcutDetailScreen() {
         {/* WebView */}
         <WebView
           ref={webRef}
-          source={{uri: shortcutMapUrl}}
+          source={{uri: MAP_HTML_URL}}
           style={{
             position: 'absolute',
             top: 0,
