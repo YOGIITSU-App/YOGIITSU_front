@@ -46,9 +46,13 @@ function FindPwCodeConfirmScreen() {
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
   const [wrongEmailModalVisible, setWrongEmailModalVisible] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // 인증번호 전송
   const handleSendCode = async () => {
+    if (isSending) return;
+    setIsSending(true);
+
     try {
       await emailApi.sendCode(
         emailcheak.values.email,
@@ -57,6 +61,8 @@ function FindPwCodeConfirmScreen() {
       setSendCodeModalVisible(true);
     } catch (error: any) {
       setWrongEmailModalVisible(true);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -120,6 +126,7 @@ function FindPwCodeConfirmScreen() {
             variant="filled"
             size="large"
             inValid={!emailcheak.isFormValid}
+            loading={isSending}
             onPress={handleSendCode}
           />
         )}

@@ -47,6 +47,7 @@ function ChangePwCodeConfirmScreen() {
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
   const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
+  const [isSending, setIsSending] = useState(false);
 
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
@@ -61,16 +62,20 @@ function ChangePwCodeConfirmScreen() {
 
   // 인증번호 전송
   const handleSendCode = async () => {
+    if (isSending) return;
+    setIsSending(true);
+
     try {
       const res = await emailApi.sendCode(
         emailcheak.values.email,
         EmailVerificationPurpose.PASSWORD_CHANGE,
       );
-      console.log('응답 확인 👉', res.data);
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
       Alert.alert('에러', msg);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -134,7 +139,8 @@ function ChangePwCodeConfirmScreen() {
             label="인증번호 전송"
             variant="filled"
             size="large"
-            inValid={!emailcheak.isFormValid} // 폼이 유효하지 않으면 버튼 비활성화
+            inValid={!emailcheak.isFormValid}
+            loading={isSending}
             onPress={handleSendCode}
           />
         )}

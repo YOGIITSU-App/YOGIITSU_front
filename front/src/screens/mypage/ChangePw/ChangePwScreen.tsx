@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginLeft: deviceWidth * 0.08,
     gap: 3,
-    marginBottom: '5%',
   },
   guideText: {
     fontSize: 20,
@@ -113,20 +112,18 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   infoContainer: {
-    justifyContent: 'flex-start', // 위쪽 정렬
-    paddingTop: 20, // 위쪽 여백 조정
-    paddingHorizontal: 20, // 상하 여백 조정
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 15,
   },
   pwBigInputfield: {
-    paddingTop: 30, // 위쪽 여백 조정
+    paddingTop: 30,
     gap: 15,
   },
   errorMessageContainer: {
     alignSelf: 'flex-start',
     marginLeft: deviceWidth * 0.04,
-    // marginBottom: '3%',
   },
   enterButton: {
     marginTop: '15%',
