@@ -58,7 +58,7 @@ function InquiryDetailScreen() {
   }, [inquiryId, updated]);
 
   useLayoutEffect(() => {
-    if (isAuthor && inquiry) {
+    if (isAuthor && inquiry && inquiry.status !== 'COMPLETED') {
       navigation.setOptions({
         headerRight: () => (
           <Text
@@ -152,7 +152,7 @@ function InquiryDetailScreen() {
         )}
       </ScrollView>
 
-      {isAuthor && (
+      {isAuthor && inquiry.status !== 'COMPLETED' && (
         <View style={styles.buttonContainer}>
           <CustomBotton
             label="문의 삭제하기"
