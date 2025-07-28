@@ -6,6 +6,7 @@ import {
   PressableProps,
   Dimensions,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import {colors} from '../constants/colors';
 
@@ -14,6 +15,7 @@ interface CustomBottonProps extends PressableProps {
   variant?: 'filled' | 'outlined';
   size?: 'large' | 'medium';
   inValid?: boolean;
+  loading?: boolean;
 }
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -25,19 +27,27 @@ function CustomBotton({
   variant = 'filled',
   size = 'large',
   inValid = false,
+  loading = false,
   ...props
 }: CustomBottonProps) {
   return (
     <Pressable
-      disabled={inValid}
+      disabled={inValid || loading}
       style={({pressed}) => [
         styles.container,
         pressed ? styles[`${variant}Pressed`] : styles[variant],
-        inValid && styles.inValid,
+        (inValid || loading) && styles.inValid,
       ]}
       {...props}>
       <View style={styles[size]}>
-        <Text style={[styles.text, styles[`${variant}Text`]]}>{label}</Text>
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'outlined' ? colors.BLUE_700 : colors.WHITE}
+          />
+        ) : (
+          <Text style={[styles.text, styles[`${variant}Text`]]}>{label}</Text>
+        )}
       </View>
     </Pressable>
   );

@@ -59,6 +59,7 @@ function SignupScreen() {
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const isAllFilled =
     !!signup.values.id &&
@@ -98,8 +99,11 @@ function SignupScreen() {
 
   // 인증번호 전송
   const handleSendCode = async () => {
+    if (isSending) return;
+    setIsSending(true);
+
     try {
-      const res = await emailApi.sendCode(
+      await emailApi.sendCode(
         signup.values.email,
         EmailVerificationPurpose.SIGNUP,
       );
@@ -107,6 +111,8 @@ function SignupScreen() {
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
       Alert.alert('에러', msg);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -182,6 +188,7 @@ function SignupScreen() {
               <MiniCustomButton
                 label="인증"
                 inValid={!!signup.errors.email}
+                loading={isSending}
                 onPress={handleSendCode}
               />
             </View>
@@ -260,7 +267,7 @@ function SignupScreen() {
               inputMode="text"
               keyboardType="ascii-capable"
               focused={signup.focused.id}
-              error={signup.errors.id} // ← 여기!
+              error={signup.errors.id}
               touched={signup.touched.id}
               {...signup.getTextInputProps('id')}
             />

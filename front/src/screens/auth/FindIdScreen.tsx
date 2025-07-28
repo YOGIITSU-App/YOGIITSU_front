@@ -46,8 +46,12 @@ function FindIdScreen() {
   const [wrongEmailModalVisible, setWrongEmailModalVisible] = useState(false);
   const [correctModalVisible, setCorrectModalVisible] = useState(false);
   const [foundId, setFoundId] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const handleSendCode = async () => {
+    if (isSending) return;
+    setIsSending(true);
+
     try {
       // 이메일이 가입되어 있는지 체크 + 인증번호 발송
       const checkRes = await authApi.findId(emailForm.values.email);
@@ -64,6 +68,8 @@ function FindIdScreen() {
       setIsCodeSent(true);
     } catch (error) {
       setWrongEmailModalVisible(true);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -119,6 +125,7 @@ function FindIdScreen() {
           <CustomBotton
             label="인증번호 전송"
             inValid={!emailForm.isFormValid}
+            loading={isSending}
             onPress={handleSendCode}
           />
         )}

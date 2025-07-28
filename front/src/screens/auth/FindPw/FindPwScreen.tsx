@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginLeft: deviceWidth * 0.08,
     gap: 3,
-    marginBottom: '5%',
   },
   guideText: {
     fontSize: 20,
@@ -120,7 +119,6 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     justifyContent: 'flex-start',
-    paddingTop: 20,
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 15,

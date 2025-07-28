@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Pressable,
   PressableProps,
@@ -11,6 +12,7 @@ import {colors} from '../constants';
 interface miniCustomButtonProps extends PressableProps {
   label: string;
   inValid?: boolean;
+  loading?: boolean;
 }
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -20,18 +22,23 @@ const deviceHeight = Dimensions.get('screen').height;
 function miniCustomButton({
   label,
   inValid = false,
+  loading = false,
   ...props
 }: miniCustomButtonProps) {
   return (
     <Pressable
-      disabled={inValid}
+      disabled={inValid || loading}
       style={({pressed}) => [
         styles.container,
         pressed ? styles.filledPressed : styles.filled,
-        inValid && styles.inValid,
+        (inValid || loading) && styles.inValid,
       ]}
       {...props}>
-      <Text style={[styles.text, styles.filledText]}>{label}</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.WHITE} />
+      ) : (
+        <Text style={[styles.text, styles.filledText]}>{label}</Text>
+      )}
     </Pressable>
   );
 }
