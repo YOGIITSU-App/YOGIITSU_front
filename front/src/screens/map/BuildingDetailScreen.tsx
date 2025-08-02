@@ -140,7 +140,7 @@ export default function BuildingDetailScreen() {
   const {buildingInfo, departments} = buildingDetail;
 
   return (
-    <AppScreenLayout>
+    <AppScreenLayout disableTopInset>
       <ScrollView style={styles.container}>
         <Image source={{uri: buildingInfo.imageUrl}} style={styles.image} />
 

@@ -1,12 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {mapNavigation} from '../constants/navigation';
 import {colors} from '../constants/colors';
@@ -30,8 +24,8 @@ export default function BuildingHeader({buildingName}: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={[styles.wrapper, {top: insets.top}]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.wrapper}>
         {/* ← 뒤로가기 버튼 */}
         <TouchableOpacity
           onPress={handleBack}
