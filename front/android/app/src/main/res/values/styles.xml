@@ -7,6 +7,9 @@
     <style name="BootTheme" parent="Theme.BootSplash">
         <item name="bootSplashBackground">@color/bootsplash_background</item>
         <item name="bootSplashLogo">@drawable/bootsplash_logo</item>
+        <!-- 상태바 투명 처리 추가 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+
         <item name="postBootSplashTheme">@style/AppTheme</item>
     </style>
 </resources>
