@@ -60,6 +60,7 @@ function SignupScreen() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   const isAllFilled =
     !!signup.values.id &&
@@ -107,6 +108,7 @@ function SignupScreen() {
         signup.values.email,
         EmailVerificationPurpose.SIGNUP,
       );
+      setCodeSent(true);
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
@@ -129,6 +131,7 @@ function SignupScreen() {
 
   // 인증번호 재전송
   const handleReSend = () => {
+    setIsVerified(false);
     setCodeWrongModalVisible(false);
     handleSendCode();
   };
@@ -198,18 +201,10 @@ function SignupScreen() {
                 inputMode="text"
                 focused={signup.focused.codemessage}
                 {...signup.getTextInputProps('codemessage')}
-                onChangeText={text => {
-                  const upperText = text.toUpperCase();
-                  if (upperText.length <= 6) {
-                    signup
-                      .getTextInputProps('codemessage')
-                      .onChangeText(upperText);
-                  }
-                }}
               />
               <MiniCustomButton_W
                 label="확인"
-                inValid={!!signup.errors.codemessage}
+                inValid={!codeSent || isVerified}
                 onPress={handleVerifyCode}
               />
             </View>
@@ -353,10 +348,10 @@ function SignupScreen() {
             </TouchableOpacity>
 
             {[
-              {key: 'age', label: '만 14세 이상입니다 (필수)'},
-              {key: 'terms', label: '서비스 이용약관에 동의 (필수)'},
-              {key: 'privacy', label: '개인정보 수집 및 이용에 동의 (필수)'},
-              {key: 'loc', label: '위치기반 서비스 이용에 동의 (필수)'},
+              {key: 'age', label: '만 14세 이상입니다'},
+              {key: 'terms', label: '서비스 이용약관에 동의'},
+              {key: 'privacy', label: '개인정보 수집 및 이용에 동의'},
+              {key: 'loc', label: '위치기반 서비스 이용에 동의'},
             ].map(item => (
               <View key={item.key} style={styles.agreeItemWrapper}>
                 <View style={styles.agreeRow}>

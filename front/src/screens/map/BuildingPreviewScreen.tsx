@@ -185,7 +185,7 @@ export default function BuildingPreviewScreen() {
   const {buildingInfo} = buildingDetail;
 
   return (
-    <AppScreenLayout>
+    <AppScreenLayout disableTopInset>
       <View style={styles.container}>
         {loading && (
           <ActivityIndicator

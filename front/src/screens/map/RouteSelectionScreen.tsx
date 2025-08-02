@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import searchApi, {RecentKeyword} from '../../api/searchApi';
 import {colors} from '../../constants/colors';
 import buildingApi from '../../api/buildingApi';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import AlertModal from '../../components/AlertModal';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -28,6 +29,7 @@ type RouteSelectionScreenRouteProp = RouteProp<
 function RouteSelectionScreen() {
   const navigation = useNavigation<RouteSelectionScreenNavigationProp>();
   const route = useRoute<RouteSelectionScreenRouteProp>();
+  const hasNavigated = useRef(false);
 
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('출발지 선택');
@@ -36,6 +38,11 @@ function RouteSelectionScreen() {
   const [startBuildingId, setStartBuildingId] = useState<number | null>(null);
   const [endBuildingId, setEndBuildingId] = useState<number | null>(null);
   const [recentKeywords, setRecentKeywords] = useState<RecentKeyword[]>([]);
+  const [sameLocationModalVisible, setSameLocationModalVisible] =
+    useState(false);
+  const [lastSelectedType, setLastSelectedType] = useState<
+    'start' | 'end' | null
+  >(null);
 
   // 초기 파라미터 세팅
   useEffect(() => {
@@ -63,19 +70,45 @@ function RouteSelectionScreen() {
 
   // 출발지/도착지 둘 다 있으면 결과화면으로 이동
   useEffect(() => {
-    if (startLocation && endLocation) {
-      requestAnimationFrame(() => {
-        navigation.replace(mapNavigation.ROUTE_RESULT, {
-          startLocation,
-          startLocationName,
-          endLocation,
-          endLocationName,
-          startBuildingId: startBuildingId ?? undefined,
-          endBuildingId: endBuildingId ?? undefined,
-        });
+    if (!startLocation || !endLocation) return;
+
+    if (startLocation === endLocation) {
+      if (!sameLocationModalVisible) {
+        setSameLocationModalVisible(true);
+      }
+      return;
+    }
+
+    if (hasNavigated.current) return;
+
+    hasNavigated.current = true;
+    navigation.replace(mapNavigation.ROUTE_RESULT, {
+      startLocation,
+      startLocationName,
+      endLocation,
+      endLocationName,
+      startBuildingId: startBuildingId ?? undefined,
+      endBuildingId: endBuildingId ?? undefined,
+    });
+  }, [startLocation, endLocation]);
+
+  useEffect(() => {
+    const {locationsAreSame = false, lastSelectedType} = route.params ?? {};
+
+    if (locationsAreSame) {
+      hasNavigated.current = false;
+      if (lastSelectedType) {
+        setLastSelectedType(lastSelectedType);
+      }
+      setSameLocationModalVisible(true);
+
+      navigation.setParams({
+        ...route.params,
+        locationsAreSame: false,
+        lastSelectedType: undefined,
       });
     }
-  }, [startLocation, endLocation]);
+  }, [route.params]);
 
   // 최근 검색어 불러오기
   useEffect(() => {
@@ -92,7 +125,8 @@ function RouteSelectionScreen() {
 
   // 검색화면 이동
   const handleSearchLocation = (type: 'start' | 'end') => {
-    navigation.push(mapNavigation.SEARCH, {
+    setLastSelectedType(type);
+    navigation.replace(mapNavigation.SEARCH, {
       selectionType: type,
       fromResultScreen: false,
       previousStartLocation: startLocation,
@@ -197,7 +231,18 @@ function RouteSelectionScreen() {
                       const location = `${info.latitude},${info.longitude}`;
                       const name = info.name;
 
+                      // 출발지 선택이 안된 경우
                       if (!startLocation) {
+                        setStartLocation(location);
+                        setStartLocationName(name);
+                        setStartBuildingId(item.buildingId);
+
+                        if (endLocation === location) {
+                          setLastSelectedType('start');
+                          setSameLocationModalVisible(true);
+                          return;
+                        }
+
                         navigation.navigate(mapNavigation.ROUTE_RESULT, {
                           startLocation: location,
                           startLocationName: name,
@@ -206,7 +251,19 @@ function RouteSelectionScreen() {
                           endLocationName,
                           endBuildingId: endBuildingId ?? undefined,
                         });
+
+                        // 도착지 선택이 안된 경우
                       } else if (!endLocation) {
+                        setEndLocation(location);
+                        setEndLocationName(name);
+                        setEndBuildingId(item.buildingId);
+
+                        if (startLocation === location) {
+                          setLastSelectedType('end');
+                          setSameLocationModalVisible(true);
+                          return;
+                        }
+
                         navigation.navigate(mapNavigation.ROUTE_RESULT, {
                           startLocation,
                           startLocationName,
@@ -215,10 +272,6 @@ function RouteSelectionScreen() {
                           endLocationName: name,
                           endBuildingId: item.buildingId,
                         });
-                      } else {
-                        Alert.alert(
-                          '이미 출발지와 도착지가 모두 선택되어 있어요!',
-                        );
                       }
                     } catch (err) {
                       Alert.alert('건물 정보를 불러오는 데 실패했습니다');
@@ -226,6 +279,7 @@ function RouteSelectionScreen() {
                   }}>
                   <Text style={styles.recentText}>{item.keyword}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={async () => {
                     try {
@@ -246,6 +300,36 @@ function RouteSelectionScreen() {
           </View>
         )}
       </View>
+      <AlertModal
+        visible={sameLocationModalVisible}
+        onRequestClose={() => setSameLocationModalVisible(false)}
+        message={`출발지와 도착지가 같아요`}
+        buttons={[
+          {
+            label: '다시 입력',
+            onPress: () => {
+              setSameLocationModalVisible(false);
+
+              if (
+                startLocation &&
+                endLocation &&
+                startLocation === endLocation
+              ) {
+                if (lastSelectedType === 'start') {
+                  setStartLocation('');
+                  setStartLocationName('출발지 선택');
+                  setStartBuildingId(null);
+                } else if (lastSelectedType === 'end') {
+                  setEndLocation('');
+                  setEndLocationName('도착지 선택');
+                  setEndBuildingId(null);
+                }
+              }
+            },
+            style: {backgroundColor: colors.BLUE_700},
+          },
+        ]}
+      />
     </AppScreenLayout>
   );
 }

@@ -64,6 +64,8 @@ export type MapStackParamList = {
     endLocationName?: string;
     startBuildingId?: number;
     endBuildingId?: number;
+    locationsAreSame?: boolean;
+    lastSelectedType?: 'start' | 'end';
   };
   [mapNavigation.ROUTE_RESULT]: {
     startLocation: string;
@@ -88,7 +90,10 @@ const Stack = createStackNavigator<MapStackParamList>();
 
 function MapStackNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerBackTitleVisible: false,
+      }}>
       <Stack.Screen
         name={mapNavigation.MAPHOME}
         component={MapHomeScreen}

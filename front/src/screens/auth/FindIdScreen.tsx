@@ -139,14 +139,6 @@ function FindIdScreen() {
                 inputMode="text"
                 focused={codeForm.focused.codemessage}
                 {...codeForm.getTextInputProps('codemessage')}
-                onChangeText={text => {
-                  const upperText = text.toUpperCase();
-                  if (upperText.length <= 6) {
-                    codeForm
-                      .getTextInputProps('codemessage')
-                      .onChangeText(upperText);
-                  }
-                }}
               />
               <MiniCustomButton_W
                 label="확인"

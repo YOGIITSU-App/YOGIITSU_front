@@ -50,12 +50,23 @@ export async function selectBuilding(buildingId: number, ctx: SelectContext) {
     endBuildingId: isStart ? prevEnd : buildingId,
   };
 
+  const isSameLocation = nextParams.startLocation === nextParams.endLocation;
+
   if (cameFromSelection) {
     if (fillingMissing) {
-      // 빈 칸 채우기 → 결과 화면
-      navigation.replace(mapNavigation.ROUTE_RESULT, nextParams);
+      if (isSameLocation) {
+        // 출발지/도착지 같을 경우
+        navigation.replace(mapNavigation.ROUTE_SELECTION, {
+          ...nextParams,
+          locationsAreSame: true,
+          lastSelectedType: selectionType,
+        });
+      } else {
+        // 정상 경로 결과 화면 이동
+        navigation.replace(mapNavigation.ROUTE_RESULT, nextParams);
+      }
     } else {
-      // 수정 → 셀렉션으로
+      // 수정인 경우는 그냥 셀렉션으로 이동
       navigation.replace(mapNavigation.ROUTE_SELECTION, nextParams);
     }
     return;

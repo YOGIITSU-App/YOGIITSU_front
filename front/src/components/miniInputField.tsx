@@ -48,6 +48,9 @@ function miniInputField({
           autoCapitalize="none"
           spellCheck={false}
           autoCorrect={false}
+          textContentType="oneTimeCode"
+          autoComplete="off"
+          importantForAutofill="no"
           {...props}
         />
       </View>
