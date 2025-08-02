@@ -60,6 +60,7 @@ function SignupScreen() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   const isAllFilled =
     !!signup.values.id &&
@@ -107,6 +108,7 @@ function SignupScreen() {
         signup.values.email,
         EmailVerificationPurpose.SIGNUP,
       );
+      setCodeSent(true);
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
@@ -129,6 +131,7 @@ function SignupScreen() {
 
   // 인증번호 재전송
   const handleReSend = () => {
+    setIsVerified(false);
     setCodeWrongModalVisible(false);
     handleSendCode();
   };
@@ -201,7 +204,7 @@ function SignupScreen() {
               />
               <MiniCustomButton_W
                 label="확인"
-                inValid={!!signup.errors.codemessage}
+                inValid={!codeSent || isVerified}
                 onPress={handleVerifyCode}
               />
             </View>
