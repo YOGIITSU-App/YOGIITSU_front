@@ -28,6 +28,7 @@ function AuthStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        headerBackTitleVisible: false,
         cardStyle: {
           backgroundColor: 'white',
         },
