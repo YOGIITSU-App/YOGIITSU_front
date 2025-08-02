@@ -64,6 +64,8 @@ export type MapStackParamList = {
     endLocationName?: string;
     startBuildingId?: number;
     endBuildingId?: number;
+    locationsAreSame?: boolean;
+    lastSelectedType?: 'start' | 'end';
   };
   [mapNavigation.ROUTE_RESULT]: {
     startLocation: string;
