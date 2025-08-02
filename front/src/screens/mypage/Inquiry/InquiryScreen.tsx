@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.BLACK_600,
     flexShrink: 1,
+    textAlign: 'center',
   },
   dateText: {
     fontSize: 11,
