@@ -107,12 +107,12 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.BUILDING_PREVIEW}
         component={BuildingPreviewScreen}
-        options={{headerShown: true}}
+        options={{headerShown: false}}
       />
       <Stack.Screen
         name={mapNavigation.BUILDING_DETAIL}
         component={BuildingDetailScreen}
-        options={{headerShown: true}}
+        options={{headerShown: false}}
       />
       <Stack.Screen
         name={mapNavigation.ROUTE_SELECTION}
