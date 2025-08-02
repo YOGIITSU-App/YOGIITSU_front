@@ -51,7 +51,7 @@ function ChangeNewEmailScreen() {
     try {
       const res = await emailApi.sendCode(
         emailcheak.values.email,
-        EmailVerificationPurpose.EMAIL_CHANGE_OLD,
+        EmailVerificationPurpose.EMAIL_CHANGE_NEW,
       );
       setSendCodeModalVisible(true);
     } catch (error: any) {
