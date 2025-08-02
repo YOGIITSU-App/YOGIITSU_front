@@ -348,10 +348,10 @@ function SignupScreen() {
             </TouchableOpacity>
 
             {[
-              {key: 'age', label: '만 14세 이상입니다 (필수)'},
-              {key: 'terms', label: '서비스 이용약관에 동의 (필수)'},
-              {key: 'privacy', label: '개인정보 수집 및 이용에 동의 (필수)'},
-              {key: 'loc', label: '위치기반 서비스 이용에 동의 (필수)'},
+              {key: 'age', label: '만 14세 이상입니다'},
+              {key: 'terms', label: '서비스 이용약관에 동의'},
+              {key: 'privacy', label: '개인정보 수집 및 이용에 동의'},
+              {key: 'loc', label: '위치기반 서비스 이용에 동의'},
             ].map(item => (
               <View key={item.key} style={styles.agreeItemWrapper}>
                 <View style={styles.agreeRow}>
