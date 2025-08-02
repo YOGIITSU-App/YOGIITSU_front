@@ -23,6 +23,7 @@ import Modal from 'react-native-modal';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import FacilityBadge from '../../components/FacilityBadge';
 import FacilityBadgeWithFloor from '../../components/FacilityBadgeWithFloor';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -43,6 +44,7 @@ export default function BuildingDetailScreen() {
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageModalVisible, setImageModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // 출발/도착 상태값
   const [startLocation, setStartLocation] = useState('');
@@ -282,12 +284,14 @@ export default function BuildingDetailScreen() {
                       onPress={() => setImageModalVisible(false)}
                       style={{
                         position: 'absolute',
-                        top: 23,
-                        right: 10,
+                        top: insets.top,
+                        right: 20,
                         zIndex: 10,
-                        padding: 10,
                       }}>
-                      <Text style={{fontSize: 20, color: 'white'}}>✕</Text>
+                      <Text
+                        style={{fontSize: 20, color: 'white', lineHeight: 24}}>
+                        ✕
+                      </Text>
                     </TouchableOpacity>
 
                     <ImageViewer
@@ -298,22 +302,16 @@ export default function BuildingDetailScreen() {
                       enableSwipeDown
                       onSwipeDown={() => setImageModalVisible(false)}
                       backgroundColor="black"
-                      renderHeader={() => (
+                      renderIndicator={(currentIndex, allSize) => (
                         <View
                           style={{
                             position: 'absolute',
-                            top: 23,
-                            right: 10,
-                            zIndex: 10,
-                            padding: 10,
-                          }}
-                          pointerEvents="box-none">
-                          <TouchableOpacity
-                            onPress={() => setImageModalVisible(false)}>
-                            <Text style={{fontSize: 20, color: 'white'}}>
-                              ✕
-                            </Text>
-                          </TouchableOpacity>
+                            top: insets.top,
+                            alignSelf: 'center',
+                          }}>
+                          <Text style={{color: 'white', fontSize: 16}}>
+                            {currentIndex}/{allSize}
+                          </Text>
                         </View>
                       )}
                     />
