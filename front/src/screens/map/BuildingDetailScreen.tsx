@@ -72,16 +72,6 @@ export default function BuildingDetailScreen() {
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
   }, [route.params]);
 
-  useLayoutEffect(() => {
-    if (buildingDetail?.buildingInfo?.name) {
-      navigation.setOptions({
-        header: () => (
-          <BuildingHeader buildingName={buildingDetail.buildingInfo.name} />
-        ),
-      });
-    }
-  }, [navigation, buildingDetail]);
-
   useEffect(() => {
     const id = route.params?.buildingId;
     if (id) {
@@ -141,6 +131,9 @@ export default function BuildingDetailScreen() {
 
   return (
     <AppScreenLayout disableTopInset>
+      {!!buildingDetail && (
+        <BuildingHeader buildingName={buildingDetail.buildingInfo.name} />
+      )}
       <ScrollView style={styles.container}>
         <Image source={{uri: buildingInfo.imageUrl}} style={styles.image} />
 
