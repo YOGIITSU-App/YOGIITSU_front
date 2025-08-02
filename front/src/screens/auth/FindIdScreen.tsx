@@ -138,6 +138,7 @@ function FindIdScreen() {
                 placeholder="인증번호"
                 inputMode="text"
                 focused={codeForm.focused.codemessage}
+                maxLength={6}
                 {...codeForm.getTextInputProps('codemessage')}
               />
               <MiniCustomButton_W

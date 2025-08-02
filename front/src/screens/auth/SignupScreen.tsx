@@ -200,6 +200,7 @@ function SignupScreen() {
                 placeholder="인증번호"
                 inputMode="text"
                 focused={signup.focused.codemessage}
+                maxLength={6}
                 {...signup.getTextInputProps('codemessage')}
               />
               <MiniCustomButton_W

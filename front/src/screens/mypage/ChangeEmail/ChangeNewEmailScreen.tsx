@@ -151,6 +151,7 @@ function ChangeNewEmailScreen() {
               placeholder="인증번호"
               inputMode="text"
               focused={codemessagecheck.focused.codemessage}
+              maxLength={6}
               {...codemessagecheck.getTextInputProps('codemessage')}
             />
             <MiniCustomButton_W
