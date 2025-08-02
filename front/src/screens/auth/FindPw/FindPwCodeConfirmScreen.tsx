@@ -158,14 +158,6 @@ function FindPwCodeConfirmScreen() {
               inputMode="text"
               focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
-              onChangeText={text => {
-                const upperText = text.toUpperCase();
-                if (upperText.length <= 6) {
-                  codemessagecheck
-                    .getTextInputProps('codemessage')
-                    .onChangeText(upperText);
-                }
-              }}
             />
             <MiniCustomButton_W
               label="확인"

@@ -152,14 +152,6 @@ function ChangeNewEmailScreen() {
               inputMode="text"
               focused={codemessagecheck.focused.codemessage}
               {...codemessagecheck.getTextInputProps('codemessage')}
-              onChangeText={text => {
-                const upperText = text.toUpperCase(); // 입력값을 대문자로 변환
-                if (upperText.length <= 6) {
-                  codemessagecheck
-                    .getTextInputProps('codemessage')
-                    .onChangeText(upperText);
-                }
-              }}
             />
             <MiniCustomButton_W
               label="확인"

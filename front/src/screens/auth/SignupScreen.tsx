@@ -198,14 +198,6 @@ function SignupScreen() {
                 inputMode="text"
                 focused={signup.focused.codemessage}
                 {...signup.getTextInputProps('codemessage')}
-                onChangeText={text => {
-                  const upperText = text.toUpperCase();
-                  if (upperText.length <= 6) {
-                    signup
-                      .getTextInputProps('codemessage')
-                      .onChangeText(upperText);
-                  }
-                }}
               />
               <MiniCustomButton_W
                 label="확인"

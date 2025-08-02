@@ -38,7 +38,10 @@ function useForm<T>({initialValue, validate}: useFormProps<T>) {
 
   function getTextInputProps(name: keyof T) {
     const value = values[name];
-    const onChangeText = (text: string) => handleChangeText(name, text);
+    const onChangeText = (text: string) => {
+      const processedText = name === 'codemessage' ? text.toUpperCase() : text;
+      handleChangeText(name, processedText);
+    };
     const onBlur = () => handleBlur(name);
     const onFocus = () => handleFocus(name);
 
