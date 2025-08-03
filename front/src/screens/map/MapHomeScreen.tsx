@@ -262,7 +262,7 @@ function MapHomeScreen() {
             (function() {
               document.addEventListener("message", function(e) {
                 window.dispatchEvent(new MessageEvent("message", { data: e.data }));
-              });
+              }); 
             })();
             true;
           `}
@@ -290,12 +290,12 @@ function MapHomeScreen() {
           onChange={index => {
             // index가 1이면 100%로 올라간 상태
             if (index === 1) {
+              setOpenSheet(null);
               navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
                 shuttleSchedule: shuttleSchedule,
                 selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
                 currentStopName: selectedStopName,
               });
-              shuttleSheetRef.current?.close();
             }
           }}>
           <ShuttleBottomSheetContent
