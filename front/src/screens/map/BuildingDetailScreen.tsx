@@ -142,7 +142,9 @@ export default function BuildingDetailScreen() {
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{buildingInfo.name}</Text>
-            <TouchableOpacity onPress={toggleFavorite}>
+            <TouchableOpacity
+              onPress={toggleFavorite}
+              hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
               <Image
                 source={require('../../assets/bookmark-icon.png')}
                 style={{

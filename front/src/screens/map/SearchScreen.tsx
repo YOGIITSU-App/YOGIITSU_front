@@ -108,7 +108,8 @@ function SearchScreen() {
               <View style={styles.searchBar}>
                 <TouchableOpacity
                   onPress={() => navigation.goBack()}
-                  style={styles.backButton}>
+                  style={styles.backButton}
+                  hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
                   <Image
                     source={require('../../assets/back-icon.png')}
                     style={styles.backIcon}

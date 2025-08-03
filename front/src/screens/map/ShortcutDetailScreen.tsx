@@ -136,7 +136,8 @@ export default function ShortcutDetailScreen() {
             {/* 왼쪽: < 아이콘 */}
             <TouchableOpacity
               style={styles.iconWrapper}
-              onPress={() => navigation.goBack()}>
+              onPress={() => navigation.goBack()}
+              hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
               <Image
                 source={require('../../assets/back-icon.png')}
                 style={styles.iconLeft}

@@ -29,7 +29,8 @@ export default function BuildingHeader({buildingName}: Props) {
         {/* ← 뒤로가기 버튼 */}
         <TouchableOpacity
           onPress={handleBack}
-          style={{paddingRight: 6, paddingVertical: 6}}>
+          style={{paddingRight: 6, paddingVertical: 6}}
+          hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
           <Image
             source={require('../assets/back-icon.png')}
             style={styles.backIcon}
