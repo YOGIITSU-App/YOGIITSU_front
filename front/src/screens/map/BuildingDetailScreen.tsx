@@ -269,6 +269,7 @@ export default function BuildingDetailScreen() {
                 <Modal
                   isVisible={isImageModalVisible}
                   onBackdropPress={() => setImageModalVisible(false)}
+                  onBackButtonPress={() => setImageModalVisible(false)}
                   style={{margin: 0}}>
                   <StatusBar
                     backgroundColor={
