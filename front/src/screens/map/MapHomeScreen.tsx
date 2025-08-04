@@ -249,6 +249,33 @@ function MapHomeScreen() {
     );
   };
 
+  const moveToMyLocation = async () => {
+    try {
+      const position = await new Promise<Geolocation.GeoPosition>(
+        (resolve, reject) => {
+          Geolocation.getCurrentPosition(
+            pos => resolve(pos),
+            err => reject(err),
+            {enableHighAccuracy: true},
+          );
+        },
+      );
+      const {latitude, longitude} = position.coords;
+      mapWebViewRef.current?.postMessage(
+        JSON.stringify({
+          type: 'moveTo',
+          lat: latitude,
+          lng: longitude,
+        }),
+      );
+    } catch (error) {
+      Alert.alert(
+        '위치 오류',
+        '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
+      );
+    }
+  };
+
   const handleSelectFavorite = async (item: FavoriteItem) => {
     try {
       const res = await buildingApi.getBuildingDetail(item.id);
@@ -386,6 +413,15 @@ function MapHomeScreen() {
             true;
           `}
           />
+          <TouchableOpacity
+            style={styles.myLocationButton}
+            onPress={moveToMyLocation}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            <Image
+              source={require('../../assets/target-icon.png')} // 아이콘 경로 맞게 변경
+              style={{width: 20, height: 20}}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.shortcutButton}
@@ -488,6 +524,18 @@ const styles = StyleSheet.create({
   targetIcon: {
     width: 16,
     height: 16,
+  },
+  myLocationButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 16,
+    width: 40,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
   },
   shortcutButton: {
     position: 'absolute',
