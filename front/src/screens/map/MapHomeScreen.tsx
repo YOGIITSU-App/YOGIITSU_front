@@ -145,15 +145,26 @@ function MapHomeScreen() {
   useEffect(() => {
     if (!mapWebViewRef.current) return;
 
-    const msg = JSON.stringify({
+    const filteredFacilities =
+      selectedCategory && facilities.length > 0
+        ? facilities.filter(f => f.type === selectedCategory)
+        : facilities;
+
+    const msgFacilities = JSON.stringify({
       type: 'setFacilities',
-      data:
-        selectedCategory && facilities.length > 0
-          ? facilities.map(f => ({...f, category: f.type}))
-          : [],
+      data: filteredFacilities.map(f => ({...f, category: f.type})),
     });
 
-    mapWebViewRef.current.postMessage(msg);
+    mapWebViewRef.current.postMessage(msgFacilities);
+
+    // 좌표만 뽑아서 bounds 계산 요청 메시지(예, map 내에 처리 필요)
+    const coords = filteredFacilities.map(f => ({
+      lat: f.latitude,
+      lng: f.longitude,
+    }));
+    mapWebViewRef.current.postMessage(
+      JSON.stringify({type: 'fitBounds', coords}),
+    );
   }, [facilities, selectedCategory]);
 
   const handleWebViewMessage = async (e: any) => {
