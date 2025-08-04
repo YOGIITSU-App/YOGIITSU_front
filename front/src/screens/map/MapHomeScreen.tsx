@@ -36,6 +36,7 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import buildingApi from '../../api/buildingApi';
 import {MAP_HOME_HTML_URL} from '@env';
+import Geolocation from 'react-native-geolocation-service';
 import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -166,6 +167,29 @@ function MapHomeScreen() {
     mapWebViewRef.current.postMessage(msg);
   }, [selectedCategory]);
 
+  const handleTargetPress = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+          startLocation: `${latitude},${longitude}`,
+          startLocationName: '현재 위치',
+          endLocation: '',
+          endLocationName: '도착지 선택',
+          startBuildingId: undefined,
+          endBuildingId: undefined,
+        });
+      },
+      error => {
+        Alert.alert(
+          '위치 오류',
+          '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
+        );
+      },
+      {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
+    );
+  };
+
   const handleSelectFavorite = async (item: FavoriteItem) => {
     try {
       const res = await buildingApi.getBuildingDetail(item.id);
@@ -257,6 +281,15 @@ function MapHomeScreen() {
                 style={styles.searchIcon}
               />
               <Text style={styles.searchInput}>어디로 떠나볼까요?</Text>
+              <TouchableOpacity
+                onPress={handleTargetPress}
+                style={{marginLeft: 8}}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                <Image
+                  source={require('../../assets/target-icon.png')} // 네 아이콘 경로로
+                  style={styles.targetIcon}
+                />
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
 
@@ -379,6 +412,7 @@ const styles = StyleSheet.create({
   searchBoxInput: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   searchIcon: {
     width: 16,
@@ -386,10 +420,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   searchInput: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: colors.GRAY_1000,
     lineHeight: 20,
+  },
+  targetIcon: {
+    width: 16,
+    height: 16,
   },
   shortcutButton: {
     position: 'absolute',
