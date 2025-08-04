@@ -38,6 +38,7 @@ import buildingApi from '../../api/buildingApi';
 import {MAP_HOME_HTML_URL} from '@env';
 import Geolocation from 'react-native-geolocation-service';
 import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
+import BootSplash from 'react-native-bootsplash';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -52,6 +53,7 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const [locationLoaded, setLocationLoaded] = useState(false);
   const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
@@ -91,26 +93,111 @@ function MapHomeScreen() {
   }
 
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!locationLoaded) {
+        BootSplash.hide({fade: true});
+        setLocationLoaded(true);
+      }
+    }, 10000); // 10초 후 강제 숨김
+
+    return () => clearTimeout(timeout);
+  }, [locationLoaded]);
+
+  useEffect(() => {
     checkLocationPermission();
+  }, []);
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        // 위치 못받았을 때도 부트스플래시는 숨겨야 앱이 멈추지 않음
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+      },
+      {enableHighAccuracy: false},
+    );
+  }, []);
+
+  useEffect(() => {
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        console.error(error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 1,
+        interval: 2000,
+        fastestInterval: 1000,
+        showsBackgroundLocationIndicator: false,
+      },
+    );
+
+    // 언마운트시 추적 중지
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
   }, []);
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
 
-    const msg = JSON.stringify({
+    const filteredFacilities =
+      selectedCategory && facilities.length > 0
+        ? facilities.filter(f => f.type === selectedCategory)
+        : [];
+
+    const msgFacilities = JSON.stringify({
       type: 'setFacilities',
-      data:
-        selectedCategory && facilities.length > 0
-          ? facilities.map(f => ({...f, category: f.type}))
-          : [],
+      data: filteredFacilities.map(f => ({...f, category: f.type})),
     });
 
-    mapWebViewRef.current.postMessage(msg);
+    mapWebViewRef.current.postMessage(msgFacilities);
+
+    if (selectedCategory) {
+      const coords = filteredFacilities.map(f => ({
+        lat: f.latitude,
+        lng: f.longitude,
+      }));
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({type: 'fitBounds', coords}),
+      );
+    }
   }, [facilities, selectedCategory]);
 
   const handleWebViewMessage = async (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
+
+      if (data.type === 'currentLocationSet') {
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+        return;
+      }
 
       if (data.type === 'selectFacility' && data.buildingId) {
         navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
@@ -188,6 +275,33 @@ function MapHomeScreen() {
       },
       {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
     );
+  };
+
+  const moveToMyLocation = async () => {
+    try {
+      const position = await new Promise<Geolocation.GeoPosition>(
+        (resolve, reject) => {
+          Geolocation.getCurrentPosition(
+            pos => resolve(pos),
+            err => reject(err),
+            {enableHighAccuracy: true},
+          );
+        },
+      );
+      const {latitude, longitude} = position.coords;
+      mapWebViewRef.current?.postMessage(
+        JSON.stringify({
+          type: 'moveTo',
+          lat: latitude,
+          lng: longitude,
+        }),
+      );
+    } catch (error) {
+      Alert.alert(
+        '위치 오류',
+        '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
+      );
+    }
   };
 
   const handleSelectFavorite = async (item: FavoriteItem) => {
@@ -327,6 +441,15 @@ function MapHomeScreen() {
             true;
           `}
           />
+          <TouchableOpacity
+            style={styles.myLocationButton}
+            onPress={moveToMyLocation}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            <Image
+              source={require('../../assets/target-icon.png')} // 아이콘 경로 맞게 변경
+              style={{width: 20, height: 20}}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.shortcutButton}
@@ -429,6 +552,18 @@ const styles = StyleSheet.create({
   targetIcon: {
     width: 16,
     height: 16,
+  },
+  myLocationButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 16,
+    width: 40,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
   },
   shortcutButton: {
     position: 'absolute',

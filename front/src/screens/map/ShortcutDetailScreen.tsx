@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -19,6 +20,7 @@ import {colors, mapNavigation} from '../../constants';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MAP_SHORTCUT_HTML_URL} from '@env';
+import Geolocation from 'react-native-geolocation-service';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -103,7 +105,49 @@ export default function ShortcutDetailScreen() {
     );
   }, [detail, mapReady]);
 
-  const loading = detailLoading || !setMapReady;
+  useEffect(() => {
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        webRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        console.log('위치 추적 에러:', error.code, error.message);
+
+        // 권한 거부(예: error.code === 1) 혹은 기타 오류일 때 안내하기
+        if (error.code === 1) {
+          Alert.alert(
+            '위치 권한 필요',
+            '길찾기 및 위치 기반 서비스를 이용하려면 위치 권한을 허용해주세요.\n설정 > 앱에서 위치 권한을 활성화할 수 있습니다.',
+          );
+        } else {
+          Alert.alert(
+            '위치 오류',
+            '현재 위치를 가져올 수 없습니다. 위치 서비스 설정을 확인해주세요.',
+          );
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 5,
+        interval: 5000,
+        fastestInterval: 2000,
+        showsBackgroundLocationIndicator: false,
+      },
+    );
+
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  const loading = detailLoading || !mapReady;
 
   if (detailError) {
     return (
