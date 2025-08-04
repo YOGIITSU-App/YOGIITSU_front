@@ -57,7 +57,7 @@ function RouteResultScreen() {
 
   // WebView 레퍼런스 & 로딩 상태 관리
   const webRef = useRef<WebView>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   // 바텀시트 내부 FlatList ref
   const flatListRef = useRef<BottomSheetFlatListMethods>(null);
@@ -80,7 +80,16 @@ function RouteResultScreen() {
     return [collapsed, expanded];
   }, [headerHeight]);
 
-  const isLoading = routeLoading || !mapLoaded;
+  const handleWebViewMessage = (e: any) => {
+    try {
+      const data = JSON.parse(e.nativeEvent.data);
+      if (data.type === 'MAP_READY') {
+        setMapReady(true);
+      }
+    } catch (err) {}
+  };
+
+  const isLoading = routeLoading || !mapReady;
 
   // 출발/도착지 재검색으로 이동
   const navigateToSearch = (type: 'start' | 'end') => {
@@ -169,13 +178,10 @@ function RouteResultScreen() {
   }, [startBuildingId, endBuildingId]);
 
   /** 2) WebView 로드 완료 시 */
-  const onWebViewLoadEnd = () => {
-    setMapLoaded(true);
-  };
 
   /** 3) mapLoaded && routePath 준비되면 지도에 그리기 */
   useEffect(() => {
-    if (!mapLoaded || routePath.length === 0) return;
+    if (!mapReady || routePath.length === 0) return;
     webRef.current?.postMessage(
       JSON.stringify({type: 'customMarker', lat: startLat, lng: startLon}),
     );
@@ -188,17 +194,7 @@ function RouteResultScreen() {
         path: routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
       }),
     );
-    webRef.current?.postMessage(
-      JSON.stringify({
-        type: 'fitBounds',
-        path: [
-          {lat: startLat, lng: startLon},
-          {lat: endLat, lng: endLon},
-          ...routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
-        ],
-      }),
-    );
-  }, [mapLoaded, routePath]);
+  }, [mapReady, routePath]);
 
   /** 4) 출발/도착 swap (params 갱신만) */
   const handleSwap = () => {
@@ -312,7 +308,7 @@ function RouteResultScreen() {
           originWhitelist={['*']}
           cacheEnabled={true}
           cacheMode="LOAD_DEFAULT"
-          onLoadEnd={onWebViewLoadEnd}
+          onMessage={handleWebViewMessage}
           injectedJavaScriptBeforeContentLoaded={`
           (function() {
             document.addEventListener("message", function(e) {

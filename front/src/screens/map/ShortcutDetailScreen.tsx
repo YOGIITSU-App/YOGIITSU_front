@@ -37,7 +37,8 @@ export default function ShortcutDetailScreen() {
   const {shortcutId} = route.params;
 
   // 1) map 로딩 상태
-  const [mapLoaded, setMapLoaded] = useState(false);
+  // const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   // 2) 상세 데이터 상태
   const [detail, setDetail] = useState<ShortcutDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
@@ -56,6 +57,17 @@ export default function ShortcutDetailScreen() {
     return [collapsed, expanded];
   }, [headerHeight]);
 
+  const handleWebViewMessage = (e: any) => {
+    try {
+      const data = JSON.parse(e.nativeEvent.data);
+      if (data.type === 'MAP_READY') {
+        setMapReady(true);
+      }
+    } catch (err) {
+      // 무시 (ex. 텍스트 메시지)
+    }
+  };
+
   // 1) 상세 API 호출
   useEffect(() => {
     fetchShortcutDetail(shortcutId)
@@ -69,19 +81,19 @@ export default function ShortcutDetailScreen() {
 
   // 2) map 로드 완료 시
   const onWebViewLoadEnd = () => {
-    setMapLoaded(true);
+    setMapReady(true);
   };
 
   // 3) detail & mapLoaded 가 모두 true 될 때만 그리기
   useEffect(() => {
-    if (!detail || !mapLoaded) return;
-
+    if (!detail || !mapReady) return;
+    // 1. 폴리라인
     const path = detail.coordinates.map(c => ({
       lat: c.latitude,
       lng: c.longitude,
     }));
     webRef.current?.postMessage(JSON.stringify({type: 'drawShortcut', path}));
-
+    // 2. 시작/끝 마커
     const start = detail.coordinates[0];
     const end = detail.coordinates[detail.coordinates.length - 1];
     [start, end].forEach(p =>
@@ -89,9 +101,9 @@ export default function ShortcutDetailScreen() {
         JSON.stringify({type: 'marker', lat: p.latitude, lng: p.longitude}),
       ),
     );
-  }, [detail, mapLoaded]);
+  }, [detail, mapReady]);
 
-  const loading = detailLoading || !mapLoaded;
+  const loading = detailLoading || !setMapReady;
 
   if (detailError) {
     return (
@@ -203,6 +215,7 @@ export default function ShortcutDetailScreen() {
           })();
           true;
         `}
+          onMessage={handleWebViewMessage}
           onLoadEnd={onWebViewLoadEnd}
         />
 
