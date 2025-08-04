@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -35,6 +36,7 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import buildingApi from '../../api/buildingApi';
 import {MAP_HOME_HTML_URL} from '@env';
+import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -65,6 +67,31 @@ function MapHomeScreen() {
 
   const mapWebViewRef = useRef<WebView>(null);
   const MAP_HTML_URL = MAP_HOME_HTML_URL;
+
+  async function checkLocationPermission() {
+    let result;
+    if (Platform.OS === 'ios') {
+      result = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      if (result !== RESULTS.GRANTED) {
+        result = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      }
+    } else {
+      result = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      if (result !== RESULTS.GRANTED) {
+        result = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      }
+    }
+    if (result !== RESULTS.GRANTED) {
+      Alert.alert(
+        '위치 권한 필요',
+        '길찾기 및 위치 기반 서비스를 위해 위치 권한을 허용해주세요.\n설정 > 앱에서 허용 가능합니다.',
+      );
+    }
+  }
+
+  useEffect(() => {
+    checkLocationPermission();
+  }, []);
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;

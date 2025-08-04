@@ -16,6 +16,7 @@ import {colors} from '../../constants/colors';
 import buildingApi from '../../api/buildingApi';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import AlertModal from '../../components/AlertModal';
+import Geolocation from 'react-native-geolocation-service';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -30,6 +31,7 @@ function RouteSelectionScreen() {
   const navigation = useNavigation<RouteSelectionScreenNavigationProp>();
   const route = useRoute<RouteSelectionScreenRouteProp>();
   const hasNavigated = useRef(false);
+  const isSwappedRef = useRef(false);
 
   const [startLocation, setStartLocation] = useState('');
   const [startLocationName, setStartLocationName] = useState('출발지 선택');
@@ -67,6 +69,42 @@ function RouteSelectionScreen() {
     }
     if (endBuildingId !== undefined) setEndBuildingId(endBuildingId);
   }, [route.params]);
+
+  useEffect(() => {
+    // 출발지가 없고 도착지만 있을 때
+    if (!startLocation && endLocation) {
+      // 🔥 swap 이후면 무시
+      if (isSwappedRef.current) {
+        isSwappedRef.current = false; // 한 번만 막고 바로 false로 돌림
+        return;
+      }
+      Geolocation.getCurrentPosition(
+        pos => {
+          const {latitude, longitude} = pos.coords;
+          const curLoc = `${latitude},${longitude}`;
+          setStartLocation(curLoc);
+          setStartLocationName('현재 위치');
+          setStartBuildingId(null);
+
+          // 결과 화면으로 바로 이동
+          navigation.replace(mapNavigation.ROUTE_RESULT, {
+            startLocation: curLoc,
+            startLocationName: '현재 위치',
+            endLocation,
+            endLocationName,
+            endBuildingId: endBuildingId ?? undefined,
+          });
+        },
+        err => {
+          Alert.alert(
+            '위치 오류',
+            '현재 위치를 가져올 수 없습니다.\n위치 서비스를 확인해주세요.',
+          );
+        },
+        {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
+      );
+    }
+  }, [startLocation, endLocation]);
 
   // 출발지/도착지 둘 다 있으면 결과화면으로 이동
   useEffect(() => {
@@ -160,6 +198,9 @@ function RouteSelectionScreen() {
     setEndLocation(swappedEndLocation);
     setEndLocationName(swappedEndName);
     setEndBuildingId(startBuildingId);
+
+    // 🔥 스왑 직후 플래그 ON
+    isSwappedRef.current = true;
   };
 
   return (
