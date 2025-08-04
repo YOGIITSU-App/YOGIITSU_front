@@ -95,6 +95,54 @@ function MapHomeScreen() {
   }, []);
 
   useEffect(() => {
+    // 최초 위치 1회 요청
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {},
+      {enableHighAccuracy: true},
+    );
+  }, []);
+
+  useEffect(() => {
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        console.error(error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 1,
+        interval: 2000,
+        fastestInterval: 1000,
+        showsBackgroundLocationIndicator: false,
+      },
+    );
+
+    // 언마운트시 추적 중지
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!mapWebViewRef.current) return;
 
     const msg = JSON.stringify({
