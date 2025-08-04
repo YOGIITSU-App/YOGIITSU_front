@@ -38,6 +38,7 @@ import buildingApi from '../../api/buildingApi';
 import {MAP_HOME_HTML_URL} from '@env';
 import Geolocation from 'react-native-geolocation-service';
 import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
+import BootSplash from 'react-native-bootsplash';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -52,6 +53,7 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const [locationLoaded, setLocationLoaded] = useState(false);
   const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
@@ -91,14 +93,25 @@ function MapHomeScreen() {
   }
 
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!locationLoaded) {
+        BootSplash.hide({fade: true});
+        setLocationLoaded(true);
+      }
+    }, 10000); // 10초 후 강제 숨김
+
+    return () => clearTimeout(timeout);
+  }, [locationLoaded]);
+
+  useEffect(() => {
     checkLocationPermission();
   }, []);
 
   useEffect(() => {
-    // 최초 위치 1회 요청
     Geolocation.getCurrentPosition(
       position => {
         const {latitude, longitude} = position.coords;
+
         mapWebViewRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -107,8 +120,14 @@ function MapHomeScreen() {
           }),
         );
       },
-      error => {},
-      {enableHighAccuracy: true},
+      error => {
+        // 위치 못받았을 때도 부트스플래시는 숨겨야 앱이 멈추지 않음
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+      },
+      {enableHighAccuracy: false},
     );
   }, []);
 
@@ -171,6 +190,14 @@ function MapHomeScreen() {
   const handleWebViewMessage = async (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
+
+      if (data.type === 'currentLocationSet') {
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+        return;
+      }
 
       if (data.type === 'selectFacility' && data.buildingId) {
         navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
