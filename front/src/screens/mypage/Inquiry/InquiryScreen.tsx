@@ -13,11 +13,13 @@ import CustomButton from '../../../components/CustomButton';
 import {colors} from '../../../constants';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {defaultTabOptions} from '../../../constants/tabOptions';
+import {useTabOptions} from '../../../constants/tabOptions';
 import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 function InquiryScreen() {
+  const tabOptions = useTabOptions();
+
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +29,7 @@ function InquiryScreen() {
     parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
     };
   }, [navigation]);
 

@@ -1,23 +1,24 @@
-import {Dimensions} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-const deviceHeight = Dimensions.get('screen').height;
-
-export const defaultTabOptions = {
-  headerShown: false,
-
-  tabBarStyle: {
-    height: deviceHeight * 0.08,
-    backgroundColor: '#fff',
-    paddingBottom: -10,
-  },
-  tabBarActiveTintColor: 'blue',
-  tabBarInactiveTintColor: 'gray',
-  tabBarLabelStyle: {
-    fontSize: 12,
-    paddingBottom: 15,
-  },
-  tabBarIconStyle: {
-    width: 24,
-    height: 24,
-  },
+export const useTabOptions = () => {
+  const insets = useSafeAreaInsets();
+  return {
+    headerShown: false,
+    tabBarStyle: {
+      height: 70 + insets.bottom,
+      backgroundColor: '#fff',
+      paddingBottom: insets.bottom,
+    },
+    tabBarActiveTintColor: 'blue',
+    tabBarInactiveTintColor: 'gray',
+    tabBarLabelStyle: {
+      fontSize: 12,
+      paddingBottom: 8,
+    },
+    tabBarIconStyle: {
+      width: 24,
+      height: 24,
+      marginTop: 8,
+    },
+  };
 };

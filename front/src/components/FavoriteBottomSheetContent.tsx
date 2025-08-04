@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import favoriteApi from '../api/favoriteApi';
 import {useNavigation} from '@react-navigation/native';
@@ -166,5 +167,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: colors.BLACK_700,
+    lineHeight: 22,
+    ...(Platform.OS === 'ios' ? {paddingTop: 2} : {}),
   },
 });

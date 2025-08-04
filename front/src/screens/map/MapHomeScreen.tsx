@@ -294,7 +294,7 @@ function MapHomeScreen() {
           </TouchableOpacity>
 
           {/* 카테고리 탭 */}
-          <View style={[{top: insets.top}]}>
+          <View style={[{top: insets.top, zIndex: 10}]}>
             <FacilityFilterButtons
               selected={selectedCategory}
               onSelect={category => {

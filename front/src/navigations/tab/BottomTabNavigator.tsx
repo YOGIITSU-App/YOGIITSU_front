@@ -11,7 +11,7 @@ import {
 import React, {useEffect, useState, useMemo} from 'react';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
-import {defaultTabOptions} from '../../constants/tabOptions';
+import {useTabOptions} from '../../constants/tabOptions';
 import {colors, mapNavigation} from '../../constants';
 
 export type BottomTabParamList = {
@@ -41,6 +41,7 @@ export default function BottomTabNavigator() {
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const navState = useNavigationState(state => state);
+  const tabOptions = useTabOptions();
 
   useEffect(() => {
     const currentRoute = navState.routes[navState.index]?.name;
@@ -118,10 +119,8 @@ export default function BottomTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const isHidden = hiddenScreens.includes(routeName as any);
         return {
-          ...defaultTabOptions,
-          tabBarStyle: isHidden
-            ? {display: 'none'}
-            : defaultTabOptions.tabBarStyle,
+          ...tabOptions,
+          tabBarStyle: isHidden ? {display: 'none'} : tabOptions.tabBarStyle,
         };
       }}>
       <BottomTab.Screen

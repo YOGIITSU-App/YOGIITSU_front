@@ -18,7 +18,7 @@ import MiniInputField from '../../../components/miniInputField';
 import MiniCustomButton_W from '../../../components/miniCustomButton_W';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {defaultTabOptions} from '../../../constants/tabOptions';
+import {useTabOptions} from '../../../constants/tabOptions';
 import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import AlertModal from '../../../components/AlertModal';
@@ -28,6 +28,8 @@ const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
 function ChangePwCodeConfirmScreen() {
+  const tabOptions = useTabOptions();
+
   const emailcheak = useForm({
     initialValue: {
       email: '',
@@ -53,10 +55,11 @@ function ChangePwCodeConfirmScreen() {
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
+
     parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
     };
   }, [navigation]);
 
