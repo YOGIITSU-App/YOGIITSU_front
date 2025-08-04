@@ -135,9 +135,10 @@ export default function ShortcutDetailScreen() {
       },
       {
         enableHighAccuracy: true,
-        distanceFilter: 1,
-        interval: 2000,
-        fastestInterval: 1000,
+        distanceFilter: 5,
+        interval: 5000,
+        fastestInterval: 2000,
+        showsBackgroundLocationIndicator: false,
       },
     );
 
@@ -146,7 +147,7 @@ export default function ShortcutDetailScreen() {
     };
   }, []);
 
-  const loading = detailLoading || !setMapReady;
+  const loading = detailLoading || !mapReady;
 
   if (detailError) {
     return (
