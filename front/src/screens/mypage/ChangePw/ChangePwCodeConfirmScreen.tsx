@@ -210,7 +210,10 @@ function ChangePwCodeConfirmScreen() {
           buttons={[
             {
               label: '다시 입력',
-              onPress: () => setCodeWrongModalVisible(false),
+              onPress: () => {
+                setCodeWrongModalVisible(false);
+                codemessagecheck.setValues({codemessage: ''});
+              },
               style: {backgroundColor: colors.GRAY_300},
             },
             {

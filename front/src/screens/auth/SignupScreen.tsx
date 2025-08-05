@@ -247,7 +247,14 @@ function SignupScreen() {
             buttons={[
               {
                 label: '다시 입력',
-                onPress: () => setCodeWrongModalVisible(false),
+                onPress: () => {
+                  setCodeWrongModalVisible(false);
+                  signup.setValues({
+                    ...signup.values,
+                    codemessage: '',
+                  });
+                  setIsVerified(false);
+                },
                 style: {backgroundColor: colors.GRAY_300},
               },
               {

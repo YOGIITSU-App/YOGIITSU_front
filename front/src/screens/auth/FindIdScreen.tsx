@@ -155,7 +155,10 @@ function FindIdScreen() {
               buttons={[
                 {
                   label: '다시 입력',
-                  onPress: () => setCodeWrongModalVisible(false),
+                  onPress: () => {
+                    setCodeWrongModalVisible(false);
+                    codeForm.setValues({codemessage: ''});
+                  },
                   style: {backgroundColor: colors.GRAY_300},
                 },
                 {

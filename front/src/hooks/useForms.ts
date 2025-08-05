@@ -54,7 +54,15 @@ function useForm<T>({initialValue, validate}: useFormProps<T>) {
 
   const isFormValid = Object.values(errors).every(error => error === '');
 
-  return {values, errors, touched, focused, isFormValid, getTextInputProps};
+  return {
+    values,
+    errors,
+    touched,
+    focused,
+    isFormValid,
+    getTextInputProps,
+    setValues,
+  };
 }
 
 export default useForm;
