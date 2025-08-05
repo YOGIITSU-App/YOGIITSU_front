@@ -41,15 +41,6 @@ const authApi = {
     });
   },
 
-  // [로그인] 이메일 변경 (이메일 인증 토큰 필요)
-  changeEmail: (verificationToken: string) => {
-    return axiosInstance.post('/email/change', null, {
-      headers: {
-        'X-Email-Verification-Token': verificationToken,
-      },
-    });
-  },
-
   // [로그인] 비밀번호 변경
   changePassword: (newPassword: string, confirmPassword: string) => {
     return axiosInstance.patch('/members/change-password', {
