@@ -53,6 +53,7 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const [permissionGranted, setPermissionGranted] = useState(false);
   const [locationLoaded, setLocationLoaded] = useState(false);
   const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -84,6 +85,8 @@ function MapHomeScreen() {
         result = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
       }
     }
+    setPermissionGranted(result === RESULTS.GRANTED); // 권한 허용/거부 여부 저장
+
     if (result !== RESULTS.GRANTED) {
       Alert.alert(
         '위치 권한 필요',
@@ -108,10 +111,11 @@ function MapHomeScreen() {
   }, []);
 
   useEffect(() => {
+    if (!permissionGranted) return;
+
     Geolocation.getCurrentPosition(
       position => {
         const {latitude, longitude} = position.coords;
-
         mapWebViewRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -121,7 +125,6 @@ function MapHomeScreen() {
         );
       },
       error => {
-        // 위치 못받았을 때도 부트스플래시는 숨겨야 앱이 멈추지 않음
         if (!locationLoaded) {
           BootSplash.hide({fade: true});
           setLocationLoaded(true);
@@ -129,9 +132,11 @@ function MapHomeScreen() {
       },
       {enableHighAccuracy: false},
     );
-  }, []);
+  }, [permissionGranted]);
 
   useEffect(() => {
+    if (!permissionGranted) return;
+
     const watchId = Geolocation.watchPosition(
       position => {
         const {latitude, longitude} = position.coords;
@@ -155,11 +160,10 @@ function MapHomeScreen() {
       },
     );
 
-    // 언마운트시 추적 중지
     return () => {
       Geolocation.clearWatch(watchId);
     };
-  }, []);
+  }, [permissionGranted]);
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
