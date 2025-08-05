@@ -45,7 +45,6 @@ function miniInputField({
           editable={!disabled}
           placeholderTextColor={colors.GRAY_500}
           style={[styles.input, disabled && styles.disabled]}
-          autoCapitalize="characters"
           spellCheck={false}
           autoCorrect={false}
           textContentType="oneTimeCode"

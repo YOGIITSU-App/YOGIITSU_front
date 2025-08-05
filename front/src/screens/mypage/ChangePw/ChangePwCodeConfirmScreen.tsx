@@ -142,7 +142,7 @@ function ChangePwCodeConfirmScreen() {
         <View style={styles.emailContainer}>
           <InputField
             placeholder="이메일 입력"
-            inputMode="email"
+            keyboardType="email-address"
             touched={emailcheak.touched.email}
             error={emailcheak.errors.email}
             {...emailcheak.getTextInputProps('email')}
@@ -190,7 +190,7 @@ function ChangePwCodeConfirmScreen() {
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
-              inputMode="text"
+              keyboardType="number-pad"
               focused={codemessagecheck.focused.codemessage}
               maxLength={6}
               {...codemessagecheck.getTextInputProps('codemessage')}

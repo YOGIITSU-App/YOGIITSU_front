@@ -184,7 +184,8 @@ function SignupScreen() {
             <View style={styles.smallContainer}>
               <MiniInputField
                 placeholder="이메일"
-                inputMode="email"
+                keyboardType="email-address"
+                autoCapitalize="none"
                 focused={signup.focused.email}
                 {...signup.getTextInputProps('email')}
               />
@@ -198,7 +199,7 @@ function SignupScreen() {
             <View style={styles.smallContainer}>
               <MiniInputField
                 placeholder="인증번호"
-                inputMode="text"
+                keyboardType="number-pad"
                 focused={signup.focused.codemessage}
                 maxLength={6}
                 {...signup.getTextInputProps('codemessage')}

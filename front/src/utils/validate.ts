@@ -118,8 +118,8 @@ type CodeInfo = {codemessage: string};
 function validateCodeMessage(values: CodeInfo) {
   const CodeMessageErrors = {codemessage: ''};
 
-  if (!/^[A-Z]{6}$/.test(values.codemessage)) {
-    CodeMessageErrors.codemessage = '인증번호는 6자의 영문 대문자입니다.';
+  if (!/^\d{6}$/.test(values.codemessage)) {
+    CodeMessageErrors.codemessage = '인증번호는 6자리 숫자입니다.';
   }
 
   return CodeMessageErrors;
@@ -167,8 +167,8 @@ function validateSignup(
     Signuperrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
   }
 
-  if (!/^[A-Z]{6}$/.test(values.codemessage)) {
-    Signuperrors.codemessage = '인증번호는 6자의 영문 대문자입니다.';
+  if (!/^\d{6}$/.test(values.codemessage)) {
+    Signuperrors.codemessage = '인증번호는 6자리 숫자입니다.';
   }
 
   return Signuperrors;
