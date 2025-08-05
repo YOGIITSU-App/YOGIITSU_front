@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -19,6 +20,7 @@ import {colors, mapNavigation} from '../../constants';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MAP_SHORTCUT_HTML_URL} from '@env';
+import Geolocation from 'react-native-geolocation-service';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -37,7 +39,8 @@ export default function ShortcutDetailScreen() {
   const {shortcutId} = route.params;
 
   // 1) map 로딩 상태
-  const [mapLoaded, setMapLoaded] = useState(false);
+  // const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   // 2) 상세 데이터 상태
   const [detail, setDetail] = useState<ShortcutDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
@@ -56,6 +59,17 @@ export default function ShortcutDetailScreen() {
     return [collapsed, expanded];
   }, [headerHeight]);
 
+  const handleWebViewMessage = (e: any) => {
+    try {
+      const data = JSON.parse(e.nativeEvent.data);
+      if (data.type === 'MAP_READY') {
+        setMapReady(true);
+      }
+    } catch (err) {
+      // 무시 (ex. 텍스트 메시지)
+    }
+  };
+
   // 1) 상세 API 호출
   useEffect(() => {
     fetchShortcutDetail(shortcutId)
@@ -69,19 +83,19 @@ export default function ShortcutDetailScreen() {
 
   // 2) map 로드 완료 시
   const onWebViewLoadEnd = () => {
-    setMapLoaded(true);
+    setMapReady(true);
   };
 
   // 3) detail & mapLoaded 가 모두 true 될 때만 그리기
   useEffect(() => {
-    if (!detail || !mapLoaded) return;
-
+    if (!detail || !mapReady) return;
+    // 1. 폴리라인
     const path = detail.coordinates.map(c => ({
       lat: c.latitude,
       lng: c.longitude,
     }));
     webRef.current?.postMessage(JSON.stringify({type: 'drawShortcut', path}));
-
+    // 2. 시작/끝 마커
     const start = detail.coordinates[0];
     const end = detail.coordinates[detail.coordinates.length - 1];
     [start, end].forEach(p =>
@@ -89,9 +103,51 @@ export default function ShortcutDetailScreen() {
         JSON.stringify({type: 'marker', lat: p.latitude, lng: p.longitude}),
       ),
     );
-  }, [detail, mapLoaded]);
+  }, [detail, mapReady]);
 
-  const loading = detailLoading || !mapLoaded;
+  useEffect(() => {
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        webRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        console.log('위치 추적 에러:', error.code, error.message);
+
+        // 권한 거부(예: error.code === 1) 혹은 기타 오류일 때 안내하기
+        if (error.code === 1) {
+          Alert.alert(
+            '위치 권한 필요',
+            '길찾기 및 위치 기반 서비스를 이용하려면 위치 권한을 허용해주세요.\n설정 > 앱에서 위치 권한을 활성화할 수 있습니다.',
+          );
+        } else {
+          Alert.alert(
+            '위치 오류',
+            '현재 위치를 가져올 수 없습니다. 위치 서비스 설정을 확인해주세요.',
+          );
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 5,
+        interval: 5000,
+        fastestInterval: 2000,
+        showsBackgroundLocationIndicator: false,
+      },
+    );
+
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  const loading = detailLoading || !mapReady;
 
   if (detailError) {
     return (
@@ -136,7 +192,8 @@ export default function ShortcutDetailScreen() {
             {/* 왼쪽: < 아이콘 */}
             <TouchableOpacity
               style={styles.iconWrapper}
-              onPress={() => navigation.goBack()}>
+              onPress={() => navigation.goBack()}
+              hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
               <Image
                 source={require('../../assets/back-icon.png')}
                 style={styles.iconLeft}
@@ -202,6 +259,7 @@ export default function ShortcutDetailScreen() {
           })();
           true;
         `}
+          onMessage={handleWebViewMessage}
           onLoadEnd={onWebViewLoadEnd}
         />
 

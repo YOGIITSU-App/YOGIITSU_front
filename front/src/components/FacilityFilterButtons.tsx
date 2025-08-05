@@ -10,6 +10,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import {colors} from '../constants';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type CategoryItem = {
   type: string;
@@ -58,11 +59,20 @@ const categories: CategoryItem[] = [
     activeColor: colors.YELLOW_700,
     iconSize: {width: 18, height: 16},
   },
+  {
+    type: 'PRINTER',
+    label: '프린터기',
+    icon: require('../assets/category-tabs/printer.png'),
+    activeColor: colors.BLUE_700,
+    iconSize: {width: 16, height: 16},
+  },
 ];
 
 export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, {top: insets.top + 80}]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

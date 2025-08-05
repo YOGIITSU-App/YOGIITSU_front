@@ -15,6 +15,7 @@ import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import AlertModal from '../../../components/AlertModal';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -38,8 +39,12 @@ function ChangeNewEmailScreen() {
   const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
   const [isSendButtonVisible, setSendButtonVisible] = useState(true);
-  const [guideTextType, setGuideTextType] = useState<'email' | 'code'>('email');
+  const [guideTextType, setGuideTextType] = useState<
+    'email' | 'code' | 'verified'
+  >('email');
   const [isSending, setIsSending] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
@@ -51,8 +56,9 @@ function ChangeNewEmailScreen() {
     try {
       const res = await emailApi.sendCode(
         emailcheak.values.email,
-        EmailVerificationPurpose.EMAIL_CHANGE_OLD,
+        EmailVerificationPurpose.EMAIL_CHANGE_NEW,
       );
+      setCodeSent(true);
       setSendCodeModalVisible(true);
     } catch (error: any) {
       const msg = error.response?.data?.message ?? '인증번호 전송 실패';
@@ -66,7 +72,8 @@ function ChangeNewEmailScreen() {
   const handleVerifyCode = async () => {
     try {
       await emailApi.verifyCode(codemessagecheck.values.codemessage);
-      navigation.navigate('ChangeEmailComplete');
+      setIsVerified(true); // 인증 성공 시 상태 변경
+      setGuideTextType('verified'); // 안내 문구도 바꿔주면 좋음
     } catch (error: any) {
       setCodeWrongModalVisible(true);
     }
@@ -83,26 +90,27 @@ function ChangeNewEmailScreen() {
       <View style={styles.guideContainer}>
         {/* 상태에 따라 문구 변경 */}
         {guideTextType === 'email' ? (
-          <>
-            <Text style={styles.guideText}>
-              <Text style={styles.highlightedText}>새로운 이메일</Text>을 등록해
-              주세요
-            </Text>
-          </>
+          <Text style={styles.guideText}>
+            <Text style={styles.highlightedText}>새로운 이메일</Text>을 등록해
+            주세요
+          </Text>
+        ) : guideTextType === 'code' ? (
+          <Text style={styles.guideText}>
+            전송된 <Text style={styles.highlightedText}>인증번호</Text>를 입력해
+            주세요
+          </Text>
         ) : (
-          <>
-            <Text style={styles.guideText}>
-              전송된 <Text style={styles.highlightedText}>인증번호</Text>를
-              입력해 주세요
-            </Text>
-          </>
+          <Text style={styles.guideText}>
+            <Text style={styles.highlightedText}>인증 완료</Text> 변경하기
+            버튼을 눌러 {'\n'}이메일을 최종 변경하세요
+          </Text>
         )}
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.emailContainer}>
           <InputField
             placeholder="이메일 입력"
-            inputMode="email"
+            keyboardType="email-address"
             touched={emailcheak.touched.email}
             error={emailcheak.errors.email}
             {...emailcheak.getTextInputProps('email')}
@@ -149,13 +157,14 @@ function ChangeNewEmailScreen() {
           <View style={styles.smallContainer}>
             <MiniInputField
               placeholder="인증번호"
-              inputMode="text"
+              keyboardType="number-pad"
               focused={codemessagecheck.focused.codemessage}
+              maxLength={6}
               {...codemessagecheck.getTextInputProps('codemessage')}
             />
             <MiniCustomButton_W
               label="확인"
-              inValid={!codemessagecheck.isFormValid}
+              inValid={!codeSent || isVerified}
               onPress={handleVerifyCode}
             />
           </View>
@@ -168,7 +177,10 @@ function ChangeNewEmailScreen() {
           buttons={[
             {
               label: '다시 입력',
-              onPress: () => setCodeWrongModalVisible(false),
+              onPress: () => {
+                setCodeWrongModalVisible(false);
+                codemessagecheck.setValues({codemessage: ''});
+              },
               style: {backgroundColor: colors.GRAY_300},
             },
             {
@@ -178,6 +190,22 @@ function ChangeNewEmailScreen() {
             },
           ]}
         />
+        {isVerified && (
+          <CustomBotton
+            label="변경하기"
+            variant="filled"
+            size="large"
+            onPress={async () => {
+              try {
+                await emailApi.changeEmail();
+                await EncryptedStorage.removeItem('emailVerifyToken');
+                navigation.navigate('ChangeEmailComplete');
+              } catch (error: any) {
+                Alert.alert('에러', '이메일 변경에 실패했습니다.');
+              }
+            }}
+          />
+        )}
       </View>
     </AppScreenLayout>
   );
@@ -255,6 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // 이메일 입력칸과 버튼의 간격 유지
     alignItems: 'center',
     gap: deviceWidth * 0.025,
+    marginBottom: '10%',
   },
 });
 

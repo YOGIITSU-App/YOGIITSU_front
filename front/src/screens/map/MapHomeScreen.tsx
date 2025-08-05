@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -35,6 +36,9 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import buildingApi from '../../api/buildingApi';
 import {MAP_HOME_HTML_URL} from '@env';
+import Geolocation from 'react-native-geolocation-service';
+import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
+import BootSplash from 'react-native-bootsplash';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -49,6 +53,8 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [locationLoaded, setLocationLoaded] = useState(false);
   const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
@@ -66,23 +72,136 @@ function MapHomeScreen() {
   const mapWebViewRef = useRef<WebView>(null);
   const MAP_HTML_URL = MAP_HOME_HTML_URL;
 
+  async function checkLocationPermission() {
+    let result;
+    if (Platform.OS === 'ios') {
+      result = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      if (result !== RESULTS.GRANTED) {
+        result = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      }
+    } else {
+      result = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      if (result !== RESULTS.GRANTED) {
+        result = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      }
+    }
+    setPermissionGranted(result === RESULTS.GRANTED); // 권한 허용/거부 여부 저장
+
+    if (result !== RESULTS.GRANTED) {
+      Alert.alert(
+        '위치 권한 필요',
+        '길찾기 및 위치 기반 서비스를 위해 위치 권한을 허용해주세요.\n설정 > 앱에서 허용 가능합니다.',
+      );
+    }
+  }
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!locationLoaded) {
+        BootSplash.hide({fade: true});
+        setLocationLoaded(true);
+      }
+    }, 10000); // 10초 후 강제 숨김
+
+    return () => clearTimeout(timeout);
+  }, [locationLoaded]);
+
+  useEffect(() => {
+    checkLocationPermission();
+  }, []);
+
+  useEffect(() => {
+    if (!permissionGranted) return;
+
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+      },
+      {enableHighAccuracy: false},
+    );
+  }, [permissionGranted]);
+
+  useEffect(() => {
+    if (!permissionGranted) return;
+
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        mapWebViewRef.current?.postMessage(
+          JSON.stringify({
+            type: 'setMyLocation',
+            lat: latitude,
+            lng: longitude,
+          }),
+        );
+      },
+      error => {
+        console.error(error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 1,
+        interval: 2000,
+        fastestInterval: 1000,
+        showsBackgroundLocationIndicator: false,
+      },
+    );
+
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
+  }, [permissionGranted]);
+
   useEffect(() => {
     if (!mapWebViewRef.current) return;
 
-    const msg = JSON.stringify({
+    const filteredFacilities =
+      selectedCategory && facilities.length > 0
+        ? facilities.filter(f => f.type === selectedCategory)
+        : [];
+
+    const msgFacilities = JSON.stringify({
       type: 'setFacilities',
-      data:
-        selectedCategory && facilities.length > 0
-          ? facilities.map(f => ({...f, category: f.type}))
-          : [],
+      data: filteredFacilities.map(f => ({...f, category: f.type})),
     });
 
-    mapWebViewRef.current.postMessage(msg);
+    mapWebViewRef.current.postMessage(msgFacilities);
+
+    if (selectedCategory) {
+      const coords = filteredFacilities.map(f => ({
+        lat: f.latitude,
+        lng: f.longitude,
+      }));
+      mapWebViewRef.current.postMessage(
+        JSON.stringify({type: 'fitBounds', coords}),
+      );
+    }
   }, [facilities, selectedCategory]);
 
   const handleWebViewMessage = async (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
+
+      if (data.type === 'currentLocationSet') {
+        if (!locationLoaded) {
+          BootSplash.hide({fade: true});
+          setLocationLoaded(true);
+        }
+        return;
+      }
 
       if (data.type === 'selectFacility' && data.buildingId) {
         navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
@@ -138,6 +257,56 @@ function MapHomeScreen() {
 
     mapWebViewRef.current.postMessage(msg);
   }, [selectedCategory]);
+
+  const handleTargetPress = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude} = position.coords;
+        navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+          startLocation: `${latitude},${longitude}`,
+          startLocationName: '현재 위치',
+          endLocation: '',
+          endLocationName: '도착지 선택',
+          startBuildingId: undefined,
+          endBuildingId: undefined,
+        });
+      },
+      error => {
+        Alert.alert(
+          '위치 오류',
+          '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
+        );
+      },
+      {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
+    );
+  };
+
+  const moveToMyLocation = async () => {
+    try {
+      const position = await new Promise<Geolocation.GeoPosition>(
+        (resolve, reject) => {
+          Geolocation.getCurrentPosition(
+            pos => resolve(pos),
+            err => reject(err),
+            {enableHighAccuracy: true},
+          );
+        },
+      );
+      const {latitude, longitude} = position.coords;
+      mapWebViewRef.current?.postMessage(
+        JSON.stringify({
+          type: 'moveTo',
+          lat: latitude,
+          lng: longitude,
+        }),
+      );
+    } catch (error) {
+      Alert.alert(
+        '위치 오류',
+        '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
+      );
+    }
+  };
 
   const handleSelectFavorite = async (item: FavoriteItem) => {
     try {
@@ -230,21 +399,28 @@ function MapHomeScreen() {
                 style={styles.searchIcon}
               />
               <Text style={styles.searchInput}>어디로 떠나볼까요?</Text>
+              <TouchableOpacity
+                onPress={handleTargetPress}
+                style={{marginLeft: 8}}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                <Image
+                  source={require('../../assets/target-icon.png')}
+                  style={styles.targetIcon}
+                />
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
 
           {/* 카테고리 탭 */}
-          <View style={[{top: insets.top}]}>
-            <FacilityFilterButtons
-              selected={selectedCategory}
-              onSelect={category => {
-                if (globalThis.setTabToHome) globalThis.setTabToHome();
-                setSelectedCategory(
-                  category === selectedCategory ? null : category,
-                );
-              }}
-            />
-          </View>
+          <FacilityFilterButtons
+            selected={selectedCategory}
+            onSelect={category => {
+              if (globalThis.setTabToHome) globalThis.setTabToHome();
+              setSelectedCategory(
+                category === selectedCategory ? null : category,
+              );
+            }}
+          />
 
           {/* 지도 */}
           <WebView
@@ -269,6 +445,16 @@ function MapHomeScreen() {
           />
 
           <TouchableOpacity
+            style={styles.myLocationButton}
+            onPress={moveToMyLocation}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            <Image
+              source={require('../../assets/target-icon.png')} // 아이콘 경로 맞게 변경
+              style={{width: 20, height: 20}}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.shortcutButton}
             onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}>
             <Image
@@ -290,12 +476,12 @@ function MapHomeScreen() {
           onChange={index => {
             // index가 1이면 100%로 올라간 상태
             if (index === 1) {
+              setOpenSheet(null);
               navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
                 shuttleSchedule: shuttleSchedule,
                 selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
                 currentStopName: selectedStopName,
               });
-              shuttleSheetRef.current?.close();
             }
           }}>
           <ShuttleBottomSheetContent
@@ -352,6 +538,7 @@ const styles = StyleSheet.create({
   searchBoxInput: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   searchIcon: {
     width: 16,
@@ -359,10 +546,27 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   searchInput: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: colors.GRAY_1000,
     lineHeight: 20,
+  },
+  targetIcon: {
+    width: 16,
+    height: 16,
+  },
+  myLocationButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 16,
+    width: 40,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
   },
   shortcutButton: {
     position: 'absolute',

@@ -5,7 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {defaultTabOptions} from '../../../constants/tabOptions';
+import {useTabOptions} from '../../../constants/tabOptions';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -13,6 +13,8 @@ const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
 
 function DeleteAccountWarningScreen() {
+  const tabOptions = useTabOptions();
+
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
   useLayoutEffect(() => {
@@ -20,7 +22,7 @@ function DeleteAccountWarningScreen() {
     parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
     };
   }, [navigation]);
 

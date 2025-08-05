@@ -31,11 +31,6 @@ const emailApi = {
         },
       },
     );
-    // 인증 성공 시 토큰 삭제
-    if (response.data?.status === 'SUCCESS') {
-      await EncryptedStorage.removeItem('emailVerifyToken');
-    }
-
     return response;
   },
 

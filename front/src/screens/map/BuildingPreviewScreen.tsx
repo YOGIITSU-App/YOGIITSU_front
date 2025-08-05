@@ -231,7 +231,9 @@ export default function BuildingPreviewScreen() {
             <View style={styles.cardContent}>
               <View style={styles.cardTitleRow}>
                 <Text style={styles.cardTitle}>{buildingInfo.name}</Text>
-                <TouchableOpacity onPress={toggleFavorite}>
+                <TouchableOpacity
+                  onPress={toggleFavorite}
+                  hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
                   <Image
                     source={require('../../assets/bookmark-icon.png')}
                     style={{
@@ -247,18 +249,6 @@ export default function BuildingPreviewScreen() {
                 {buildingInfo.tags.map(tag => `#${tag}`).join(' ')}
               </Text>
 
-              {/* <View style={styles.facilityRow}>
-                {buildingInfo.facilities.map(fac => {
-                  const icon = facilityIconMap[fac.name.trim()];
-                  return icon ? (
-                    <Image
-                      key={fac.name}
-                      source={icon}
-                      style={styles.facilityIcon}
-                    />
-                  ) : null;
-                })}
-              </View> */}
               <FacilityBadge facilities={buildingInfo.facilities} />
 
               <View style={styles.buttonRow}>

@@ -107,7 +107,7 @@ function FindIdScreen() {
       <View style={styles.infoContainer}>
         <InputField
           placeholder="이메일 입력"
-          inputMode="email"
+          keyboardType="email-address"
           touched={emailForm.touched.email}
           error={emailForm.errors.email}
           focused={emailForm.focused.email}
@@ -136,8 +136,9 @@ function FindIdScreen() {
             <View style={styles.codeContainer}>
               <MiniInputField
                 placeholder="인증번호"
-                inputMode="text"
+                keyboardType="number-pad"
                 focused={codeForm.focused.codemessage}
+                maxLength={6}
                 {...codeForm.getTextInputProps('codemessage')}
               />
               <MiniCustomButton_W
@@ -154,7 +155,10 @@ function FindIdScreen() {
               buttons={[
                 {
                   label: '다시 입력',
-                  onPress: () => setCodeWrongModalVisible(false),
+                  onPress: () => {
+                    setCodeWrongModalVisible(false);
+                    codeForm.setValues({codemessage: ''});
+                  },
                   style: {backgroundColor: colors.GRAY_300},
                 },
                 {

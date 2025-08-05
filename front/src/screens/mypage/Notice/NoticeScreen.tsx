@@ -14,9 +14,11 @@ import {MypageStackParamList} from '../../../navigations/stack/MypageStackNaviga
 import {StackNavigationProp} from '@react-navigation/stack';
 import {colors} from '../../../constants';
 import noticeApi, {mapToNotice, Notice} from '../../../api/noticeApi';
-import {defaultTabOptions} from '../../../constants/tabOptions';
+import {useTabOptions} from '../../../constants/tabOptions';
 
 function NoticeListScreen() {
+  const tabOptions = useTabOptions();
+
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +28,7 @@ function NoticeListScreen() {
     parent?.setOptions({tabBarStyle: {display: 'none'}});
 
     return () => {
-      parent?.setOptions({tabBarStyle: defaultTabOptions.tabBarStyle});
+      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
     };
   }, [navigation]);
 
