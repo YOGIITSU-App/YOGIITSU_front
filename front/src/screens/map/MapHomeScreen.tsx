@@ -400,7 +400,7 @@ function MapHomeScreen() {
                 style={{marginLeft: 8}}
                 hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
                 <Image
-                  source={require('../../assets/target-icon.png')} // 네 아이콘 경로로
+                  source={require('../../assets/target-icon.png')}
                   style={styles.targetIcon}
                 />
               </TouchableOpacity>
@@ -408,17 +408,15 @@ function MapHomeScreen() {
           </TouchableOpacity>
 
           {/* 카테고리 탭 */}
-          <View style={[{top: insets.top, zIndex: 10}]}>
-            <FacilityFilterButtons
-              selected={selectedCategory}
-              onSelect={category => {
-                if (globalThis.setTabToHome) globalThis.setTabToHome();
-                setSelectedCategory(
-                  category === selectedCategory ? null : category,
-                );
-              }}
-            />
-          </View>
+          <FacilityFilterButtons
+            selected={selectedCategory}
+            onSelect={category => {
+              if (globalThis.setTabToHome) globalThis.setTabToHome();
+              setSelectedCategory(
+                category === selectedCategory ? null : category,
+              );
+            }}
+          />
 
           {/* 지도 */}
           <WebView
@@ -436,11 +434,12 @@ function MapHomeScreen() {
             (function() {
               document.addEventListener("message", function(e) {
                 window.dispatchEvent(new MessageEvent("message", { data: e.data }));
-              }); 
+              });
             })();
             true;
           `}
           />
+
           <TouchableOpacity
             style={styles.myLocationButton}
             onPress={moveToMyLocation}

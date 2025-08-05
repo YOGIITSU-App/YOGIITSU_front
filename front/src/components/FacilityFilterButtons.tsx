@@ -10,6 +10,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import {colors} from '../constants';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type CategoryItem = {
   type: string;
@@ -68,8 +69,10 @@ const categories: CategoryItem[] = [
 ];
 
 export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, {top: insets.top + 80}]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
