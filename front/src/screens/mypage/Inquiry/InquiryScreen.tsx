@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import CustomButton from '../../../components/CustomButton';
@@ -16,6 +17,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {useTabOptions} from '../../../constants/tabOptions';
 import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+
+const deviceWidth = Dimensions.get('screen').width;
 
 function InquiryScreen() {
   const tabOptions = useTabOptions();
@@ -198,6 +201,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: '5%',
     gap: 6,
   },
   titleText: {
