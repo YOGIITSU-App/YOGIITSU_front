@@ -2,9 +2,12 @@ import React, {useLayoutEffect, useState} from 'react';
 import {
   Alert,
   Dimensions,
+  Image,
+  Modal,
   SafeAreaView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import InputField from '../../../components/inputField';
@@ -23,6 +26,8 @@ import emailApi from '../../../api/emailApi';
 import {EmailVerificationPurpose} from '../../../constants/emailPurpose';
 import AlertModal from '../../../components/AlertModal';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+import {scale, verticalScale} from '../../../utils/scale';
+import axios from 'axios';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -44,6 +49,7 @@ function ChangePwCodeConfirmScreen() {
     validate: validateCodeMessage,
   });
 
+  const [wrongEmailModalVisible, setWrongEmailModalVisible] = useState(false);
   const [sendCodeModalVisible, setSendCodeModalVisible] = useState(false);
   const [codeWrongModalVisible, setCodeWrongModalVisible] = useState(false);
   const [isCodeFieldVisible, setCodeFieldVisible] = useState(false);
@@ -71,12 +77,25 @@ function ChangePwCodeConfirmScreen() {
     try {
       const res = await emailApi.sendCode(
         emailcheak.values.email,
-        EmailVerificationPurpose.PASSWORD_CHANGE,
+        EmailVerificationPurpose.EMAIL_CHANGE_OLD,
       );
       setSendCodeModalVisible(true);
-    } catch (error: any) {
-      const msg = error.response?.data?.message ?? '인증번호 전송 실패';
-      Alert.alert('에러', msg);
+    } catch (error) {
+      let msg = '';
+      if (axios.isAxiosError(error)) {
+        msg = error.response?.data?.message;
+      } else {
+        msg = '알 수 없는 오류';
+      }
+
+      if (
+        msg?.includes('가입된 계정이 존재하지 않습니다') ||
+        msg?.includes('이메일 정보가 일치하지 않습니다')
+      ) {
+        setWrongEmailModalVisible(true);
+      } else {
+        Alert.alert('에러', msg);
+      }
     } finally {
       setIsSending(false);
     }
@@ -201,6 +220,31 @@ function ChangePwCodeConfirmScreen() {
             },
           ]}
         />
+        <Modal
+          transparent
+          visible={wrongEmailModalVisible}
+          animationType="fade"
+          onRequestClose={() => setWrongEmailModalVisible(false)}>
+          <View style={styles.overlay}>
+            <View style={styles.wrongModalBox}>
+              <Image
+                source={require('../../../assets/Warning-icon-gray.png')}
+                style={styles.warningIcon}
+              />
+              <Text style={styles.wrongTitle}>
+                {'현재 계정의 이메일과\n일치하지 않습니다'}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  setWrongEmailModalVisible(false);
+                }}>
+                <Text style={styles.buttonText}>다시 입력하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </AppScreenLayout>
   );
@@ -278,6 +322,46 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // 이메일 입력칸과 버튼의 간격 유지
     alignItems: 'center',
     gap: deviceWidth * 0.025,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: colors.TRANSLUCENT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wrongModalBox: {
+    width: deviceWidth * 0.85,
+    backgroundColor: colors.WHITE,
+    padding: scale(20),
+    borderRadius: scale(10),
+    alignItems: 'center',
+  },
+  warningIcon: {
+    width: scale(28),
+    height: scale(28),
+    marginBottom: verticalScale(18),
+  },
+  wrongTitle: {
+    color: colors.BLACK_700,
+    fontSize: scale(16),
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: scale(25),
+    marginBottom: verticalScale(30),
+  },
+  button: {
+    backgroundColor: colors.BLUE_700,
+    width: deviceWidth * 0.7277,
+    height: deviceHeight * 0.06125,
+    marginHorizontal: scale(7),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: scale(6),
+  },
+  buttonText: {
+    color: colors.WHITE,
+    fontSize: scale(14),
+    fontWeight: '600',
   },
 });
 
