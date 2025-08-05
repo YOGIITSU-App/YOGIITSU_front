@@ -58,6 +58,13 @@ const categories: CategoryItem[] = [
     activeColor: colors.YELLOW_700,
     iconSize: {width: 18, height: 16},
   },
+  {
+    type: 'PRINTER',
+    label: '프린터기',
+    icon: require('../assets/category-tabs/printer.png'),
+    activeColor: colors.BLUE_700,
+    iconSize: {width: 16, height: 16},
+  },
 ];
 
 export const FacilityFilterButtons = ({selected, onSelect}: Props) => {
