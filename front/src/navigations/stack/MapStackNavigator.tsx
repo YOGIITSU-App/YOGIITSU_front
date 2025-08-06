@@ -117,7 +117,7 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.ROUTE_SELECTION}
         component={RouteSelectionScreen}
-        options={{headerTitle: '출발 & 도착 선택'}}
+        options={{headerShown: false}}
       />
       <Stack.Screen
         name={mapNavigation.ROUTE_RESULT}
