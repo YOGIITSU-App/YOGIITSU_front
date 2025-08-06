@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -71,6 +73,36 @@ function MapHomeScreen() {
 
   const mapWebViewRef = useRef<WebView>(null);
   const MAP_HTML_URL = MAP_HOME_HTML_URL;
+
+  const backPressCount = useRef(0);
+  const backPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS !== 'android') return;
+
+      const onBackPress = () => {
+        if (backPressCount.current === 0) {
+          backPressCount.current = 1;
+          ToastAndroid.show('한 번 더 누르면 종료됩니다.', ToastAndroid.SHORT);
+          if (backPressTimer.current) clearTimeout(backPressTimer.current);
+          backPressTimer.current = setTimeout(() => {
+            backPressCount.current = 0;
+          }, 2000);
+          return true; // 뒤로가기 동작 막음
+        } else {
+          BackHandler.exitApp(); // 앱 종료
+          return true;
+        }
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        if (backPressTimer.current) clearTimeout(backPressTimer.current);
+      };
+    }, []),
+  );
 
   async function checkLocationPermission() {
     let result;
