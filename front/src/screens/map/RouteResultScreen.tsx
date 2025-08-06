@@ -8,10 +8,16 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  BackHandler,
 } from 'react-native';
 import axios from 'axios';
 import {TMAP_API_KEY} from '@env';
-import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
+import {
+  RouteProp,
+  useRoute,
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import BottomSheet, {
   BottomSheetFlatList,
@@ -80,6 +86,29 @@ function RouteResultScreen() {
     const expanded = deviceHeight - headerHeight;
     return [collapsed, expanded];
   }, [headerHeight]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        navigation.navigate(mapNavigation.MAPHOME);
+        return true; // 기본 뒤로가기 막음
+      };
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, [navigation]),
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
+      // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
+      if (e.data.action.type === 'POP') {
+        e.preventDefault();
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const handleWebViewMessage = (e: any) => {
     try {
