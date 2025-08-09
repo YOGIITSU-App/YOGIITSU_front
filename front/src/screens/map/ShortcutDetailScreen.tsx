@@ -34,7 +34,7 @@ type NavigationProp = StackNavigationProp<
 
 export default function ShortcutDetailScreen() {
   const insets = useSafeAreaInsets();
-  const deviceHeight = Dimensions.get('window').height;
+  const deviceHeight = Dimensions.get('screen').height;
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { shortcutId } = route.params;
@@ -278,7 +278,7 @@ export default function ShortcutDetailScreen() {
         />
 
         {/* 요약 박스 */}
-        <View style={[styles.summaryBox, { bottom: '34.5%' }]}>
+        <View style={[styles.summaryBox, { bottom: '37.5%' }]}>
           <Text style={styles.summaryText}>
             {detail?.distance}m · 약 {detail?.duration}분 소요
           </Text>
