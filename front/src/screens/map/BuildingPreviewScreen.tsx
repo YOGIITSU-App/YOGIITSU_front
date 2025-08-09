@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +22,11 @@ import BuildingHeader from '../../components/BuildingHeader';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import FacilityBadge from '../../components/FacilityBadge';
 import Config from 'react-native-config';
+import {
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('window').height;
@@ -41,6 +40,9 @@ type NavigationProp = StackNavigationProp<MapStackParamList>;
 export default function BuildingPreviewScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
+  const animatedIndex = useSharedValue(0); // 드래그 중 실시간 인덱스
+  const didNavigateRef = useRef(false); // 중복 이동 방지
+
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
     null,
   );
@@ -61,7 +63,7 @@ export default function BuildingPreviewScreen() {
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
   const snapPoints = useMemo(() => {
-    const collapsed = 0.5 * deviceHeight;
+    const collapsed = 0.7 * deviceHeight;
     const expanded = deviceHeight - headerHeight;
     return [collapsed, expanded];
   }, [headerHeight]);
@@ -157,18 +159,32 @@ export default function BuildingPreviewScreen() {
     }
   };
 
+  const navigateToDetail = () => {
+    if (didNavigateRef.current) return;
+    if (!buildingDetail) return;
+    didNavigateRef.current = true;
+    navigation.replace(mapNavigation.BUILDING_DETAIL, {
+      buildingId: route.params.buildingId,
+      startLocation: route.params.startLocation,
+      startLocationName: route.params.startLocationName,
+      startBuildingId: route.params.startBuildingId,
+      endLocation: route.params.endLocation,
+      endLocationName: route.params.endLocationName,
+      endBuildingId: route.params.endBuildingId,
+    });
+  };
+
+  useAnimatedReaction(
+    () => animatedIndex.value,
+    (curr, prev) => {
+      if (curr >= 0.95 && (prev ?? 0) < 0.95) {
+        runOnJS(navigateToDetail)();
+      }
+    },
+  );
+
   const handleSheetChange = (index: number) => {
-    if (index === 1 && buildingDetail) {
-      navigation.replace(mapNavigation.BUILDING_DETAIL, {
-        buildingId: route.params.buildingId,
-        startLocation: route.params.startLocation,
-        startLocationName: route.params.startLocationName,
-        startBuildingId: route.params.startBuildingId,
-        endLocation: route.params.endLocation,
-        endLocationName: route.params.endLocationName,
-        endBuildingId: route.params.endBuildingId,
-      });
-    }
+    if (index === 1) navigateToDetail();
   };
 
   if (!buildingDetail) return null;
@@ -223,6 +239,7 @@ export default function BuildingPreviewScreen() {
           enableOverDrag={false}
           style={{ flex: 1 }}
           onChange={handleSheetChange}
+          animatedIndex={animatedIndex}
         >
           <BottomSheetView style={styles.sheetContent}>
             <Image
