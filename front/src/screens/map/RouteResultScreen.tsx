@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Dimensions,
   BackHandler,
+  Platform,
 } from 'react-native';
 import axios from 'axios';
 import Config from 'react-native-config';
@@ -80,11 +81,18 @@ function RouteResultScreen() {
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
-  const snapPoints = useMemo(() => {
-    const collapsed = 0.35 * deviceHeight;
-    const expanded = deviceHeight - headerHeight;
-    return [collapsed, expanded];
-  }, [headerHeight]);
+
+  const expanded = useMemo(() => {
+    return Platform.select({
+      ios: deviceHeight - headerHeight,
+      android: deviceHeight + insets.top - headerHeight,
+    })!;
+  }, [deviceHeight, headerHeight, insets.top]);
+
+  const snapPoints = useMemo(
+    () => [deviceHeight * 0.35, expanded],
+    [deviceHeight, expanded],
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -404,6 +412,7 @@ function RouteResultScreen() {
           enableContentPanningGesture
           enableHandlePanningGesture
           enableOverDrag={false}
+          maxDynamicContentSize={expanded}
           style={{ flex: 1 }}
           onChange={idx => {
             if (idx === 0)
@@ -422,6 +431,8 @@ function RouteResultScreen() {
           <BottomSheetFlatList
             ref={flatListRef}
             data={routeSteps}
+            bounces={false}
+            overScrollMode="never"
             keyExtractor={(_, i) => `step-${i}`}
             contentContainerStyle={{
               paddingHorizontal: 16,

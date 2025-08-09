@@ -8,6 +8,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -53,11 +54,18 @@ export default function ShortcutDetailScreen() {
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
-  const snapPoints = useMemo(() => {
-    const collapsed = 0.35 * deviceHeight;
-    const expanded = deviceHeight - headerHeight;
-    return [collapsed, expanded];
-  }, [headerHeight]);
+
+  const expanded = useMemo(() => {
+    return Platform.select({
+      ios: deviceHeight - headerHeight,
+      android: deviceHeight + insets.top - headerHeight,
+    })!;
+  }, [deviceHeight, headerHeight, insets.top]);
+
+  const snapPoints = useMemo(
+    () => [deviceHeight * 0.35, expanded],
+    [deviceHeight, expanded],
+  );
 
   const handleWebViewMessage = (e: any) => {
     try {
@@ -283,6 +291,7 @@ export default function ShortcutDetailScreen() {
           enableContentPanningGesture
           enableHandlePanningGesture
           enableOverDrag={false}
+          maxDynamicContentSize={expanded}
         >
           <BottomSheetFlatList
             data={detail?.coordinates || []}
