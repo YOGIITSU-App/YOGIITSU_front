@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "YogiitsuAppV802.app"
-               BlueprintName = "YogiitsuAppV802"
-               ReferencedContainer = "container:YogiitsuAppV802.xcodeproj">
+               BuildableName = "YogiitsuApp.app"
+               BlueprintName = "YogiitsuApp"
+               ReferencedContainer = "container:YogiitsuApp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "YogiitsuAppV802Tests.xctest"
-               BlueprintName = "YogiitsuAppV802Tests"
-               ReferencedContainer = "container:YogiitsuAppV802.xcodeproj">
+               BuildableName = "YogiitsuAppTests.xctest"
+               BlueprintName = "YogiitsuAppTests"
+               ReferencedContainer = "container:YogiitsuApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "YogiitsuAppV802.app"
-            BlueprintName = "YogiitsuAppV802"
-            ReferencedContainer = "container:YogiitsuAppV802.xcodeproj">
+            BuildableName = "YogiitsuApp.app"
+            BlueprintName = "YogiitsuApp"
+            ReferencedContainer = "container:YogiitsuApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "YogiitsuAppV802.app"
-            BlueprintName = "YogiitsuAppV802"
-            ReferencedContainer = "container:YogiitsuAppV802.xcodeproj">
+            BuildableName = "YogiitsuApp.app"
+            BlueprintName = "YogiitsuApp"
+            ReferencedContainer = "container:YogiitsuApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -2336,7 +2336,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReanimated (3.19.1):
+  - RNReanimated (3.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2363,11 +2363,11 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated (= 3.19.1)
-    - RNReanimated/worklets (= 3.19.1)
+    - RNReanimated/reanimated (= 3.18.0)
+    - RNReanimated/worklets (= 3.18.0)
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated (3.19.1):
+  - RNReanimated/reanimated (3.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2394,10 +2394,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated/apple (= 3.19.1)
+    - RNReanimated/reanimated/apple (= 3.18.0)
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated/apple (3.19.1):
+  - RNReanimated/reanimated/apple (3.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2426,7 +2426,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReanimated/worklets (3.19.1):
+  - RNReanimated/worklets (3.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2453,10 +2453,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/worklets/apple (= 3.19.1)
+    - RNReanimated/worklets/apple (= 3.18.0)
     - SocketRocket
     - Yoga
-  - RNReanimated/worklets/apple (3.19.1):
+  - RNReanimated/worklets/apple (3.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2876,7 +2876,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: bbc1152da7d2d40f9e59c28acc6576fcf5d28e2a
-  RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
+  RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: 300c5eb91114d4339b0bb39505d0f4824d7299b7
   RCTRequired: e0446b01093475b7082fbeee5d1ef4ad1fe20ac4
   RCTTypeSafety: cb974efcdc6695deedf7bf1eb942f2a0603a063f
@@ -2947,13 +2947,13 @@ SPEC CHECKSUMS:
   ReactCommon: 7aca047f2f453a7d7f0adeccb63810d61829235a
   RNBootSplash: 07805bcd3aaecb26115e56fa39237fbb88a442a8
   RNGestureHandler: cdca641e24d0ab743dcd90a24de4e6259e6aa0de
-  RNPermissions: d139a73fb2755b57a34678df07c33e6d7b5e9969
-  RNReanimated: 03d501a89a2d96ccb601fc9782ab4f7ced3b1ef8
+  RNPermissions: 1105b6da2b40fc00e101c36998bde373ecc54a97
+  RNReanimated: 2010262133feb53009f16faaa404042eed7da018
   RNScreens: 75074e642b69b086813a943bdf63da7085fb2166
   RNSVG: 432ca012e24410cab11449afef353ce20573a59f
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
 
-PODFILE CHECKSUM: 74d8610000ecfa61a059f3087c7891aeffc57e5d
+PODFILE CHECKSUM: 1d88320fc7f4a2c99565a38780649b7b83293c5a
 
 COCOAPODS: 1.16.2
