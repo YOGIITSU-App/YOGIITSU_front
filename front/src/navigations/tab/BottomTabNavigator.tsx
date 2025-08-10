@@ -1,14 +1,10 @@
-import {
-  BottomTabNavigationProp,
-  createBottomTabNavigator,
-} from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image, Text, TouchableOpacity } from 'react-native';
 import {
   getFocusedRouteNameFromRoute,
-  useNavigation,
   useNavigationState,
 } from '@react-navigation/native';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import MapStackNavigator from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import { useTabOptions } from '../../constants/tabOptions';
@@ -38,8 +34,6 @@ export default function BottomTabNavigator() {
   const [selectedTab, setSelectedTab] = useState<'홈' | '즐겨찾기' | 'MY'>(
     '홈',
   );
-  const navigation =
-    useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const navState = useNavigationState(state => state);
   const tabOptions = useTabOptions();
 
@@ -64,7 +58,7 @@ export default function BottomTabNavigator() {
     const isFocused = selectedTab === label;
     const handlePress = () => {
       if (label === '즐겨찾기') {
-        navigation.navigate('홈');
+        props.onPress?.();
         requestAnimationFrame(() => {
           setSelectedTab('즐겨찾기');
           globalThis.openFavoriteBottomSheet?.();
@@ -100,7 +94,7 @@ export default function BottomTabNavigator() {
           style={{
             width: 24,
             height: 24,
-            ...(isFocused && { tintColor: colors.BLUE_700 }), // ← 항상 지정
+            ...(isFocused && { tintColor: colors.BLUE_700 }),
           }}
           resizeMode="contain"
           fadeDuration={0}
@@ -120,6 +114,7 @@ export default function BottomTabNavigator() {
 
   return (
     <BottomTab.Navigator
+      initialRouteName="홈"
       screenOptions={({ route }) => {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const isHidden = hiddenScreens.includes(routeName as any);
@@ -143,6 +138,12 @@ export default function BottomTabNavigator() {
         options={{
           tabBarButton: props => createTabButton(props, '즐겨찾기'),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: e => {
+            e.preventDefault();
+            navigation.navigate('홈');
+          },
+        })}
       />
 
       <BottomTab.Screen
