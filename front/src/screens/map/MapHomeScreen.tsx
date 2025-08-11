@@ -12,7 +12,7 @@ import {
   BackHandler,
   ToastAndroid,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   useNavigation,
@@ -41,8 +41,14 @@ import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
 import { check, PERMISSIONS, RESULTS, request } from 'react-native-permissions';
 import BootSplash from 'react-native-bootsplash';
+import {
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
 
 type NavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -70,6 +76,8 @@ function MapHomeScreen() {
     null,
   );
   const [pendingFavoriteSheet, setPendingFavoriteSheet] = useState(false);
+  const shuttleAnimatedIndex = useSharedValue(0);
+  const didNavigateShuttleRef = useRef(false);
 
   const mapWebViewRef = useRef<WebView>(null);
   const MAP_HTML_URL = Config.MAP_HOME_HTML_URL ?? '';
@@ -399,6 +407,36 @@ function MapHomeScreen() {
   );
 
   useEffect(() => {
+    if (openSheet === 'SHUTTLE') {
+      didNavigateShuttleRef.current = false;
+    }
+  }, [openSheet]);
+
+  // 셔틀 디테일 이동 함수
+  const navigateToShuttleDetail = () => {
+    if (didNavigateShuttleRef.current) return;
+    if (!shuttleSchedule) return;
+    didNavigateShuttleRef.current = true;
+    setOpenSheet(null);
+
+    navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
+      shuttleSchedule,
+      selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
+      currentStopName: selectedStopName,
+    });
+  };
+
+  // 애니메이션 인덱스 반응
+  useAnimatedReaction(
+    () => shuttleAnimatedIndex.value,
+    (curr, prev) => {
+      if (curr >= 0.95 && (prev ?? 0) < 0.95) {
+        runOnJS(navigateToShuttleDetail)();
+      }
+    },
+  );
+
+  useEffect(() => {
     if (pendingFavoriteSheet && selectedCategory === null) {
       setOpenSheet('FAVORITE');
       setPendingFavoriteSheet(false);
@@ -406,8 +444,10 @@ function MapHomeScreen() {
   }, [pendingFavoriteSheet, selectedCategory]);
 
   useEffect(() => {
-    setShowShuttleBottomSheet(false);
-    setOpenSheet(null);
+    if (selectedCategory !== null) {
+      setShowShuttleBottomSheet(false);
+      setOpenSheet(null);
+    }
   }, [selectedCategory]);
 
   return (
@@ -503,48 +543,51 @@ function MapHomeScreen() {
             />
             <Text style={styles.shortcutButtonText}>지름길</Text>
           </TouchableOpacity>
+          {openSheet === 'SHUTTLE' && shuttleSchedule && (
+            <BottomSheet
+              containerStyle={{ zIndex: 100, elevation: 100 }}
+              ref={shuttleSheetRef}
+              index={0}
+              snapPoints={['60%', '100%']}
+              animatedIndex={shuttleAnimatedIndex}
+              enablePanDownToClose
+              onClose={() => {
+                setOpenSheet(null);
+                didNavigateShuttleRef.current = false;
+              }}
+              onChange={index => {
+                // 손 떼고 스냅이 100%로 '정착'되었을 때만 호출됨
+                if (index === 1) navigateToShuttleDetail();
+              }}
+            >
+              <BottomSheetView style={{ flex: 1 }}>
+                <ShuttleBottomSheetContent
+                  data={shuttleSchedule}
+                  currentStopName={selectedStopName}
+                />
+              </BottomSheetView>
+            </BottomSheet>
+          )}
+          {openSheet === 'FAVORITE' && (
+            <BottomSheet
+              containerStyle={{ zIndex: 100, elevation: 100 }}
+              index={0}
+              snapPoints={[deviceHeight * 0.4]}
+              enablePanDownToClose
+              enableOverDrag={false}
+              maxDynamicContentSize={deviceHeight * 0.4}
+              onClose={() => setOpenSheet(null)}
+            >
+              <FavoriteBottomSheetContent
+                favorites={favorites}
+                onRefresh={open}
+                onSelect={handleSelectFavorite}
+                isLoading={isLoading}
+              />
+            </BottomSheet>
+          )}
         </View>
       </AppScreenLayout>
-      {openSheet === 'SHUTTLE' && shuttleSchedule && (
-        <BottomSheet
-          ref={shuttleSheetRef}
-          index={0}
-          snapPoints={['60%', '100%']}
-          enablePanDownToClose
-          onClose={() => setOpenSheet(null)}
-          onChange={index => {
-            // index가 1이면 100%로 올라간 상태
-            if (index === 1) {
-              setOpenSheet(null);
-              navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
-                shuttleSchedule: shuttleSchedule,
-                selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
-                currentStopName: selectedStopName,
-              });
-            }
-          }}
-        >
-          <ShuttleBottomSheetContent
-            data={shuttleSchedule}
-            currentStopName={selectedStopName}
-          />
-        </BottomSheet>
-      )}
-      {openSheet === 'FAVORITE' && (
-        <BottomSheet
-          index={0}
-          snapPoints={['40%', '75%']}
-          enablePanDownToClose
-          onClose={() => setOpenSheet(null)}
-        >
-          <FavoriteBottomSheetContent
-            favorites={favorites}
-            onRefresh={open}
-            onSelect={handleSelectFavorite}
-            isLoading={isLoading}
-          />
-        </BottomSheet>
-      )}
     </GestureHandlerRootView>
   );
 }
@@ -607,7 +650,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 20,
   },
   shortcutButton: {
     position: 'absolute',
