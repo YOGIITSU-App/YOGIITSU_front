@@ -593,10 +593,10 @@ function MapHomeScreen() {
             <BottomSheet
               containerStyle={{ zIndex: 100, elevation: 100 }}
               index={0}
-              snapPoints={[deviceHeight * 0.4]}
+              snapPoints={[deviceHeight * 0.28, deviceHeight * 0.67]}
               enablePanDownToClose
               enableOverDrag={false}
-              maxDynamicContentSize={deviceHeight * 0.4}
+              maxDynamicContentSize={deviceHeight * 0.67}
               onClose={() => setOpenSheet(null)}
             >
               <FavoriteBottomSheetContent
