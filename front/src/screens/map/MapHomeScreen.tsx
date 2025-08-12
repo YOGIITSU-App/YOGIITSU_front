@@ -248,9 +248,15 @@ function MapHomeScreen() {
       }
 
       if (data.type === 'selectFacility' && data.buildingId) {
-        navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-          buildingId: data.buildingId,
+        setOpenSheet(null);
+        requestAnimationFrame(() => {
+          InteractionManager.runAfterInteractions(() => {
+            navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+              buildingId: data.buildingId,
+            });
+          });
         });
+        return;
       } else if (data.type === 'shuttleClicked') {
         setLoadingSchedule(true);
         try {

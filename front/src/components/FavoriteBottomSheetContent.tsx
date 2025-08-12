@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  InteractionManager,
 } from 'react-native';
 import { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
 import favoriteApi from '../api/favoriteApi';
@@ -38,6 +39,8 @@ export default function FavoriteBottomSheetContent({
 }: Props) {
   const navigation = useNavigation<StackNavigationProp<MapStackParamList>>();
 
+  let previewPushing = false;
+
   const handleRemove = async (buildingId: number) => {
     try {
       await favoriteApi.removeFavorite(buildingId);
@@ -46,8 +49,17 @@ export default function FavoriteBottomSheetContent({
       Alert.alert('에러', '즐겨찾기 해제에 실패했어요');
     }
   };
-  const handlePreview = (buildingId: number) => {
-    navigation.navigate(mapNavigation.BUILDING_PREVIEW, { buildingId });
+
+  const handlePreview = (id: number) => {
+    if (previewPushing) return;
+    previewPushing = true;
+    globalThis.closeFavoriteBottomSheet?.();
+    requestAnimationFrame(() => {
+      InteractionManager.runAfterInteractions(() => {
+        navigation.navigate(mapNavigation.BUILDING_PREVIEW, { buildingId: id });
+        setTimeout(() => (previewPushing = false), 500);
+      });
+    });
   };
 
   const Header = useCallback(
