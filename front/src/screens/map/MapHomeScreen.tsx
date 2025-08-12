@@ -41,12 +41,13 @@ import buildingApi from '../../api/buildingApi';
 import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
 import { check, PERMISSIONS, RESULTS, request } from 'react-native-permissions';
-import BootSplash from 'react-native-bootsplash';
+
 import {
   runOnJS,
   useAnimatedReaction,
   useSharedValue,
 } from 'react-native-reanimated';
+import { useAppInit } from '../../contexts/AppInitContext';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -62,8 +63,10 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const { markMapReady } = useAppInit();
+  const announcedRef = useRef(false);
+
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [locationLoaded, setLocationLoaded] = useState(false);
   const { open, close, favorites, isLoading } = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
@@ -140,17 +143,6 @@ function MapHomeScreen() {
   }
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!locationLoaded) {
-        BootSplash.hide({ fade: true });
-        setLocationLoaded(true);
-      }
-    }, 10000); // 10초 후 강제 숨김
-
-    return () => clearTimeout(timeout);
-  }, [locationLoaded]);
-
-  useEffect(() => {
     checkLocationPermission();
   }, []);
 
@@ -168,12 +160,7 @@ function MapHomeScreen() {
           }),
         );
       },
-      error => {
-        if (!locationLoaded) {
-          BootSplash.hide({ fade: true });
-          setLocationLoaded(true);
-        }
-      },
+      error => {},
       { enableHighAccuracy: false },
     );
   }, [permissionGranted]);
@@ -240,9 +227,9 @@ function MapHomeScreen() {
       const data = JSON.parse(e.nativeEvent.data);
 
       if (data.type === 'currentLocationSet') {
-        if (!locationLoaded) {
-          BootSplash.hide({ fade: true });
-          setLocationLoaded(true);
+        if (!announcedRef.current) {
+          announcedRef.current = true;
+          markMapReady();
         }
         return;
       }
@@ -296,6 +283,16 @@ function MapHomeScreen() {
       );
     }
   };
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!announcedRef.current) {
+        announcedRef.current = true;
+        markMapReady();
+      }
+    }, 12000);
+    return () => clearTimeout(t);
+  }, [markMapReady]);
 
   useEffect(() => {
     if (!mapWebViewRef.current) return;
