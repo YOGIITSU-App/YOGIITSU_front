@@ -11,6 +11,7 @@ import {
   Platform,
   BackHandler,
   ToastAndroid,
+  InteractionManager,
 } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -353,26 +354,46 @@ function MapHomeScreen() {
 
   const handleSelectFavorite = async (item: FavoriteItem) => {
     try {
+      setOpenSheet(null);
+      close?.();
+
       const res = await buildingApi.getBuildingDetail(item.id);
       const info = res.data.buildingInfo;
-      const location = `${info.latitude},${info.longitude}`;
-      const name = info.name;
+      const endLoc = `${info.latitude},${info.longitude}`;
+      const endName = info.name;
 
-      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-        endLocation: location,
-        endLocationName: name,
-        endBuildingId: item.id,
-      });
-      close();
-    } catch (err) {
+      Geolocation.getCurrentPosition(
+        ({ coords }) => {
+          const startLoc = `${coords.latitude},${coords.longitude}`;
+          navigation.replace(mapNavigation.ROUTE_RESULT, {
+            startLocation: startLoc,
+            startLocationName: '현재 위치',
+            endLocation: endLoc,
+            endLocationName: endName,
+            endBuildingId: item.id,
+          });
+        },
+        () => {
+          // 현재 위치 실패하면 선택 화면으로
+          InteractionManager.runAfterInteractions(() => {
+            navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+              endLocation: endLoc,
+              endLocationName: endName,
+              endBuildingId: item.id,
+            });
+          });
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
+      );
+    } catch {
       Alert.alert('건물 위치 정보를 불러올 수 없습니다');
     }
   };
-
   useEffect(() => {
     const buildingId = route.params?.buildingId;
     if (typeof buildingId === 'number') {
       navigation.navigate(mapNavigation.BUILDING_PREVIEW, { buildingId });
+      navigation.setParams({ buildingId: undefined });
     }
   }, [route.params]);
 

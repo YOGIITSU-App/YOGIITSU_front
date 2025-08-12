@@ -18,6 +18,7 @@ import {
   useRoute,
   useNavigation,
   useFocusEffect,
+  CommonActions,
 } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import BottomSheet, {
@@ -96,29 +97,42 @@ function RouteResultScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => {
-        navigation.navigate(mapNavigation.MAPHOME);
-        return true; // 기본 뒤로가기 막음
+      const onBack = () => {
+        goHomeSafely();
+        return true;
       };
-      const backHandler = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
-      return () => {
-        backHandler.remove();
-      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
     }, [navigation]),
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', e => {
-      // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-      if (e.data.action.type === 'POP') {
-        e.preventDefault();
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
+  const goHomeSafely = () => {
+    const state = navigation.getState();
+    const canPop = (state?.index ?? 0) > 0;
+
+    if (canPop) {
+      // 스택에 히스토리가 있으면 정상 pop
+      navigation.popToTop();
+    } else {
+      // 히스토리가 없으면(루트가 결과화면) 스택을 홈으로 재구성
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: mapNavigation.MAPHOME }],
+        }),
+      );
+    }
+  };
+
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
+  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
+  //     if (e.data.action.type === 'POP') {
+  //       e.preventDefault();
+  //     }
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
 
   const handleWebViewMessage = (e: any) => {
     try {
@@ -351,7 +365,7 @@ function RouteResultScreen() {
             </View>
             <TouchableOpacity
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
+              onPress={goHomeSafely}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>

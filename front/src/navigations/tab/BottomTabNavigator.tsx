@@ -120,6 +120,7 @@ export default function BottomTabNavigator() {
         const isHidden = hiddenScreens.includes(routeName as any);
         return {
           ...tabOptions,
+          detachInactiveScreens: false,
           tabBarStyle: isHidden ? { display: 'none' } : tabOptions.tabBarStyle,
         };
       }}

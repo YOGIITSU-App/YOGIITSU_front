@@ -57,7 +57,7 @@ function RouteSelectionScreen() {
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        navigation.navigate(mapNavigation.MAPHOME);
+        navigation.popToTop();
         return true; // 기본 뒤로가기 막음
       };
       const backHandler = BackHandler.addEventListener(
@@ -70,15 +70,15 @@ function RouteSelectionScreen() {
     }, [navigation]),
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', e => {
-      // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-      if (e.data.action.type === 'POP') {
-        e.preventDefault();
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
+  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
+  //     if (e.data.action.type === 'POP') {
+  //       e.preventDefault();
+  //     }
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
 
   // 초기 파라미터 세팅
   useEffect(() => {
@@ -119,6 +119,8 @@ function RouteSelectionScreen() {
           setStartLocation(curLoc);
           setStartLocationName('현재 위치');
           setStartBuildingId(null);
+
+          hasNavigated.current = true;
 
           // 결과 화면으로 바로 이동
           navigation.replace(mapNavigation.ROUTE_RESULT, {
@@ -272,7 +274,7 @@ function RouteSelectionScreen() {
             </View>
             <TouchableOpacity
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
+              onPress={() => navigation.popToTop()}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
@@ -364,7 +366,7 @@ function RouteSelectionScreen() {
                           return;
                         }
 
-                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        navigation.replace(mapNavigation.ROUTE_RESULT, {
                           startLocation: location,
                           startLocationName: name,
                           startBuildingId: item.buildingId,
@@ -385,7 +387,7 @@ function RouteSelectionScreen() {
                           return;
                         }
 
-                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        navigation.replace(mapNavigation.ROUTE_RESULT, {
                           startLocation,
                           startLocationName,
                           startBuildingId: startBuildingId ?? undefined,
