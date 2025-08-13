@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,16 +14,16 @@ import {
   RouteProp,
   useFocusEffect,
 } from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../../constants/navigation';
-import searchApi, {RecentKeyword} from '../../api/searchApi';
-import {colors} from '../../constants/colors';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../../constants/navigation';
+import searchApi, { RecentKeyword } from '../../api/searchApi';
+import { colors } from '../../constants/colors';
 import buildingApi from '../../api/buildingApi';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import AlertModal from '../../components/AlertModal';
 import Geolocation from 'react-native-geolocation-service';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -57,25 +57,28 @@ function RouteSelectionScreen() {
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        navigation.navigate(mapNavigation.MAPHOME);
+        navigation.popToTop();
         return true; // 기본 뒤로가기 막음
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
       return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        backHandler.remove();
       };
     }, [navigation]),
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', e => {
-      // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-      if (e.data.action.type === 'POP') {
-        e.preventDefault();
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
+  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
+  //     if (e.data.action.type === 'POP') {
+  //       e.preventDefault();
+  //     }
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
 
   // 초기 파라미터 세팅
   useEffect(() => {
@@ -111,11 +114,13 @@ function RouteSelectionScreen() {
       }
       Geolocation.getCurrentPosition(
         pos => {
-          const {latitude, longitude} = pos.coords;
+          const { latitude, longitude } = pos.coords;
           const curLoc = `${latitude},${longitude}`;
           setStartLocation(curLoc);
           setStartLocationName('현재 위치');
           setStartBuildingId(null);
+
+          hasNavigated.current = true;
 
           // 결과 화면으로 바로 이동
           navigation.replace(mapNavigation.ROUTE_RESULT, {
@@ -132,7 +137,7 @@ function RouteSelectionScreen() {
             '현재 위치를 가져올 수 없습니다.\n위치 서비스를 확인해주세요.',
           );
         },
-        {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 },
       );
     }
   }, [startLocation, endLocation]);
@@ -162,7 +167,7 @@ function RouteSelectionScreen() {
   }, [startLocation, endLocation]);
 
   useEffect(() => {
-    const {locationsAreSame = false, lastSelectedType} = route.params ?? {};
+    const { locationsAreSame = false, lastSelectedType } = route.params ?? {};
 
     if (locationsAreSame) {
       hasNavigated.current = false;
@@ -257,19 +262,20 @@ function RouteSelectionScreen() {
     <AppScreenLayout disableTopInset>
       <View style={styles.container}>
         {/* 헤더 */}
-        <View style={[styles.headerWrapper, {paddingTop: insets.top}]}>
+        <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
           <View style={styles.headerTop}>
             <View style={styles.placeholder} />
             <View style={styles.modeIconWrapper}>
               <Image
                 source={require('../../assets/walking-icon2.png')}
-                style={{width: 48, height: 30}}
+                style={{ width: 48, height: 30 }}
                 resizeMode="contain"
               />
             </View>
             <TouchableOpacity
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => navigation.popToTop()}
+            >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -278,18 +284,22 @@ function RouteSelectionScreen() {
           {/* 출발지 */}
           <TouchableOpacity
             style={styles.inputWrapper}
-            onPress={() => handleSearchLocation('start')}>
+            onPress={() => handleSearchLocation('start')}
+          >
             <View style={styles.inputInner}>
               <Text
                 style={[
                   styles.inputText,
                   startLocationName === '출발지 선택' && styles.placeholderText,
-                ]}>
+                ]}
+              >
                 {startLocationName}
               </Text>
               {startLocation && !endLocation && (
                 <TouchableOpacity onPress={swapLocations}>
-                  <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
+                  <Text style={{ fontSize: 16, color: colors.GRAY_450 }}>
+                    ⇅
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -298,18 +308,22 @@ function RouteSelectionScreen() {
           {/* 도착지 */}
           <TouchableOpacity
             style={styles.inputWrapper}
-            onPress={() => handleSearchLocation('end')}>
+            onPress={() => handleSearchLocation('end')}
+          >
             <View style={styles.inputInner}>
               <Text
                 style={[
                   styles.inputText,
                   endLocationName === '도착지 선택' && styles.placeholderText,
-                ]}>
+                ]}
+              >
                 {endLocationName}
               </Text>
               {endLocation && !startLocation && (
                 <TouchableOpacity onPress={swapLocations}>
-                  <Text style={{fontSize: 16, color: colors.GRAY_450}}>⇅</Text>
+                  <Text style={{ fontSize: 16, color: colors.GRAY_450 }}>
+                    ⇅
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -352,7 +366,7 @@ function RouteSelectionScreen() {
                           return;
                         }
 
-                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        navigation.replace(mapNavigation.ROUTE_RESULT, {
                           startLocation: location,
                           startLocationName: name,
                           startBuildingId: item.buildingId,
@@ -373,7 +387,7 @@ function RouteSelectionScreen() {
                           return;
                         }
 
-                        navigation.navigate(mapNavigation.ROUTE_RESULT, {
+                        navigation.replace(mapNavigation.ROUTE_RESULT, {
                           startLocation,
                           startLocationName,
                           startBuildingId: startBuildingId ?? undefined,
@@ -385,7 +399,8 @@ function RouteSelectionScreen() {
                     } catch (err) {
                       Alert.alert('건물 정보를 불러오는 데 실패했습니다');
                     }
-                  }}>
+                  }}
+                >
                   <Text style={styles.recentText}>{item.keyword}</Text>
                 </TouchableOpacity>
 
@@ -401,7 +416,8 @@ function RouteSelectionScreen() {
                     } catch (err) {
                       Alert.alert('삭제 실패');
                     }
-                  }}>
+                  }}
+                >
                   <Text style={styles.clearIcon}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -435,7 +451,7 @@ function RouteSelectionScreen() {
                 }
               }
             },
-            style: {backgroundColor: colors.BLUE_700},
+            style: { backgroundColor: colors.BLUE_700 },
           },
         ]}
       />
@@ -444,7 +460,7 @@ function RouteSelectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: { flex: 1, backgroundColor: '#fff' },
   headerWrapper: {
     position: 'relative',
     paddingHorizontal: 16,

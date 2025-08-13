@@ -1,8 +1,8 @@
-import {createStackNavigator} from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import {StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 import AuthHomeScreen from '../../screens/auth/AuthHomeScreen';
-import {authNavigations, colors} from '../../constants';
+import { authNavigations, colors } from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import FindIdScreen from '../../screens/auth/FindIdScreen';
 import FindPwScreen from '../../screens/auth/FindPw/FindPwScreen';
@@ -16,10 +16,10 @@ export type AuthStackParamList = {
   [authNavigations.LOGIN]: undefined;
   [authNavigations.FINDID]: undefined;
   FindPwCodeConfirm: undefined;
-  FindPw: {email: string};
+  FindPw: { email: string };
   FindPwComplete: undefined;
   [authNavigations.SIGNUP]: undefined;
-  [authNavigations.TERMS_DETAIL]: {type: 'age' | 'terms' | 'privacy' | 'loc'};
+  [authNavigations.TERMS_DETAIL]: { type: 'age' | 'terms' | 'privacy' | 'loc' };
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
@@ -28,20 +28,21 @@ function AuthStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerBackTitleVisible: false,
+        // headerBackTitleVisible: false,
         cardStyle: {
           backgroundColor: 'white',
         },
-      }}>
+      }}
+    >
       <Stack.Screen
         name={authNavigations.AUTH_HOME}
         component={AuthHomeScreen}
-        options={{headerTitle: ' ', headerShown: false}}
+        options={{ headerTitle: ' ', headerShown: false }}
       />
       <Stack.Screen
         name={authNavigations.LOGIN}
         component={BottomTabNavigator}
-        options={{headerTitle: '로그인'}}
+        options={{ headerTitle: '로그인' }}
       />
       <Stack.Screen
         name={authNavigations.FINDID}
@@ -80,12 +81,12 @@ function AuthStackNavigator() {
       <Stack.Screen
         name="FindPw"
         component={FindPwScreen}
-        options={{title: '비밀번호찾기'}}
+        options={{ title: '비밀번호찾기' }}
       />
       <Stack.Screen
         name="FindPwComplete"
         component={FindPwCompleteScreen}
-        options={{title: '비밀번호찾기'}}
+        options={{ title: '비밀번호찾기' }}
       />
       <Stack.Screen
         name={authNavigations.SIGNUP}
@@ -107,7 +108,7 @@ function AuthStackNavigator() {
       <Stack.Screen
         name={authNavigations.TERMS_DETAIL}
         component={TermsDetailScreen}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

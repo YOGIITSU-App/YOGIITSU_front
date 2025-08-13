@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,19 @@ import {
   Dimensions,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
-import {BottomSheetFlatList} from '@gorhom/bottom-sheet';
-import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {fetchShortcutDetail, ShortcutDetail} from '../../api/shortcutApi';
-import {colors, mapNavigation} from '../../constants';
+import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { fetchShortcutDetail, ShortcutDetail } from '../../api/shortcutApi';
+import { colors, mapNavigation } from '../../constants';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {MAP_SHORTCUT_HTML_URL} from '@env';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
 
 type ShortcutDetailRouteProp = RouteProp<
@@ -33,10 +34,10 @@ type NavigationProp = StackNavigationProp<
 
 export default function ShortcutDetailScreen() {
   const insets = useSafeAreaInsets();
-  const deviceHeight = Dimensions.get('window').height;
+  const deviceHeight = Dimensions.get('screen').height;
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
-  const {shortcutId} = route.params;
+  const { shortcutId } = route.params;
 
   // 1) map 로딩 상태
   // const [mapLoaded, setMapLoaded] = useState(false);
@@ -49,15 +50,22 @@ export default function ShortcutDetailScreen() {
   const webRef = useRef<WebView>(null);
 
   // 맵 페이지 URL
-  const MAP_HTML_URL = MAP_SHORTCUT_HTML_URL;
+  const MAP_HTML_URL = Config.MAP_SHORTCUT_HTML_URL ?? '';
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
-  const snapPoints = useMemo(() => {
-    const collapsed = 0.35 * deviceHeight;
-    const expanded = deviceHeight - headerHeight;
-    return [collapsed, expanded];
-  }, [headerHeight]);
+
+  const expanded = useMemo(() => {
+    return Platform.select({
+      ios: deviceHeight - headerHeight,
+      android: deviceHeight + insets.top - headerHeight,
+    })!;
+  }, [deviceHeight, headerHeight, insets.top]);
+
+  const snapPoints = useMemo(
+    () => [deviceHeight * 0.35, expanded],
+    [deviceHeight, expanded],
+  );
 
   const handleWebViewMessage = (e: any) => {
     try {
@@ -94,13 +102,13 @@ export default function ShortcutDetailScreen() {
       lat: c.latitude,
       lng: c.longitude,
     }));
-    webRef.current?.postMessage(JSON.stringify({type: 'drawShortcut', path}));
+    webRef.current?.postMessage(JSON.stringify({ type: 'drawShortcut', path }));
     // 2. 시작/끝 마커
     const start = detail.coordinates[0];
     const end = detail.coordinates[detail.coordinates.length - 1];
     [start, end].forEach(p =>
       webRef.current?.postMessage(
-        JSON.stringify({type: 'marker', lat: p.latitude, lng: p.longitude}),
+        JSON.stringify({ type: 'marker', lat: p.latitude, lng: p.longitude }),
       ),
     );
   }, [detail, mapReady]);
@@ -108,7 +116,7 @@ export default function ShortcutDetailScreen() {
   useEffect(() => {
     const watchId = Geolocation.watchPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const { latitude, longitude } = position.coords;
         webRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -152,7 +160,7 @@ export default function ShortcutDetailScreen() {
   if (detailError) {
     return (
       <View style={[styles.container, styles.loading]}>
-        <Text style={{color: 'red', marginBottom: 12}}>{detailError}</Text>
+        <Text style={{ color: 'red', marginBottom: 12 }}>{detailError}</Text>
         <TouchableOpacity
           onPress={() => {
             setDetailError(null);
@@ -164,8 +172,9 @@ export default function ShortcutDetailScreen() {
                 setDetailError('지름길 정보를 불러올 수 없습니다.');
               })
               .finally(() => setDetailLoading(false));
-          }}>
-          <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
+          }}
+        >
+          <Text style={{ color: colors.BLUE_700, fontWeight: 'bold' }}>
             재시도
           </Text>
         </TouchableOpacity>
@@ -186,14 +195,16 @@ export default function ShortcutDetailScreen() {
 
         {/* Header */}
         <View
-          style={[styles.header, {paddingTop: insets.top + 5}]}
-          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
+          style={[styles.header, { paddingTop: insets.top + 5 }]}
+          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}
+        >
           <View style={styles.headerTop}>
             {/* 왼쪽: < 아이콘 */}
             <TouchableOpacity
               style={styles.iconWrapper}
               onPress={() => navigation.goBack()}
-              hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
               <Image
                 source={require('../../assets/back-icon.png')}
                 style={styles.iconLeft}
@@ -212,26 +223,29 @@ export default function ShortcutDetailScreen() {
             <View style={styles.iconWrapper}>
               <Text
                 onPress={() => navigation.navigate(mapNavigation.MAPHOME)}
-                style={styles.iconRight}>
+                style={styles.iconRight}
+              >
                 ✕
               </Text>
             </View>
           </View>
           <View style={styles.titleBox}>
-            <View style={{flex: 1, alignItems: 'center'}}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
               <Text
-                style={[styles.pointText, {textAlign: 'center'}]}
+                style={[styles.pointText, { textAlign: 'center' }]}
                 numberOfLines={1}
-                ellipsizeMode="tail">
+                ellipsizeMode="tail"
+              >
                 {detail?.pointA}
               </Text>
             </View>
-            <Text style={[styles.arrowIcon, {marginHorizontal: 16}]}>↔</Text>
-            <View style={{flex: 1, alignItems: 'center'}}>
+            <Text style={[styles.arrowIcon, { marginHorizontal: 16 }]}>↔</Text>
+            <View style={{ flex: 1, alignItems: 'center' }}>
               <Text
-                style={[styles.pointText, {textAlign: 'center'}]}
+                style={[styles.pointText, { textAlign: 'center' }]}
                 numberOfLines={1}
-                ellipsizeMode="tail">
+                ellipsizeMode="tail"
+              >
                 {detail?.pointB}
               </Text>
             </View>
@@ -241,7 +255,7 @@ export default function ShortcutDetailScreen() {
         {/* WebView */}
         <WebView
           ref={webRef}
-          source={{uri: MAP_HTML_URL}}
+          source={{ uri: MAP_HTML_URL }}
           style={{
             position: 'absolute',
             top: 0,
@@ -264,7 +278,7 @@ export default function ShortcutDetailScreen() {
         />
 
         {/* 요약 박스 */}
-        <View style={[styles.summaryBox, {bottom: '34.5%'}]}>
+        <View style={[styles.summaryBox, { bottom: '37.5%' }]}>
           <Text style={styles.summaryText}>
             {detail?.distance}m · 약 {detail?.duration}분 소요
           </Text>
@@ -276,7 +290,9 @@ export default function ShortcutDetailScreen() {
           snapPoints={snapPoints}
           enableContentPanningGesture
           enableHandlePanningGesture
-          enableOverDrag={false}>
+          enableOverDrag={false}
+          maxDynamicContentSize={expanded}
+        >
           <BottomSheetFlatList
             data={detail?.coordinates || []}
             keyExtractor={c => c.pointOrder.toString()}
@@ -285,7 +301,7 @@ export default function ShortcutDetailScreen() {
               paddingBottom: 20,
               flexGrow: 1,
             }}
-            renderItem={({item, index}) => {
+            renderItem={({ item, index }) => {
               const isFirst = index === 0;
               const isLast = index === (detail?.coordinates.length ?? 0) - 1;
               return (
@@ -319,7 +335,7 @@ export default function ShortcutDetailScreen() {
                     )}
                     {item.imageUrl?.trim() !== '' && (
                       <Image
-                        source={{uri: item.imageUrl}}
+                        source={{ uri: item.imageUrl }}
                         style={styles.image}
                         resizeMode="cover"
                       />
@@ -336,7 +352,7 @@ export default function ShortcutDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
+  container: { flex: 1 },
   loading: {
     flex: 1,
     justifyContent: 'center',
@@ -413,7 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
   },

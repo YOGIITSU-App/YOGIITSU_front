@@ -1,12 +1,12 @@
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import {logoutEmitter} from '../utils/logoutEmitter';
-import {refreshToken as requestTokenRefresh} from './refreshApi';
-import {API_BASE_URL} from '@env';
+import { logoutEmitter } from '../utils/logoutEmitter';
+import { refreshToken as requestTokenRefresh } from './refreshApi';
+import Config from 'react-native-config';
 
 // 공통 axios 인스턴스
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: Config.API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -72,7 +72,7 @@ axiosInstance.interceptors.response.use(
       if (isRefreshing) {
         try {
           const newToken = await new Promise((resolve, reject) => {
-            failedQueue.push({resolve, reject});
+            failedQueue.push({ resolve, reject });
           });
           if (newToken) {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;

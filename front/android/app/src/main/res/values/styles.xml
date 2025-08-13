@@ -1,15 +1,13 @@
 <resources>
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+        <item name="android:windowBackground">@color/app_window_background</item>
+        <item name="android:windowIsTranslucent">false</item>
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
     <style name="BootTheme" parent="Theme.BootSplash">
         <item name="bootSplashBackground">@color/bootsplash_background</item>
         <item name="bootSplashLogo">@drawable/bootsplash_logo</item>
-        <!-- 상태바 투명 처리 추가 -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-
         <item name="postBootSplashTheme">@style/AppTheme</item>
     </style>
 </resources>

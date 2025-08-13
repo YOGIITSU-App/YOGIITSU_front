@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import {
   Platform,
   BackHandler,
   ToastAndroid,
+  InteractionManager,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   useNavigation,
   useRoute,
@@ -26,23 +27,30 @@ import {
   FavoriteItem,
   useFavoriteBottomSheet,
 } from '../../hooks/useFavoriteBottomSheet';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../../constants/navigation';
-import {colors} from '../../constants';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {FacilityFilterButtons} from '../../components/FacilityFilterButtons';
-import {useFacilities} from '../../hooks/useFacilities';
-import {fetchShuttleSchedule, ShuttleSchedule} from '../../api/shuttleApi';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../../constants/navigation';
+import { colors } from '../../constants';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { FacilityFilterButtons } from '../../components/FacilityFilterButtons';
+import { useFacilities } from '../../hooks/useFacilities';
+import { fetchShuttleSchedule, ShuttleSchedule } from '../../api/shuttleApi';
 import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import buildingApi from '../../api/buildingApi';
-import {MAP_HOME_HTML_URL} from '@env';
+import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
-import {check, PERMISSIONS, RESULTS, request} from 'react-native-permissions';
-import BootSplash from 'react-native-bootsplash';
+import { check, PERMISSIONS, RESULTS, request } from 'react-native-permissions';
+
+import {
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { useAppInit } from '../../contexts/AppInitContext';
 
 const deviceWidth = Dimensions.get('screen').width;
+const deviceHeight = Dimensions.get('screen').height;
 
 type NavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -55,9 +63,11 @@ function MapHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutePropType>();
 
+  const { markMapReady } = useAppInit();
+  const announcedRef = useRef(false);
+
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [locationLoaded, setLocationLoaded] = useState(false);
-  const {open, close, favorites, isLoading} = useFavoriteBottomSheet();
+  const { open, close, favorites, isLoading } = useFavoriteBottomSheet();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const facilities = useFacilities(selectedCategory);
   const [shuttleSchedule, setShuttleSchedule] =
@@ -70,9 +80,11 @@ function MapHomeScreen() {
     null,
   );
   const [pendingFavoriteSheet, setPendingFavoriteSheet] = useState(false);
+  const shuttleAnimatedIndex = useSharedValue(0);
+  const didNavigateShuttleRef = useRef(false);
 
   const mapWebViewRef = useRef<WebView>(null);
-  const MAP_HTML_URL = MAP_HOME_HTML_URL;
+  const MAP_HTML_URL = Config.MAP_HOME_HTML_URL ?? '';
 
   const backPressCount = useRef(0);
   const backPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -96,9 +108,12 @@ function MapHomeScreen() {
         }
       };
 
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
       return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        backHandler.remove();
         if (backPressTimer.current) clearTimeout(backPressTimer.current);
       };
     }, []),
@@ -128,17 +143,6 @@ function MapHomeScreen() {
   }
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!locationLoaded) {
-        BootSplash.hide({fade: true});
-        setLocationLoaded(true);
-      }
-    }, 10000); // 10초 후 강제 숨김
-
-    return () => clearTimeout(timeout);
-  }, [locationLoaded]);
-
-  useEffect(() => {
     checkLocationPermission();
   }, []);
 
@@ -147,7 +151,7 @@ function MapHomeScreen() {
 
     Geolocation.getCurrentPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const { latitude, longitude } = position.coords;
         mapWebViewRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -156,13 +160,8 @@ function MapHomeScreen() {
           }),
         );
       },
-      error => {
-        if (!locationLoaded) {
-          BootSplash.hide({fade: true});
-          setLocationLoaded(true);
-        }
-      },
-      {enableHighAccuracy: false},
+      error => {},
+      { enableHighAccuracy: false },
     );
   }, [permissionGranted]);
 
@@ -171,7 +170,7 @@ function MapHomeScreen() {
 
     const watchId = Geolocation.watchPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const { latitude, longitude } = position.coords;
         mapWebViewRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -207,7 +206,7 @@ function MapHomeScreen() {
 
     const msgFacilities = JSON.stringify({
       type: 'setFacilities',
-      data: filteredFacilities.map(f => ({...f, category: f.type})),
+      data: filteredFacilities.map(f => ({ ...f, category: f.type })),
     });
 
     mapWebViewRef.current.postMessage(msgFacilities);
@@ -218,7 +217,7 @@ function MapHomeScreen() {
         lng: f.longitude,
       }));
       mapWebViewRef.current.postMessage(
-        JSON.stringify({type: 'fitBounds', coords}),
+        JSON.stringify({ type: 'fitBounds', coords }),
       );
     }
   }, [facilities, selectedCategory]);
@@ -228,17 +227,23 @@ function MapHomeScreen() {
       const data = JSON.parse(e.nativeEvent.data);
 
       if (data.type === 'currentLocationSet') {
-        if (!locationLoaded) {
-          BootSplash.hide({fade: true});
-          setLocationLoaded(true);
+        if (!announcedRef.current) {
+          announcedRef.current = true;
+          markMapReady();
         }
         return;
       }
 
       if (data.type === 'selectFacility' && data.buildingId) {
-        navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
-          buildingId: data.buildingId,
+        setOpenSheet(null);
+        requestAnimationFrame(() => {
+          InteractionManager.runAfterInteractions(() => {
+            navigation.navigate(mapNavigation.BUILDING_PREVIEW, {
+              buildingId: data.buildingId,
+            });
+          });
         });
+        return;
       } else if (data.type === 'shuttleClicked') {
         setLoadingSchedule(true);
         try {
@@ -264,7 +269,7 @@ function MapHomeScreen() {
       mapWebViewRef.current.postMessage(
         JSON.stringify({
           type: 'setFacilities',
-          data: facilities.map(f => ({...f, category: f.type})),
+          data: facilities.map(f => ({ ...f, category: f.type })),
         }),
       );
     }
@@ -280,6 +285,16 @@ function MapHomeScreen() {
   };
 
   useEffect(() => {
+    const t = setTimeout(() => {
+      if (!announcedRef.current) {
+        announcedRef.current = true;
+        markMapReady();
+      }
+    }, 12000);
+    return () => clearTimeout(t);
+  }, [markMapReady]);
+
+  useEffect(() => {
     if (!mapWebViewRef.current) return;
 
     const msg = JSON.stringify({
@@ -293,7 +308,7 @@ function MapHomeScreen() {
   const handleTargetPress = () => {
     Geolocation.getCurrentPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const { latitude, longitude } = position.coords;
         navigation.navigate(mapNavigation.ROUTE_SELECTION, {
           startLocation: `${latitude},${longitude}`,
           startLocationName: '현재 위치',
@@ -309,7 +324,7 @@ function MapHomeScreen() {
           '현재 위치를 불러올 수 없습니다.\n위치 서비스를 확인해주세요.',
         );
       },
-      {enableHighAccuracy: true, timeout: 10000, maximumAge: 10000},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 },
     );
   };
 
@@ -320,11 +335,11 @@ function MapHomeScreen() {
           Geolocation.getCurrentPosition(
             pos => resolve(pos),
             err => reject(err),
-            {enableHighAccuracy: true},
+            { enableHighAccuracy: true },
           );
         },
       );
-      const {latitude, longitude} = position.coords;
+      const { latitude, longitude } = position.coords;
       mapWebViewRef.current?.postMessage(
         JSON.stringify({
           type: 'moveTo',
@@ -342,26 +357,46 @@ function MapHomeScreen() {
 
   const handleSelectFavorite = async (item: FavoriteItem) => {
     try {
+      setOpenSheet(null);
+      close?.();
+
       const res = await buildingApi.getBuildingDetail(item.id);
       const info = res.data.buildingInfo;
-      const location = `${info.latitude},${info.longitude}`;
-      const name = info.name;
+      const endLoc = `${info.latitude},${info.longitude}`;
+      const endName = info.name;
 
-      navigation.navigate(mapNavigation.ROUTE_SELECTION, {
-        endLocation: location,
-        endLocationName: name,
-        endBuildingId: item.id,
-      });
-      close();
-    } catch (err) {
+      Geolocation.getCurrentPosition(
+        ({ coords }) => {
+          const startLoc = `${coords.latitude},${coords.longitude}`;
+          navigation.replace(mapNavigation.ROUTE_RESULT, {
+            startLocation: startLoc,
+            startLocationName: '현재 위치',
+            endLocation: endLoc,
+            endLocationName: endName,
+            endBuildingId: item.id,
+          });
+        },
+        () => {
+          // 현재 위치 실패하면 선택 화면으로
+          InteractionManager.runAfterInteractions(() => {
+            navigation.navigate(mapNavigation.ROUTE_SELECTION, {
+              endLocation: endLoc,
+              endLocationName: endName,
+              endBuildingId: item.id,
+            });
+          });
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
+      );
+    } catch {
       Alert.alert('건물 위치 정보를 불러올 수 없습니다');
     }
   };
-
   useEffect(() => {
     const buildingId = route.params?.buildingId;
     if (typeof buildingId === 'number') {
-      navigation.navigate(mapNavigation.BUILDING_PREVIEW, {buildingId});
+      navigation.navigate(mapNavigation.BUILDING_PREVIEW, { buildingId });
+      navigation.setParams({ buildingId: undefined });
     }
   }, [route.params]);
 
@@ -396,6 +431,36 @@ function MapHomeScreen() {
   );
 
   useEffect(() => {
+    if (openSheet === 'SHUTTLE') {
+      didNavigateShuttleRef.current = false;
+    }
+  }, [openSheet]);
+
+  // 셔틀 디테일 이동 함수
+  const navigateToShuttleDetail = () => {
+    if (didNavigateShuttleRef.current) return;
+    if (!shuttleSchedule) return;
+    didNavigateShuttleRef.current = true;
+    setOpenSheet(null);
+
+    navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
+      shuttleSchedule,
+      selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
+      currentStopName: selectedStopName,
+    });
+  };
+
+  // 애니메이션 인덱스 반응
+  useAnimatedReaction(
+    () => shuttleAnimatedIndex.value,
+    (curr, prev) => {
+      if (curr >= 0.95 && (prev ?? 0) < 0.95) {
+        runOnJS(navigateToShuttleDetail)();
+      }
+    },
+  );
+
+  useEffect(() => {
     if (pendingFavoriteSheet && selectedCategory === null) {
       setOpenSheet('FAVORITE');
       setPendingFavoriteSheet(false);
@@ -403,12 +468,14 @@ function MapHomeScreen() {
   }, [pendingFavoriteSheet, selectedCategory]);
 
   useEffect(() => {
-    setShowShuttleBottomSheet(false);
-    setOpenSheet(null);
+    if (selectedCategory !== null) {
+      setShowShuttleBottomSheet(false);
+      setOpenSheet(null);
+    }
   }, [selectedCategory]);
 
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <AppScreenLayout disableTopInset>
         <View style={styles.container}>
           {loadingSchedule && (
@@ -418,13 +485,14 @@ function MapHomeScreen() {
           )}
           {/* 검색창 */}
           <TouchableOpacity
-            style={[styles.searchBox, {top: insets.top + 10}]}
+            style={[styles.searchBox, { top: insets.top + 10 }]}
             onPress={() =>
               navigation.navigate(mapNavigation.SEARCH, {
                 selectionType: 'start',
                 fromResultScreen: false,
               })
-            }>
+            }
+          >
             <View style={styles.searchBoxInput}>
               <Image
                 source={require('../../assets/Search-icon.png')}
@@ -433,8 +501,9 @@ function MapHomeScreen() {
               <Text style={styles.searchInput}>어디로 떠나볼까요?</Text>
               <TouchableOpacity
                 onPress={handleTargetPress}
-                style={{marginLeft: 8}}
-                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                style={{ marginLeft: 8 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 <Image
                   source={require('../../assets/target-icon.png')}
                   style={styles.targetIcon}
@@ -457,11 +526,11 @@ function MapHomeScreen() {
           {/* 지도 */}
           <WebView
             ref={mapWebViewRef}
-            source={{uri: MAP_HTML_URL}}
+            source={{ uri: MAP_HTML_URL }}
             originWhitelist={['*']}
             javaScriptEnabled
             domStorageEnabled
-            style={{flex: 1, marginTop: -insets.top}}
+            style={{ flex: 1, marginTop: -insets.top }}
             cacheEnabled={true}
             cacheMode="LOAD_DEFAULT"
             onLoadEnd={handleWebViewLoad}
@@ -479,69 +548,76 @@ function MapHomeScreen() {
           <TouchableOpacity
             style={styles.myLocationButton}
             onPress={moveToMyLocation}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Image
               source={require('../../assets/target-icon.png')} // 아이콘 경로 맞게 변경
-              style={{width: 20, height: 20}}
+              style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.shortcutButton}
-            onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}>
+            onPress={() => navigation.navigate(mapNavigation.SHORTCUT_LIST)}
+          >
             <Image
               source={require('../../assets/shortcut-icon.png')}
-              style={{width: 24, height: 24, marginBottom: 4}}
+              style={{ width: 24, height: 24, marginBottom: 4 }}
               resizeMode="contain"
             />
             <Text style={styles.shortcutButtonText}>지름길</Text>
           </TouchableOpacity>
+          {openSheet === 'SHUTTLE' && shuttleSchedule && (
+            <BottomSheet
+              containerStyle={{ zIndex: 100, elevation: 100 }}
+              ref={shuttleSheetRef}
+              index={0}
+              snapPoints={['60%', '100%']}
+              animatedIndex={shuttleAnimatedIndex}
+              enablePanDownToClose
+              onClose={() => {
+                setOpenSheet(null);
+                didNavigateShuttleRef.current = false;
+              }}
+              onChange={index => {
+                // 손 떼고 스냅이 100%로 '정착'되었을 때만 호출됨
+                if (index === 1) navigateToShuttleDetail();
+              }}
+            >
+              <BottomSheetView style={{ flex: 1 }}>
+                <ShuttleBottomSheetContent
+                  data={shuttleSchedule}
+                  currentStopName={selectedStopName}
+                />
+              </BottomSheetView>
+            </BottomSheet>
+          )}
+          {openSheet === 'FAVORITE' && (
+            <BottomSheet
+              containerStyle={{ zIndex: 100, elevation: 100 }}
+              index={0}
+              snapPoints={[deviceHeight * 0.28, deviceHeight * 0.67]}
+              enablePanDownToClose
+              enableOverDrag={false}
+              maxDynamicContentSize={deviceHeight * 0.67}
+              onClose={() => setOpenSheet(null)}
+            >
+              <FavoriteBottomSheetContent
+                favorites={favorites}
+                onRefresh={open}
+                onSelect={handleSelectFavorite}
+                isLoading={isLoading}
+              />
+            </BottomSheet>
+          )}
         </View>
       </AppScreenLayout>
-      {openSheet === 'SHUTTLE' && shuttleSchedule && (
-        <BottomSheet
-          ref={shuttleSheetRef}
-          index={0}
-          snapPoints={['60%', '100%']}
-          enablePanDownToClose
-          onClose={() => setOpenSheet(null)}
-          onChange={index => {
-            // index가 1이면 100%로 올라간 상태
-            if (index === 1) {
-              setOpenSheet(null);
-              navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
-                shuttleSchedule: shuttleSchedule,
-                selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
-                currentStopName: selectedStopName,
-              });
-            }
-          }}>
-          <ShuttleBottomSheetContent
-            data={shuttleSchedule}
-            currentStopName={selectedStopName}
-          />
-        </BottomSheet>
-      )}
-      {openSheet === 'FAVORITE' && (
-        <BottomSheet
-          index={0}
-          snapPoints={['40%', '75%']}
-          enablePanDownToClose
-          onClose={() => setOpenSheet(null)}>
-          <FavoriteBottomSheetContent
-            favorites={favorites}
-            onRefresh={open}
-            onSelect={handleSelectFavorite}
-            isLoading={isLoading}
-          />
-        </BottomSheet>
-      )}
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
+  container: { flex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
@@ -549,7 +625,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 100,
   },
-  map: {flex: 1},
+  map: { flex: 1 },
   searchBox: {
     position: 'absolute',
     top: 30,
@@ -560,7 +636,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
@@ -598,7 +674,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 20,
   },
   shortcutButton: {
     position: 'absolute',

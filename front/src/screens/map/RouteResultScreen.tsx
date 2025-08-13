@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef, useMemo} from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,31 +9,32 @@ import {
   ActivityIndicator,
   Dimensions,
   BackHandler,
+  Platform,
 } from 'react-native';
 import axios from 'axios';
-import {TMAP_API_KEY} from '@env';
+import Config from 'react-native-config';
 import {
   RouteProp,
   useRoute,
   useNavigation,
   useFocusEffect,
+  CommonActions,
 } from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import BottomSheet, {
   BottomSheetFlatList,
   BottomSheetFlatListMethods,
 } from '@gorhom/bottom-sheet';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../../constants/navigation';
-import {colors} from '../../constants';
-import buildingApi, {BuildingDetail} from '../../api/buildingApi';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../../constants/navigation';
+import { colors } from '../../constants';
+import buildingApi, { BuildingDetail } from '../../api/buildingApi';
 import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {MAP_RESULT_HTML_URL} from '@env';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Geolocation from 'react-native-geolocation-service';
 
-const {height: deviceHeight} = Dimensions.get('window');
+const { height: deviceHeight } = Dimensions.get('window');
 
 type RouteResultScreenRouteProp = RouteProp<
   MapStackParamList,
@@ -81,34 +82,57 @@ function RouteResultScreen() {
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
-  const snapPoints = useMemo(() => {
-    const collapsed = 0.35 * deviceHeight;
-    const expanded = deviceHeight - headerHeight;
-    return [collapsed, expanded];
-  }, [headerHeight]);
+
+  const expanded = useMemo(() => {
+    return Platform.select({
+      ios: deviceHeight - headerHeight,
+      android: deviceHeight + insets.top - headerHeight,
+    })!;
+  }, [deviceHeight, headerHeight, insets.top]);
+
+  const snapPoints = useMemo(
+    () => [deviceHeight * 0.35, expanded],
+    [deviceHeight, expanded],
+  );
 
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => {
-        navigation.navigate(mapNavigation.MAPHOME);
-        return true; // 기본 뒤로가기 막음
+      const onBack = () => {
+        goHomeSafely();
+        return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
     }, [navigation]),
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', e => {
-      // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-      if (e.data.action.type === 'POP') {
-        e.preventDefault();
-      }
-    });
-    return unsubscribe;
-  }, [navigation]);
+  const goHomeSafely = () => {
+    const state = navigation.getState();
+    const canPop = (state?.index ?? 0) > 0;
+
+    if (canPop) {
+      // 스택에 히스토리가 있으면 정상 pop
+      navigation.popToTop();
+    } else {
+      // 히스토리가 없으면(루트가 결과화면) 스택을 홈으로 재구성
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: mapNavigation.MAPHOME }],
+        }),
+      );
+    }
+  };
+
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
+  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
+  //     if (e.data.action.type === 'POP') {
+  //       e.preventDefault();
+  //     }
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
 
   const handleWebViewMessage = (e: any) => {
     try {
@@ -122,7 +146,7 @@ function RouteResultScreen() {
   useEffect(() => {
     const watchId = Geolocation.watchPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const { latitude, longitude } = position.coords;
         webRef.current?.postMessage(
           JSON.stringify({
             type: 'setMyLocation',
@@ -193,14 +217,14 @@ function RouteResultScreen() {
   const [endLat, endLon] = endCoord;
 
   // 맵 페이지 URL
-  const MAP_HTML_URL = MAP_RESULT_HTML_URL;
+  const MAP_HTML_URL = Config.MAP_RESULT_HTML_URL ?? '';
 
   // 1) 경로 API 호출
   useEffect(() => {
     setRouteLoading(true);
     axios
       .post(
-        `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${TMAP_API_KEY}`,
+        `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${Config.TMAP_API_KEY}`,
         {
           startX: startLon,
           startY: startLat,
@@ -224,7 +248,7 @@ function RouteResultScreen() {
           .filter((f: any) => f.geometry.type === 'LineString')
           .forEach((f: any) =>
             f.geometry.coordinates.forEach((c: number[]) =>
-              coords.push({latitude: c[1], longitude: c[0]}),
+              coords.push({ latitude: c[1], longitude: c[0] }),
             ),
           );
         setRoutePath(coords);
@@ -255,15 +279,15 @@ function RouteResultScreen() {
   useEffect(() => {
     if (!mapReady || routePath.length === 0) return;
     webRef.current?.postMessage(
-      JSON.stringify({type: 'customMarker', lat: startLat, lng: startLon}),
+      JSON.stringify({ type: 'customMarker', lat: startLat, lng: startLon }),
     );
     webRef.current?.postMessage(
-      JSON.stringify({type: 'customMarker', lat: endLat, lng: endLon}),
+      JSON.stringify({ type: 'customMarker', lat: endLat, lng: endLon }),
     );
     webRef.current?.postMessage(
       JSON.stringify({
         type: 'drawRoute',
-        path: routePath.map(p => ({lat: p.latitude, lng: p.longitude})),
+        path: routePath.map(p => ({ lat: p.latitude, lng: p.longitude })),
       }),
     );
   }, [mapReady, routePath]);
@@ -287,7 +311,7 @@ function RouteResultScreen() {
     const steps: any[] = [];
     steps.push({
       type: 'Feature',
-      geometry: {type: 'Point', coordinates: [startLon, startLat]},
+      geometry: { type: 'Point', coordinates: [startLon, startLat] },
       properties: {
         description: `${startLocationName} 출발`,
         pointType: 'SP',
@@ -327,20 +351,22 @@ function RouteResultScreen() {
 
         {/* 헤더 */}
         <View
-          style={[styles.headerWrapper, {paddingTop: insets.top}]}
-          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}>
+          style={[styles.headerWrapper, { paddingTop: insets.top }]}
+          onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}
+        >
           <View style={styles.headerTop}>
             <View style={styles.placeholder} />
             <View style={styles.modeIconWrapper}>
               <Image
                 source={require('../../assets/walking-icon.png')}
-                style={{width: 48, height: 30}}
+                style={{ width: 48, height: 30 }}
                 resizeMode="contain"
               />
             </View>
             <TouchableOpacity
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              onPress={() => navigation.navigate(mapNavigation.MAPHOME)}>
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={goHomeSafely}
+            >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -348,18 +374,20 @@ function RouteResultScreen() {
             <View style={styles.inputCol}>
               <TouchableOpacity
                 style={styles.inputRow}
-                onPress={() => navigateToSearch('start')}>
+                onPress={() => navigateToSearch('start')}
+              >
                 <Text style={styles.inputText}>{startLocationName}</Text>
               </TouchableOpacity>
               <View style={styles.divider} />
               <TouchableOpacity
                 style={styles.inputRow}
-                onPress={() => navigateToSearch('end')}>
+                onPress={() => navigateToSearch('end')}
+              >
                 <Text style={styles.inputText}>{endLocationName}</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.switchBtn} onPress={handleSwap}>
-              <Text style={{fontSize: 16, color: 'white'}}>⇅</Text>
+              <Text style={{ fontSize: 16, color: 'white' }}>⇅</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -367,7 +395,7 @@ function RouteResultScreen() {
         {/* WebView */}
         <WebView
           ref={webRef}
-          source={{uri: MAP_HTML_URL}}
+          source={{ uri: MAP_HTML_URL }}
           style={{
             position: 'absolute',
             top: 0,
@@ -398,11 +426,16 @@ function RouteResultScreen() {
           enableContentPanningGesture
           enableHandlePanningGesture
           enableOverDrag={false}
-          style={{flex: 1}}
+          maxDynamicContentSize={expanded}
+          style={{ flex: 1 }}
           onChange={idx => {
             if (idx === 0)
-              flatListRef.current?.scrollToOffset({offset: 0, animated: true});
-          }}>
+              flatListRef.current?.scrollToOffset({
+                offset: 0,
+                animated: true,
+              });
+          }}
+        >
           <View style={styles.sheetHeader}>
             <Text style={styles.headerTitle}>경로 안내</Text>
             {travelTime !== null && (
@@ -412,14 +445,16 @@ function RouteResultScreen() {
           <BottomSheetFlatList
             ref={flatListRef}
             data={routeSteps}
+            bounces={false}
+            overScrollMode="never"
             keyExtractor={(_, i) => `step-${i}`}
             contentContainerStyle={{
               paddingHorizontal: 16,
               paddingBottom: 20,
               flexGrow: 1,
             }}
-            renderItem={({item, index}) => {
-              const {description, distance} = item.properties;
+            renderItem={({ item, index }) => {
+              const { description, distance } = item.properties;
               const isFirst = index === 0;
               const isLast = index === routeSteps.length - 1;
               return (
@@ -462,7 +497,9 @@ function RouteResultScreen() {
                     )}
                     {isLast && endBuildingDetail?.buildingInfo.imageUrl && (
                       <Image
-                        source={{uri: endBuildingDetail.buildingInfo.imageUrl}}
+                        source={{
+                          uri: endBuildingDetail.buildingInfo.imageUrl,
+                        }}
                         style={styles.stepImage}
                         resizeMode="cover"
                       />
