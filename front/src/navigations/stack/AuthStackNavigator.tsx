@@ -1,6 +1,7 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { StyleSheet } from 'react-native';
+import SocialLoginScreen from '../../screens/auth/SocialLoginScreen';
 import AuthHomeScreen from '../../screens/auth/AuthHomeScreen';
 import { authNavigations, colors } from '../../constants';
 import SignupScreen from '../../screens/auth/SignupScreen';
@@ -12,6 +13,7 @@ import FindPwCompleteScreen from '../../screens/auth/FindPw/FindPwCompleteScreen
 import TermsDetailScreen from '../../screens/auth/TermsDetailScreen';
 
 export type AuthStackParamList = {
+  [authNavigations.SOCIAL_LOGIN]: undefined;
   [authNavigations.AUTH_HOME]: undefined;
   [authNavigations.LOGIN]: undefined;
   [authNavigations.FINDID]: undefined;
@@ -27,6 +29,7 @@ const Stack = createStackNavigator<AuthStackParamList>();
 function AuthStackNavigator() {
   return (
     <Stack.Navigator
+      initialRouteName={authNavigations.SOCIAL_LOGIN}
       screenOptions={{
         // headerBackTitleVisible: false,
         cardStyle: {
@@ -34,6 +37,11 @@ function AuthStackNavigator() {
         },
       }}
     >
+      <Stack.Screen
+        name={authNavigations.SOCIAL_LOGIN}
+        component={SocialLoginScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name={authNavigations.AUTH_HOME}
         component={AuthHomeScreen}
