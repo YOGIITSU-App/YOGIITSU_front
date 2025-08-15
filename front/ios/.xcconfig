@@ -1,0 +1,2 @@
+#include? "Pods/Target Support Files/Pods-YogiitsuApp/Pods-YogiitsuApp.debug.xcconfig"
+#include "Config.Shared.xcconfig"

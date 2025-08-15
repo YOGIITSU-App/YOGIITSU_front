@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -84,6 +85,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+            KAKAO_NATIVE_APP_KEY: project.env.get("KAKAO_NATIVE_APP_KEY") ?: ""
+        ]
+        resValue "string", "kakao_app_key", project.env.get("KAKAO_NATIVE_APP_KEY") ?: ""
     }
     signingConfigs {
         debug {
@@ -118,4 +123,3 @@ dependencies {
     }
 }
 
-apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
