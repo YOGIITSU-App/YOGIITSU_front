@@ -79,3 +79,7 @@ yarn-error.log
 
 # html
 *.html
+
+ios/Config/
+  Config.Debug.xcconfig
+  Config.Release.xcconfig
