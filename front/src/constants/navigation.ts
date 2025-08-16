@@ -1,4 +1,5 @@
 const authNavigations = {
+  SOCIAL_LOGIN: 'SocialLogin',
   AUTH_HOME: 'AuthHome',
   LOGIN: 'Login',
   SIGNUP: 'Signup',
@@ -19,4 +20,4 @@ const mapNavigation = {
   SHORTCUT_DETAIL: 'ShortcutDetail',
 } as const;
 
-export {authNavigations, mapNavigation};
+export { authNavigations, mapNavigation };

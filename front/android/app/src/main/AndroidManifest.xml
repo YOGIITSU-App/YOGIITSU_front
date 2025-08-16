@@ -11,6 +11,13 @@
     android:allowBackup="false"
     android:theme="@style/AppTheme"
     android:supportsRtl="true">
+
+    <!-- Kakao 네이티브 앱 키 -->
+    <meta-data
+      android:name="com.kakao.sdk.AppKey"
+      android:value="@string/kakao_app_key" />
+
+    <!-- 앱 진입 Activity (그대로 유지) -->
     <activity
       android:name=".MainActivity"
       android:label="@string/app_name"
@@ -24,5 +31,18 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+
+    <!-- Kakao 로그인 리다이렉트 처리용 Activity (※ 별도 블록) -->
+    <activity
+      android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="kakao${KAKAO_NATIVE_APP_KEY}" android:host="oauth" />
+      </intent-filter>
+    </activity>
+
   </application>
 </manifest>

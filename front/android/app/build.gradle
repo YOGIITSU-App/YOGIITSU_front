@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -78,12 +79,32 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.yogiitsuapp"
+
+    def kakaoKey = project.env.get("KAKAO_NATIVE_APP_KEY")
+    def isRelease = gradle.startParameter.taskNames.any {
+        it.toLowerCase().contains('release')
+    }
+
+    if (!kakaoKey) {
+        if (isRelease) {
+            // GradleException 대신 JDK 기본 예외 사용(가장 호환성 좋음)
+            throw new RuntimeException("KAKAO_NATIVE_APP_KEY is missing. Set it for release builds.")
+        } else {
+            logger.warn("KAKAO_NATIVE_APP_KEY is missing. Kakao login will not work on this build.")
+        }
+    }
+
+
     defaultConfig {
         applicationId "com.yogiitsuapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+            KAKAO_NATIVE_APP_KEY: project.env.get("KAKAO_NATIVE_APP_KEY")
+        ]
+        resValue "string", "kakao_app_key", project.env.get("KAKAO_NATIVE_APP_KEY")
     }
     signingConfigs {
         debug {
@@ -118,4 +139,3 @@ dependencies {
     }
 }
 
-apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
