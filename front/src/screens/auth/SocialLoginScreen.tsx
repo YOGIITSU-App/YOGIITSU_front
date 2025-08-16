@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { authNavigations, colors } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
@@ -14,7 +14,7 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 export default function SocialLoginScreen() {
   const navigation = useNavigation<any>();
   const { login } = useUser();
-  const [loading, setLoading] = useState<'google' | 'kakao' | null>(null);
+  const [loading, setLoading] = useState<null | 'kakao' | 'google'>(null);
 
   useEffect(() => {
     configureSocial();
@@ -25,6 +25,9 @@ export default function SocialLoginScreen() {
       setLoading('kakao');
       const r = await signInWithKakao();
       if (r.userId && r.role) login({ userId: r.userId, role: r.role });
+    } catch (e) {
+      console.warn('[Kakao SignIn] failed', e);
+      Alert.alert('카카오 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(null);
     }
@@ -35,6 +38,9 @@ export default function SocialLoginScreen() {
       setLoading('google');
       const r = await signInWithGoogle();
       if (r.userId && r.role) login({ userId: r.userId, role: r.role });
+    } catch (e) {
+      console.warn('[Google SignIn] failed', e);
+      Alert.alert('구글 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(null);
     }
@@ -44,7 +50,6 @@ export default function SocialLoginScreen() {
     <AppScreenLayout disableTopInset>
       <View style={styles.container}>
         {/* 상단 카피 */}
-        {/* 브랜드 로고 (부트스플래시와 동일 이미지) */}
         <Image
           source={require('../../assets/bootsplash/logo.png')}
           style={styles.brandLogo}
@@ -67,13 +72,14 @@ export default function SocialLoginScreen() {
             provider="kakao"
             onPress={onKakao}
             loading={loading === 'kakao'}
+            disabled={loading !== null}
             style={{ marginBottom: 12 }}
           />
-          {/* 네이버는 이번 프로젝트 미사용이라 제거 */}
           <SocialButton
             provider="google"
             onPress={onGoogle}
             loading={loading === 'google'}
+            disabled={loading !== null}
           />
         </View>
 
@@ -98,7 +104,7 @@ export default function SocialLoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.BLUE_700, // 기존 팔레트
+    backgroundColor: colors.BLUE_700,
     paddingHorizontal: 20,
     paddingTop: 64,
     paddingBottom: 24,
@@ -108,7 +114,10 @@ const styles = StyleSheet.create({
     height: '55%',
     marginBottom: '5%',
   },
-  bubbleWrap: { alignItems: 'center', marginBottom: 20 },
+  bubbleWrap: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   bubble: {
     backgroundColor: 'white',
     paddingHorizontal: 14,
