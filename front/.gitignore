@@ -83,3 +83,8 @@ yarn-error.log
 ios/Config/
   Config.Debug.xcconfig
   Config.Release.xcconfig
+
+# Keystore files
+android/keystore.properties
+android/*.keystore
+android/*.jks
