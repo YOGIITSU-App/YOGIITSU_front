@@ -34,7 +34,7 @@ type NavigationProp = StackNavigationProp<
 
 export default function ShortcutDetailScreen() {
   const insets = useSafeAreaInsets();
-  const deviceHeight = Dimensions.get('screen').height;
+  const deviceHeight = Dimensions.get('window').height;
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { shortcutId } = route.params;
@@ -195,7 +195,7 @@ export default function ShortcutDetailScreen() {
 
         {/* Header */}
         <View
-          style={[styles.header, { paddingTop: insets.top + 5 }]}
+          style={[styles.header, { paddingTop: insets.top }]}
           onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}
         >
           <View style={styles.headerTop}>
