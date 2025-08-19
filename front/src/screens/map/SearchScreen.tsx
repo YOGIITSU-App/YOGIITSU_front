@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -19,14 +19,19 @@ import {
   useRoute,
   RouteProp,
   useFocusEffect,
+  StackActions,
 } from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../../constants/navigation';
-import searchApi, {RecentKeyword, SearchSuggestion} from '../../api/searchApi';
-import {useSelectBuilding} from '../../hooks/useSelectBuilding';
-import {colors} from '../../constants/colors';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../../constants/navigation';
+import searchApi, {
+  RecentKeyword,
+  SearchSuggestion,
+} from '../../api/searchApi';
+import { useSelectBuilding } from '../../hooks/useSelectBuilding';
+import { colors } from '../../constants/colors';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import buildingApi from '../../api/buildingApi';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -40,6 +45,7 @@ type SearchScreenRouteProp = RouteProp<
 function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
+  const { selectionType, source } = route.params ?? {};
   const [searchText, setSearchText] = useState(route.params?.keyword ?? '');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [results, setResults] = useState<SearchSuggestion[]>([]);
@@ -47,7 +53,7 @@ function SearchScreen() {
   const [recentKeywords, setRecentKeywords] = useState<RecentKeyword[]>([]);
 
   // 유틸 훅 가져오기
-  const {onSelect} = useSelectBuilding();
+  const { onSelect } = useSelectBuilding();
 
   // 1. route.params.keyword가 바뀔 때는 기존처럼 setSearchText 해주고
   useEffect(() => {
@@ -97,19 +103,54 @@ function SearchScreen() {
     }
   }
 
+  async function applySelectionDirect(buildingId: number) {
+    if (!selectionType) return;
+    const res = await buildingApi.getBuildingDetail(buildingId);
+    const info = res.data.buildingInfo;
+    const location = `${info.latitude},${info.longitude}`;
+    const name = info.name;
+
+    navigation.navigate({
+      name: mapNavigation.ROUTE_SELECTION,
+      params:
+        selectionType === 'start'
+          ? {
+              startLocation: location,
+              startLocationName: name,
+              startBuildingId: buildingId,
+              lastSelectedType: 'start',
+            }
+          : {
+              endLocation: location,
+              endLocationName: name,
+              endBuildingId: buildingId,
+              lastSelectedType: 'end',
+            },
+      merge: true,
+    });
+  }
+
   return (
     <KeyboardAvoidingView
-      style={{flex: 1}}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <AppScreenLayout>
           <View style={styles.container}>
             <View style={styles.searchBoxWrapper}>
               <View style={styles.searchBar}>
                 <TouchableOpacity
-                  onPress={() => navigation.goBack()}
+                  onPress={() => {
+                    if (source === 'selection') {
+                      navigation.dispatch(StackActions.pop(1)); // ← Search만 닫고 바로 RouteSelection 복귀
+                    } else {
+                      navigation.goBack();
+                    }
+                  }}
                   style={styles.backButton}
-                  hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
                   <Image
                     source={require('../../assets/back-icon.png')}
                     style={styles.backIcon}
@@ -141,7 +182,8 @@ function SearchScreen() {
                       setSearchText('');
                       setResults([]);
                     }}
-                    style={styles.clearButton}>
+                    style={styles.clearButton}
+                  >
                     {/* 아이콘 교체 가능 */}
                     <Text style={styles.closeIcon}>✕</Text>
                   </TouchableOpacity>
@@ -170,19 +212,25 @@ function SearchScreen() {
                             } catch (err) {
                               Alert.alert('전체 삭제 실패');
                             }
-                          }}>
+                          }}
+                        >
                           <Text style={styles.clearText}>전체삭제</Text>
                         </TouchableOpacity>
                       </View>
                     }
-                    renderItem={({item}) => (
+                    renderItem={({ item }) => (
                       <View style={styles.recentItem}>
                         <TouchableOpacity
                           style={styles.recentKeyword}
-                          onPress={() => {
+                          onPress={async () => {
                             setSearchText(item.keyword);
-                            onSelect(item.buildingId);
-                          }}>
+                            if (source === 'selection' && selectionType) {
+                              await applySelectionDirect(item.buildingId);
+                            } else {
+                              onSelect(item.buildingId); // 프리뷰/디테일로 가는 기존 흐름
+                            }
+                          }}
+                        >
                           <Text style={styles.itemText}>{item.keyword}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -199,7 +247,8 @@ function SearchScreen() {
                             } catch (err) {
                               Alert.alert('삭제 실패');
                             }
-                          }}>
+                          }}
+                        >
                           <Text style={styles.clearIcon}>✕</Text>
                         </TouchableOpacity>
                       </View>
@@ -219,10 +268,11 @@ function SearchScreen() {
                 <FlatList
                   data={results}
                   keyExtractor={(item, i) => `${item.keyword}-${i}`}
-                  renderItem={({item}) => (
+                  renderItem={({ item }) => (
                     <TouchableOpacity
                       style={styles.item}
-                      onPress={() => onSelect(item.buildingId)}>
+                      onPress={() => onSelect(item.buildingId)}
+                    >
                       <Text style={styles.itemText}>{item.keyword}</Text>
                       <Text style={styles.tagText}>
                         {Array.isArray(item.tags)
@@ -242,7 +292,7 @@ function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: 'white'},
+  container: { flex: 1, backgroundColor: 'white' },
   searchBoxWrapper: {
     backgroundColor: colors.GRAY_100,
     borderRadius: 8,

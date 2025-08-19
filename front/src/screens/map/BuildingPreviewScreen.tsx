@@ -9,7 +9,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useIsFocused,
+  useFocusEffect,
+} from '@react-navigation/native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import WebView from 'react-native-webview';
 import { mapNavigation } from '../../constants/navigation';
@@ -29,7 +35,7 @@ import {
 } from 'react-native-reanimated';
 
 const deviceWidth = Dimensions.get('screen').width;
-const deviceHeight = Dimensions.get('window').height;
+const deviceHeight = Dimensions.get('screen').height;
 
 type RouteType = RouteProp<
   MapStackParamList,
@@ -41,6 +47,7 @@ export default function BuildingPreviewScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const animatedIndex = useSharedValue(0); // 드래그 중 실시간 인덱스
+  const isFocused = useIsFocused();
   const didNavigateRef = useRef(false); // 중복 이동 방지
 
   const [buildingDetail, setBuildingDetail] = useState<BuildingDetail | null>(
@@ -160,8 +167,10 @@ export default function BuildingPreviewScreen() {
   };
 
   const navigateToDetail = () => {
+    if (!isFocused) return;
     if (didNavigateRef.current) return;
     if (!buildingDetail) return;
+
     didNavigateRef.current = true;
     navigation.replace(mapNavigation.BUILDING_DETAIL, {
       buildingId: route.params.buildingId,
@@ -173,6 +182,16 @@ export default function BuildingPreviewScreen() {
       endBuildingId: route.params.endBuildingId,
     });
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      didNavigateRef.current = false;
+      return () => {
+        // 화면 빠져나갈 때도 재진입 대비 리셋
+        didNavigateRef.current = false;
+      };
+    }, []),
+  );
 
   useAnimatedReaction(
     () => animatedIndex.value,
@@ -233,7 +252,6 @@ export default function BuildingPreviewScreen() {
           ref={bottomSheetRef}
           index={0}
           snapPoints={snapPoints}
-          // enableContentPanningGesture={true}
           enableContentPanningGesture={false}
           enableHandlePanningGesture={true}
           enableOverDrag={false}

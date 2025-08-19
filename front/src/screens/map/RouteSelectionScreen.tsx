@@ -70,16 +70,6 @@ function RouteSelectionScreen() {
     }, [navigation]),
   );
 
-  // useEffect(() => {
-  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
-  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-  //     if (e.data.action.type === 'POP') {
-  //       e.preventDefault();
-  //     }
-  //   });
-  //   return unsubscribe;
-  // }, [navigation]);
-
   // 초기 파라미터 세팅
   useEffect(() => {
     const {
@@ -200,34 +190,16 @@ function RouteSelectionScreen() {
   // 검색화면 이동
   const handleSearchLocation = (type: 'start' | 'end') => {
     setLastSelectedType(type);
-    navigation.reset({
-      index: 1,
-      routes: [
-        {
-          name: mapNavigation.ROUTE_SELECTION,
-          params: {
-            startLocation,
-            startLocationName,
-            startBuildingId: startBuildingId ?? undefined,
-            endLocation,
-            endLocationName,
-            endBuildingId: endBuildingId ?? undefined,
-          },
-        },
-        {
-          name: mapNavigation.SEARCH,
-          params: {
-            selectionType: type,
-            fromResultScreen: false,
-            previousStartLocation: startLocation,
-            previousStartLocationName: startLocationName,
-            previousEndLocation: endLocation,
-            previousEndLocationName: endLocationName,
-            startBuildingId: startBuildingId ?? undefined,
-            endBuildingId: endBuildingId ?? undefined,
-          },
-        },
-      ],
+    navigation.push(mapNavigation.SEARCH, {
+      selectionType: type,
+      source: 'selection',
+      fromResultScreen: false,
+      previousStartLocation: startLocation,
+      previousStartLocationName: startLocationName,
+      previousEndLocation: endLocation,
+      previousEndLocationName: endLocationName,
+      startBuildingId: startBuildingId ?? undefined,
+      endBuildingId: endBuildingId ?? undefined,
     });
   };
 
@@ -254,7 +226,6 @@ function RouteSelectionScreen() {
     setEndLocationName(swappedEndName);
     setEndBuildingId(startBuildingId);
 
-    // 🔥 스왑 직후 플래그 ON
     isSwappedRef.current = true;
   };
 

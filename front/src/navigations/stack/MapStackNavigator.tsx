@@ -48,6 +48,7 @@ export type MapStackParamList = {
 
   [mapNavigation.SEARCH]: {
     selectionType: 'start' | 'end';
+    source?: 'selection' | 'home' | 'preview' | 'result';
     fromResultScreen: boolean;
     previousStartLocation?: string;
     previousStartLocationName?: string;

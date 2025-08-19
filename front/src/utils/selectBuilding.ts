@@ -1,9 +1,9 @@
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
 import searchApi from '../api/searchApi';
 import buildingApi from '../api/buildingApi';
-import {MapStackParamList} from '../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../constants/navigation';
+import { MapStackParamList } from '../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../constants/navigation';
 
 export type SelectContext = {
   selectionType: 'start' | 'end';
@@ -16,10 +16,10 @@ export type SelectContext = {
 };
 
 export async function selectBuilding(buildingId: number, ctx: SelectContext) {
-  const {selectionType, fromResultScreen, routeParams, navigation} = ctx;
+  const { selectionType, fromResultScreen, routeParams, navigation } = ctx;
 
-  const {data} = await buildingApi.getBuildingDetail(buildingId);
-  const {latitude, longitude, name} = data.buildingInfo;
+  const { data } = await buildingApi.getBuildingDetail(buildingId);
+  const { latitude, longitude, name } = data.buildingInfo;
   const location = `${latitude},${longitude}`;
 
   await searchApi.saveKeyword(name);
@@ -77,20 +77,17 @@ export async function selectBuilding(buildingId: number, ctx: SelectContext) {
     navigation.replace(mapNavigation.ROUTE_RESULT, nextParams);
   } else {
     // 최초 검색 → 프리뷰
-    navigation.navigate({
-      name: mapNavigation.BUILDING_PREVIEW,
-      key: `preview-${buildingId}`,
-      params: isStart
-        ? {
-            buildingId,
-            endLocation: previousEndLocation,
-            endLocationName: previousEndLocationName,
-          }
-        : {
-            buildingId,
-            startLocation: previousStartLocation,
-            startLocationName: previousStartLocationName,
-          },
-    });
+    const previewParams = isStart
+      ? {
+          buildingId,
+          endLocation: previousEndLocation,
+          endLocationName: previousEndLocationName,
+        }
+      : {
+          buildingId,
+          startLocation: previousStartLocation,
+          startLocationName: previousStartLocationName,
+        };
+    navigation.push(mapNavigation.BUILDING_PREVIEW, previewParams);
   }
 }
