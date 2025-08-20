@@ -1,12 +1,22 @@
-import React, {useLayoutEffect} from 'react';
-import {Dimensions, Image, StyleSheet, Text, View} from 'react-native';
-import {colors} from '../../../constants';
-import {useNavigation} from '@react-navigation/native';
+import React, { useLayoutEffect, useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { colors } from '../../../constants';
+import { useNavigation } from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {useTabOptions} from '../../../constants/tabOptions';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
+import { useTabOptions } from '../../../constants/tabOptions';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+import authApi from '../../../api/authApi';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -14,15 +24,16 @@ const deviceHeight = Dimensions.get('screen').height;
 
 function DeleteAccountWarningScreen() {
   const tabOptions = useTabOptions();
+  const [modalVisible, setModalVisible] = useState(false);
 
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
 
     return () => {
-      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
+      parent?.setOptions({ tabBarStyle: tabOptions.tabBarStyle });
     };
   }, [navigation]);
 
@@ -57,9 +68,59 @@ function DeleteAccountWarningScreen() {
       <View style={styles.centeredContainer}>
         <CustomBotton
           label="확인했습니다"
-          onPress={() => navigation.navigate('DeleteAccount')}
+          onPress={() => setModalVisible(true)}
         />
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            {/* 아이콘 자리 */}
+            <Image
+              source={require('../../../assets/Warning-icon-gray.png')}
+              style={styles.modalWarningIcon}
+            />
+            {/* 안내 문구 */}
+            <Text style={styles.modalTitle}>
+              정말로 <Text style={styles.highlightText}>탈퇴</Text>하시겠어요?
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              탈퇴 시 계정 복구가 불가능합니다
+            </Text>
+            {/* 버튼 컨테이너 */}
+            <View style={styles.buttonContainer}>
+              {/* 취소 버튼 */}
+              <CustomBotton
+                label="아니요"
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              />
+              {/* 탈퇴 버튼 */}
+              <CustomBotton
+                label="네"
+                style={[styles.button, styles.confirmButton]}
+                onPress={async () => {
+                  setModalVisible(false);
+                  try {
+                    await authApi.deleteAccount();
+                    navigation.navigate('DeleteAccountComplete');
+                  } catch (error: any) {
+                    const msg =
+                      error.response?.data?.message ?? '회원 탈퇴 실패';
+                    Alert.alert('에러', msg);
+                  }
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </AppScreenLayout>
   );
 }
@@ -83,13 +144,13 @@ const styles = StyleSheet.create({
     color: colors.BLUE_700,
   },
   centeredContainer: {
-    alignItems: 'center', // 가로 중앙 정렬
+    alignItems: 'center',
   },
   warningBox: {
-    backgroundColor: colors.GRAY_100, // 연한 회색 배경
+    backgroundColor: colors.GRAY_100,
     padding: 15,
-    borderRadius: 10, // 모서리 둥글게
-    flexDirection: 'row', // 아이콘 + 텍스트 가로 정렬
+    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     width: deviceWidth * 0.84,
@@ -104,12 +165,68 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#999999',
-    lineHeight: 20, // 아이콘 크기와 맞추기 위해 줄 간격 설정
+    lineHeight: 20,
   },
   infoText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.GRAY_500,
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // 반투명 배경
+  },
+  modalBox: {
+    width: deviceWidth * 0.844,
+    height: deviceHeight * 0.2725,
+    backgroundColor: colors.WHITE,
+    borderRadius: 6,
+    alignItems: 'center',
+    paddingTop: 30,
+    paddingBottom: 0,
+  },
+  modalWarningIcon: {
+    width: 28,
+    height: 28,
+    marginBottom: 25,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.BLACK_500,
+    marginBottom: 10,
+    lineHeight: 21.6,
+  },
+  highlightText: {
+    color: colors.BLUE_700,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.GRAY_500,
+    lineHeight: 16.8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    height: deviceHeight * 0.07,
+    position: 'absolute',
+    bottom: 0,
+  },
+  button: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.GRAY_300,
+    borderBottomLeftRadius: 6,
+  },
+  confirmButton: {
+    backgroundColor: colors.BLUE_700,
+    borderBottomRightRadius: 6,
   },
 });
 

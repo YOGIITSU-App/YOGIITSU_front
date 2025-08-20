@@ -25,7 +25,7 @@ const authApi = {
 
   // [비로그인] 아이디 찾기
   findId: (email: string) => {
-    return axiosInstance.post('/members/find-id', {email});
+    return axiosInstance.post('/members/find-id', { email });
   },
 
   // [비로그인] 비밀번호 재설정 (이메일 인증 기반)
@@ -50,11 +50,7 @@ const authApi = {
   },
 
   // [로그인] 회원 탈퇴
-  deleteAccount: (password: string) => {
-    return axiosInstance.delete('/members/delete', {
-      data: {password},
-    });
-  },
+  deleteAccount: () => axiosInstance.delete('/members/delete'),
 };
 
 export default authApi;

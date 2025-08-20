@@ -5,7 +5,6 @@ import NoticeScreen from '../../screens/mypage/Notice/NoticeScreen';
 import InquiryScreen from '../../screens/mypage/Inquiry/InquiryScreen';
 import { colors } from '../../constants';
 import DeleteAccountWarningScreen from '../../screens/mypage/DeleteAccount/DeleteAccountWarningScreen';
-import DeleteAccountScreen from '../../screens/mypage/DeleteAccount/DeleteAccountScreen';
 import ChangePwCodeConfirmScreen from '../../screens/mypage/ChangePw/ChangePwCodeConfirmScreen';
 import ChangePwScreen from '../../screens/mypage/ChangePw/ChangePwScreen';
 import ChangePwCompleteScreen from '../../screens/mypage/ChangePw/ChangePwCompleteScreen';
@@ -133,11 +132,6 @@ function MypageStackNavigator() {
       <Stack.Screen
         name="DeleteAccountWarning"
         component={DeleteAccountWarningScreen}
-        options={{ title: '회원 탈퇴' }}
-      />
-      <Stack.Screen
-        name="DeleteAccount"
-        component={DeleteAccountScreen}
         options={{ title: '회원 탈퇴' }}
       />
       <Stack.Screen
