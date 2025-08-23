@@ -28,6 +28,7 @@ const hiddenScreens = [
   mapNavigation.SHUTTLE_DETAIL,
   mapNavigation.SHORTCUT_LIST,
   mapNavigation.SHORTCUT_DETAIL,
+  mapNavigation.CHATBOT,
 ];
 
 export default function BottomTabNavigator() {

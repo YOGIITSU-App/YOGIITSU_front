@@ -18,6 +18,7 @@ const mapNavigation = {
   SHUTTLE_DETAIL: 'ShuttleDetail',
   SHORTCUT_LIST: 'ShortcutList',
   SHORTCUT_DETAIL: 'ShortcutDetail',
+  CHATBOT: 'Chatbot',
 } as const;
 
 export { authNavigations, mapNavigation };

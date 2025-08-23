@@ -567,6 +567,19 @@ function MapHomeScreen() {
             />
             <Text style={styles.shortcutButtonText}>지름길</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.chatbotButton}
+            onPress={() => navigation.navigate(mapNavigation.CHATBOT)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Image
+              source={require('../../assets/chatbot-icon.png')}
+              style={{ width: 50, height: 50 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
           {openSheet === 'SHUTTLE' && shuttleSchedule && (
             <BottomSheet
               containerStyle={{ zIndex: 100, elevation: 100 }}
@@ -691,6 +704,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
+  },
+  chatbotButton: {
+    position: 'absolute',
+    bottom: 90,
+    left: 8,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

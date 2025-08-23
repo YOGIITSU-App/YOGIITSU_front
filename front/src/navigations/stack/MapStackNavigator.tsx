@@ -11,6 +11,7 @@ import ShortcutListScreen from '../../screens/map/ShortcutListScreen';
 import ShortcutDetailScreen from '../../screens/map/ShortcutDetailScreen';
 import ShuttleDetailScreen from '../../screens/map/ShuttleDetailScreen';
 import { ShuttleSchedule } from '../../api/shuttleApi';
+import ChatbotScreen from '../../screens/map/ChatbotScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -85,6 +86,7 @@ export type MapStackParamList = {
   [mapNavigation.SHORTCUT_DETAIL]: {
     shortcutId: number;
   };
+  [mapNavigation.CHATBOT]: undefined;
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -151,6 +153,11 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.SHORTCUT_DETAIL}
         component={ShortcutDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={mapNavigation.CHATBOT}
+        component={ChatbotScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
