@@ -1,4 +1,4 @@
-import React, {useEffect, useLayoutEffect, useState} from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,12 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {mapNavigation} from '../../constants/navigation';
-import buildingApi, {BuildingDetail} from '../../api/buildingApi';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {colors} from '../../constants';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { mapNavigation } from '../../constants/navigation';
+import buildingApi, { BuildingDetail } from '../../api/buildingApi';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { colors } from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
 import BuildingHeader from '../../components/BuildingHeader';
 import ImageViewer from 'react-native-image-zoom-viewer';
@@ -23,7 +23,7 @@ import Modal from 'react-native-modal';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import FacilityBadge from '../../components/FacilityBadge';
 import FacilityBadgeWithFloor from '../../components/FacilityBadgeWithFloor';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -129,7 +129,7 @@ export default function BuildingDetailScreen() {
 
   if (!buildingDetail) return null;
 
-  const {buildingInfo, departments} = buildingDetail;
+  const { buildingInfo, departments } = buildingDetail;
 
   return (
     <AppScreenLayout disableTopInset>
@@ -137,21 +137,22 @@ export default function BuildingDetailScreen() {
         <BuildingHeader buildingName={buildingDetail.buildingInfo.name} />
       )}
       <ScrollView style={styles.container}>
-        <Image source={{uri: buildingInfo.imageUrl}} style={styles.image} />
+        <Image source={{ uri: buildingInfo.imageUrl }} style={styles.image} />
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{buildingInfo.name}</Text>
             <TouchableOpacity
               onPress={toggleFavorite}
-              hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}>
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
               <Image
+                key={isFavorite ? 'fav' : 'unfav'}
                 source={require('../../assets/bookmark-icon.png')}
-                style={{
-                  tintColor: isFavorite ? undefined : colors.GRAY_700,
-                  width: 14,
-                  height: 18,
-                }}
+                style={[
+                  { width: 14, height: 18 },
+                  !isFavorite && { tintColor: colors.GRAY_700 },
+                ]}
               />
             </TouchableOpacity>
           </View>
@@ -166,7 +167,8 @@ export default function BuildingDetailScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.tabContainer}>
+          style={styles.tabContainer}
+        >
           {departments.map((dep, index) => (
             <TouchableOpacity
               key={dep.id}
@@ -174,12 +176,14 @@ export default function BuildingDetailScreen() {
               style={[
                 styles.tabItem,
                 index === selectedDeptIndex && styles.activeTabItem,
-              ]}>
+              ]}
+            >
               <Text
                 style={[
                   styles.tabText,
                   index === selectedDeptIndex && styles.activeTabText,
-                ]}>
+                ]}
+              >
                 {dep.departmentName}
               </Text>
             </TouchableOpacity>
@@ -234,7 +238,8 @@ export default function BuildingDetailScreen() {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  style={styles.floorTabContainer}>
+                  style={styles.floorTabContainer}
+                >
                   {buildingDetail.floorPlans.map((plan, index) => (
                     <TouchableOpacity
                       key={plan.floor}
@@ -243,13 +248,15 @@ export default function BuildingDetailScreen() {
                         index === selectedFloorIndex &&
                           styles.activeFloorTabItem,
                       ]}
-                      onPress={() => setSelectedFloorIndex(index)}>
+                      onPress={() => setSelectedFloorIndex(index)}
+                    >
                       <Text
                         style={[
                           styles.floorTabText,
                           index === selectedFloorIndex &&
                             styles.activeFloorTabText,
-                        ]}>
+                        ]}
+                      >
                         {plan.floor}
                       </Text>
                     </TouchableOpacity>
@@ -272,7 +279,8 @@ export default function BuildingDetailScreen() {
                   isVisible={isImageModalVisible}
                   onBackdropPress={() => setImageModalVisible(false)}
                   onBackButtonPress={() => setImageModalVisible(false)}
-                  style={{margin: 0}}>
+                  style={{ margin: 0 }}
+                >
                   <StatusBar
                     backgroundColor={
                       isImageModalVisible ? 'black' : 'transparent'
@@ -282,7 +290,7 @@ export default function BuildingDetailScreen() {
                     }
                     animated
                   />
-                  <View style={{flex: 1, backgroundColor: 'black'}}>
+                  <View style={{ flex: 1, backgroundColor: 'black' }}>
                     <TouchableOpacity
                       onPress={() => setImageModalVisible(false)}
                       style={{
@@ -290,9 +298,11 @@ export default function BuildingDetailScreen() {
                         top: insets.top,
                         right: 20,
                         zIndex: 10,
-                      }}>
+                      }}
+                    >
                       <Text
-                        style={{fontSize: 20, color: 'white', lineHeight: 24}}>
+                        style={{ fontSize: 20, color: 'white', lineHeight: 24 }}
+                      >
                         ✕
                       </Text>
                     </TouchableOpacity>
@@ -311,8 +321,9 @@ export default function BuildingDetailScreen() {
                             position: 'absolute',
                             top: insets.top,
                             alignSelf: 'center',
-                          }}>
-                          <Text style={{color: 'white', fontSize: 16}}>
+                          }}
+                        >
+                          <Text style={{ color: 'white', fontSize: 16 }}>
                             {currentIndex}/{allSize}
                           </Text>
                         </View>
@@ -326,12 +337,14 @@ export default function BuildingDetailScreen() {
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={styles.startbutton}
-              onPress={() => handleNavigateToRouteSelection('start')}>
+              onPress={() => handleNavigateToRouteSelection('start')}
+            >
               <Text style={styles.startbuttonText}>출발</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.finishbutton}
-              onPress={() => handleNavigateToRouteSelection('end')}>
+              onPress={() => handleNavigateToRouteSelection('end')}
+            >
               <Text style={styles.finishbuttonText}>도착</Text>
             </TouchableOpacity>
           </View>
@@ -342,7 +355,7 @@ export default function BuildingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: { flex: 1, backgroundColor: '#fff' },
   image: {
     width: deviceWidth,
     height: deviceWidth * 0.6,
