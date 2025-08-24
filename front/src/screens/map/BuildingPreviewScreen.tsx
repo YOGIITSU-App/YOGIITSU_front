@@ -272,12 +272,12 @@ export default function BuildingPreviewScreen() {
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Image
+                    key={isFavorite ? 'fav' : 'unfav'}
                     source={require('../../assets/bookmark-icon.png')}
-                    style={{
-                      tintColor: isFavorite ? undefined : colors.GRAY_700,
-                      width: 14,
-                      height: 18,
-                    }}
+                    style={[
+                      { width: 14, height: 18 },
+                      !isFavorite && { tintColor: colors.GRAY_700 },
+                    ]}
                   />
                 </TouchableOpacity>
               </View>
