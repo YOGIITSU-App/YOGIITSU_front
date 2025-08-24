@@ -13,12 +13,37 @@ import {
 } from 'react-native';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import { useNavigation } from '@react-navigation/native';
+import { mapNavigation } from '../../constants/navigation';
 
 type Message = {
   id: string;
   role: 'user' | 'bot';
   text: string;
+  payload?: { type: 'shortcut'; id: number; name: string };
 };
+
+// 지름길 목록 중 예시로 shortcutId=2 고정
+const sampleShortcut = {
+  shortcutId: 2,
+  pointA: 'ICT대학 3층',
+  pointB: '음악대학',
+  distance: 110, // m
+  duration: 4, // 분
+};
+
+const isShortcutQuery = (t: string) =>
+  /지름길|가장\s*가까운\s*지름길|지름길.*알려줘/i.test(t);
+
+const makeShortcutBotMsg = (): Message => ({
+  id: `${Date.now()}-bot-shortcut`,
+  role: 'bot',
+  text: `가장 가까운 지름길은 “${sampleShortcut.pointA} ↔ ${sampleShortcut.pointB}” (약 ${sampleShortcut.distance}m, 도보 ${sampleShortcut.duration}분)이야.`,
+  payload: {
+    type: 'shortcut',
+    id: sampleShortcut.shortcutId,
+    name: `${sampleShortcut.pointA} ↔ ${sampleShortcut.pointB}`,
+  },
+});
 
 export default function ChatbotScreen() {
   const navigation = useNavigation();
@@ -87,6 +112,12 @@ export default function ChatbotScreen() {
 
     setIsTyping(true);
     setTimeout(() => {
+      if (isShortcutQuery(userMsg.text)) {
+        const botMsg = makeShortcutBotMsg();
+        setMessages(prev => [botMsg, ...prev]);
+        setIsTyping(false);
+        return;
+      }
       const reply = findPreset(userMsg.text) ?? '확인했어! 이어서 진행할게.';
       const botMsg: Message = {
         id: `${Date.now()}-bot`,
@@ -94,6 +125,7 @@ export default function ChatbotScreen() {
         text: reply,
       };
       setMessages(prev => [botMsg, ...prev]);
+
       setIsTyping(false);
     }, 900);
   };
@@ -139,7 +171,7 @@ export default function ChatbotScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => renderRow(item)}
+          renderItem={({ item }) => renderRow(item, navigation)}
           ListHeaderComponent={isTyping ? <TypingDots /> : null}
         />
 
@@ -167,7 +199,7 @@ export default function ChatbotScreen() {
   );
 }
 
-function renderRow(item: Message) {
+function renderRow(item: Message, navigation: any) {
   if (item.text.startsWith('__time__')) {
     return (
       <View style={styles.timeChipWrap}>
@@ -186,6 +218,7 @@ function renderRow(item: Message) {
   const isUser = item.role === 'user';
   const isIntro = item.id === 'intro';
   const isExample = item.id === 'ex';
+  const hasShortcutCTA = item.payload?.type === 'shortcut';
 
   return (
     <View style={[styles.bubbleRow, isUser ? styles.rightRow : styles.leftRow]}>
@@ -207,6 +240,20 @@ function renderRow(item: Message) {
         >
           {item.text}
         </Text>
+        {hasShortcutCTA && (
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            activeOpacity={0.85}
+            onPress={() =>
+              navigation.navigate(
+                mapNavigation.SHORTCUT_DETAIL as never,
+                { shortcutId: item.payload!.id } as never,
+              )
+            }
+          >
+            <Text style={styles.ctaBtnText}>자세히 보기</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {isUser && <Text style={styles.metaText}>전송됨</Text>}
     </View>
@@ -380,4 +427,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
   },
   sendIcon: { color: 'white', fontWeight: '800', fontSize: 16 },
+  ctaBtn: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+  },
+  ctaBtnText: { color: 'white', fontWeight: '600' },
 });
