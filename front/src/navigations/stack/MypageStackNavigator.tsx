@@ -46,7 +46,7 @@ function MypageStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        // headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         cardStyle: {
           backgroundColor: 'white',
         },
