@@ -31,7 +31,7 @@ function AuthStackNavigator() {
     <Stack.Navigator
       initialRouteName={authNavigations.SOCIAL_LOGIN}
       screenOptions={{
-        // headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         cardStyle: {
           backgroundColor: 'white',
         },

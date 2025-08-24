@@ -92,11 +92,9 @@ const Stack = createStackNavigator<MapStackParamList>();
 function MapStackNavigator() {
   return (
     <Stack.Navigator
-      screenOptions={
-        {
-          // headerBackTitleVisible: false,
-        }
-      }
+      screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
+      }}
     >
       <Stack.Screen
         name={mapNavigation.MAPHOME}
