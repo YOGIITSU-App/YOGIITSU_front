@@ -125,9 +125,12 @@ export default function BuildingPreviewScreen() {
     const { latitude, longitude } = buildingDetail.buildingInfo;
 
     const markerMsg = JSON.stringify({
-      type: 'customMarker',
+      type: 'setPreviewMarker',
       lat: latitude,
       lng: longitude,
+      url: 'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/start-marker.png',
+      width: 23,
+      height: 32,
       zoom: 3,
     });
 
