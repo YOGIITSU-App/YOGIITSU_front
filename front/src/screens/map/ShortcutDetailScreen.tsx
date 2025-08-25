@@ -70,6 +70,7 @@ export default function ShortcutDetailScreen() {
   const handleWebViewMessage = (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
+      console.log('WV MSG:', data);
       if (data.type === 'MAP_READY') {
         setMapReady(true);
       }
@@ -90,27 +91,50 @@ export default function ShortcutDetailScreen() {
   }, [shortcutId]);
 
   // 2) map 로드 완료 시
-  const onWebViewLoadEnd = () => {
-    setMapReady(true);
-  };
 
   // 3) detail & mapLoaded 가 모두 true 될 때만 그리기
   useEffect(() => {
     if (!detail || !mapReady) return;
-    // 1. 폴리라인
-    const path = detail.coordinates.map(c => ({
-      lat: c.latitude,
-      lng: c.longitude,
-    }));
-    webRef.current?.postMessage(JSON.stringify({ type: 'drawShortcut', path }));
-    // 2. 시작/끝 마커
-    const start = detail.coordinates[0];
-    const end = detail.coordinates[detail.coordinates.length - 1];
-    [start, end].forEach(p =>
-      webRef.current?.postMessage(
-        JSON.stringify({ type: 'marker', lat: p.latitude, lng: p.longitude }),
-      ),
+
+    // 좌표 정렬 (pointOrder)
+    const coords = [...detail.coordinates]
+      .filter(
+        c => typeof c.latitude === 'number' && typeof c.longitude === 'number',
+      )
+      .sort((a, b) => (a.pointOrder ?? 0) - (b.pointOrder ?? 0));
+    if (coords.length === 0) return;
+
+    const start = coords[0];
+    const end = coords[coords.length - 1];
+
+    webRef.current?.postMessage(
+      JSON.stringify({ type: 'clearStartEndMarkers' }),
     );
+    webRef.current?.postMessage(
+      JSON.stringify({
+        type: 'setStartMarker',
+        lat: start.latitude,
+        lng: start.longitude,
+        url: 'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/start-marker.png',
+        width: 23,
+        height: 32,
+      }),
+    );
+    if (coords.length > 1) {
+      webRef.current?.postMessage(
+        JSON.stringify({
+          type: 'setEndMarker',
+          lat: end.latitude,
+          lng: end.longitude,
+          url: 'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/end-marker.png',
+          width: 23,
+          height: 32,
+        }),
+      );
+    }
+
+    const path = coords.map(c => ({ lat: c.latitude, lng: c.longitude }));
+    webRef.current?.postMessage(JSON.stringify({ type: 'drawShortcut', path }));
   }, [detail, mapReady]);
 
   useEffect(() => {
@@ -274,7 +298,6 @@ export default function ShortcutDetailScreen() {
           true;
         `}
           onMessage={handleWebViewMessage}
-          onLoadEnd={onWebViewLoadEnd}
         />
 
         {/* 요약 박스 */}
