@@ -56,9 +56,6 @@ function DeleteAccountWarningScreen() {
       </View>
       <View style={styles.guideContainer}>
         <Text style={styles.infoText}>
-          - 탈퇴 후 7일 동안 가입이 제한됩니다
-        </Text>
-        <Text style={styles.infoText}>
           - 데이터가 모두 삭제되며, 복구가 불가능합니다
         </Text>
         <Text style={styles.infoText}>
