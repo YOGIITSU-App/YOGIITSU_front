@@ -124,10 +124,15 @@ export default function BuildingPreviewScreen() {
 
     const { latitude, longitude } = buildingDetail.buildingInfo;
 
+    const MARKER_PREVIEW_URL = Config.MARKER_START_URL;
+
     const markerMsg = JSON.stringify({
-      type: 'customMarker',
+      type: 'setPreviewMarker',
       lat: latitude,
       lng: longitude,
+      url: MARKER_PREVIEW_URL,
+      width: 23,
+      height: 32,
       zoom: 3,
     });
 
