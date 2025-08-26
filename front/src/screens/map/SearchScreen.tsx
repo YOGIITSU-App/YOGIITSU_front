@@ -109,25 +109,46 @@ function SearchScreen() {
     const info = res.data.buildingInfo;
     const location = `${info.latitude},${info.longitude}`;
     const name = info.name;
+    const {
+      previousStartLocation,
+      previousStartLocationName,
+      previousEndLocation,
+      previousEndLocationName,
+      startBuildingId: prevStartBuildingId,
+      endBuildingId: prevEndBuildingId,
+    } = route.params ?? {};
 
-    navigation.navigate({
-      name: mapNavigation.ROUTE_SELECTION,
-      params:
-        selectionType === 'start'
-          ? {
-              startLocation: location,
-              startLocationName: name,
-              startBuildingId: buildingId,
-              lastSelectedType: 'start',
-            }
-          : {
-              endLocation: location,
-              endLocationName: name,
-              endBuildingId: buildingId,
-              lastSelectedType: 'end',
-            },
-      merge: true,
-    });
+    if (selectionType === 'start') {
+      navigation.navigate({
+        name: mapNavigation.ROUTE_SELECTION,
+        params: {
+          startLocation: location,
+          startLocationName: name,
+          startBuildingId: buildingId,
+          lastSelectedType: 'start',
+          // 기존 도착 유지
+          endLocation: previousEndLocation,
+          endLocationName: previousEndLocationName,
+          endBuildingId: prevEndBuildingId,
+        },
+        merge: true,
+      });
+    } else {
+      navigation.navigate({
+        name: mapNavigation.ROUTE_SELECTION,
+        params: {
+          endLocation: location,
+          endLocationName: name,
+          endBuildingId: buildingId,
+          lastSelectedType: 'end',
+          // 기존 출발 유지
+          startLocation: previousStartLocation,
+          startLocationName: previousStartLocationName,
+          startBuildingId: prevStartBuildingId,
+        },
+        merge: true,
+      });
+    }
   }
 
   return (
@@ -143,7 +164,7 @@ function SearchScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     if (source === 'selection') {
-                      navigation.dispatch(StackActions.pop(1)); // ← Search만 닫고 바로 RouteSelection 복귀
+                      navigation.dispatch(StackActions.pop(1)); // Search만 닫고 바로 RouteSelection 복귀
                     } else {
                       navigation.goBack();
                     }
@@ -271,7 +292,13 @@ function SearchScreen() {
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       style={styles.item}
-                      onPress={() => onSelect(item.buildingId)}
+                      onPress={() => {
+                        if (source === 'selection' && selectionType) {
+                          applySelectionDirect(item.buildingId); // 선택모드면 바로 반영
+                        } else {
+                          onSelect(item.buildingId); // 일반 흐름(프리뷰 경유)
+                        }
+                      }}
                     >
                       <Text style={styles.itemText}>{item.keyword}</Text>
                       <Text style={styles.tagText}>
