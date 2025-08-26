@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,12 +11,12 @@ import {
   TouchableWithoutFeedback,
   StatusBar,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {colors} from '../../../constants';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
+import { colors } from '../../../constants';
 import CustomButton from '../../../components/CustomButton';
-import inquiryApi, {mapToInquiry} from '../../../api/inquiryApi';
+import inquiryApi, { mapToInquiry } from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -27,7 +27,7 @@ type Navigation = StackNavigationProp<MypageStackParamList, 'InquiryEdit'>;
 function InquiryEditScreen() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute();
-  const {inquiry} = route.params as any;
+  const { inquiry } = route.params as any;
 
   const [title, setTitle] = useState(inquiry.title);
   const [content, setContent] = useState(inquiry.content);
@@ -52,8 +52,8 @@ function InquiryEditScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <AppScreenLayout disableTopInset>
+    <AppScreenLayout disableTopInset>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           <TextInput
             style={styles.titleInput}
@@ -93,7 +93,8 @@ function InquiryEditScreen() {
             animationType="fade"
             transparent
             visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}>
+            onRequestClose={() => setModalVisible(false)}
+          >
             <StatusBar
               backgroundColor="rgba(0,0,0,0.5)"
               barStyle="light-content"
@@ -117,8 +118,8 @@ function InquiryEditScreen() {
             </View>
           </Modal>
         </View>
-      </AppScreenLayout>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </AppScreenLayout>
   );
 }
 
