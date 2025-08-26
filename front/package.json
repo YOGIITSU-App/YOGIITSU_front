@@ -7,6 +7,7 @@
     "ios": "react-native run-ios",
     "android:dev": "ENVFILE=.env.development react-native run-android",
     "android:prod": "ENVFILE=.env.production react-native run-android",
+    "android:install-release": "cd android && ENVFILE=.env.production ./gradlew installRelease",
     "android:release": "cd android && ENVFILE=.env.production ./gradlew assembleRelease",
     "android:aab": "cd android && ENVFILE=.env.production ./gradlew bundleRelease",
     "ios:dev": "ENVFILE=.env.development react-native run-ios",
