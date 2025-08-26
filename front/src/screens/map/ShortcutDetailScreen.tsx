@@ -70,7 +70,6 @@ export default function ShortcutDetailScreen() {
   const handleWebViewMessage = (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
-      console.log('WV MSG:', data);
       if (data.type === 'MAP_READY') {
         setMapReady(true);
       }
@@ -107,6 +106,9 @@ export default function ShortcutDetailScreen() {
     const start = coords[0];
     const end = coords[coords.length - 1];
 
+    const START_ICON_URL = Config.MARKER_START_URL;
+    const END_ICON_URL = Config.MARKER_END_URL;
+
     webRef.current?.postMessage(
       JSON.stringify({ type: 'clearStartEndMarkers' }),
     );
@@ -115,7 +117,7 @@ export default function ShortcutDetailScreen() {
         type: 'setStartMarker',
         lat: start.latitude,
         lng: start.longitude,
-        url: 'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/start-marker.png',
+        url: START_ICON_URL,
         width: 23,
         height: 32,
       }),
@@ -126,7 +128,7 @@ export default function ShortcutDetailScreen() {
           type: 'setEndMarker',
           lat: end.latitude,
           lng: end.longitude,
-          url: 'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/end-marker.png',
+          url: END_ICON_URL,
           width: 23,
           height: 32,
         }),

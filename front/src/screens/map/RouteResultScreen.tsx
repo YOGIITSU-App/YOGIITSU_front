@@ -267,10 +267,8 @@ function RouteResultScreen() {
 
   /** 3) mapLoaded && routePath 준비되면 지도에 그리기 */
   useEffect(() => {
-    const START_ICON_URL =
-      'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/start-marker.png';
-    const END_ICON_URL =
-      'https://yogiitsu.s3.ap-northeast-2.amazonaws.com/marker/end-marker.png';
+    const START_ICON_URL = Config.MARKER_START_URL;
+    const END_ICON_URL = Config.MARKER_END_URL;
 
     webRef.current?.postMessage(
       JSON.stringify({ type: 'clearStartEndMarkers' }),
