@@ -10,6 +10,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   buttonContainer: {
-    padding: 15,
+    padding: Platform.OS === 'ios' ? 45 : 20,
     alignItems: 'center',
     position: 'absolute',
     bottom: 0,

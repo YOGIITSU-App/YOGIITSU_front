@@ -1,4 +1,4 @@
-import React, {useCallback, useLayoutEffect, useState} from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,14 +8,15 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import CustomButton from '../../../components/CustomButton';
-import {colors} from '../../../constants';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {useTabOptions} from '../../../constants/tabOptions';
-import inquiryApi, {mapToInquiry, Inquiry} from '../../../api/inquiryApi';
+import { colors } from '../../../constants';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useTabOptions } from '../../../constants/tabOptions';
+import inquiryApi, { mapToInquiry, Inquiry } from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('screen').width;
@@ -29,10 +30,10 @@ function InquiryScreen() {
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
-    parent?.setOptions({tabBarStyle: {display: 'none'}});
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
 
     return () => {
-      parent?.setOptions({tabBarStyle: tabOptions.tabBarStyle});
+      parent?.setOptions({ tabBarStyle: tabOptions.tabBarStyle });
     };
   }, [navigation]);
 
@@ -88,20 +89,23 @@ function InquiryScreen() {
           ) : (
             <>
               <View style={styles.headerRow}>
-                <Text style={[styles.headerText, {flex: 1}]}>상태</Text>
-                <Text style={[styles.headerText, {flex: 3}]}>제목</Text>
-                <Text style={[styles.headerText, {flex: 1}]}>작성자</Text>
+                <Text style={[styles.headerText, { flex: 1 }]}>상태</Text>
+                <Text style={[styles.headerText, { flex: 3 }]}>제목</Text>
+                <Text style={[styles.headerText, { flex: 1 }]}>작성자</Text>
               </View>
 
               <FlatList
                 data={inquiries}
                 keyExtractor={item => item.id.toString()}
-                renderItem={({item}) => (
+                renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.itemRow}
                     onPress={() =>
-                      navigation.navigate('InquiryDetail', {inquiryId: item.id})
-                    }>
+                      navigation.navigate('InquiryDetail', {
+                        inquiryId: item.id,
+                      })
+                    }
+                  >
                     <View
                       style={[
                         styles.statusBadge,
@@ -111,7 +115,8 @@ function InquiryScreen() {
                               ? colors.GRAY_100
                               : colors.BLUE_100,
                         },
-                      ]}>
+                      ]}
+                    >
                       <Text
                         style={[
                           styles.statusText,
@@ -121,7 +126,8 @@ function InquiryScreen() {
                                 ? colors.GRAY_500
                                 : colors.BLUE_700,
                           },
-                        ]}>
+                        ]}
+                      >
                         {item.status === 'PROCESSING' ? '답변대기' : '답변완료'}
                       </Text>
                     </View>
@@ -155,7 +161,7 @@ function InquiryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
+  container: { flex: 1 },
   spinnerOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.5)',
@@ -251,7 +257,7 @@ const styles = StyleSheet.create({
     height: 38,
   },
   buttonContainer: {
-    padding: 15,
+    padding: Platform.OS === 'ios' ? 45 : 20,
     alignItems: 'center',
   },
 });

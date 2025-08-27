@@ -1,4 +1,4 @@
-import React, {useEffect, useLayoutEffect, useState} from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,14 +8,15 @@ import {
   Dimensions,
   ActivityIndicator,
   StatusBar,
+  Platform,
 } from 'react-native';
-import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {StackNavigationProp} from '@react-navigation/stack';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
+import { StackNavigationProp } from '@react-navigation/stack';
 import CustomBotton from '../../../components/CustomButton';
-import {colors} from '../../../constants';
-import {useUser} from '../../../contexts/UserContext';
-import inquiryApi, {Inquiry, mapToInquiry} from '../../../api/inquiryApi';
+import { colors } from '../../../constants';
+import { useUser } from '../../../contexts/UserContext';
+import inquiryApi, { Inquiry, mapToInquiry } from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
 const deviceWidth = Dimensions.get('window').width;
@@ -26,9 +27,9 @@ type Route = RouteProp<MypageStackParamList, 'InquiryDetail'>;
 function InquiryDetailScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
-  const {user} = useUser();
+  const { user } = useUser();
 
-  const {inquiryId, updated} = route.params;
+  const { inquiryId, updated } = route.params;
 
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,13 +63,14 @@ function InquiryDetailScreen() {
       navigation.setOptions({
         headerRight: () => (
           <Text
-            onPress={() => navigation.navigate('InquiryEdit', {inquiry})}
+            onPress={() => navigation.navigate('InquiryEdit', { inquiry })}
             style={{
               marginRight: 20,
               color: colors.BLUE_700,
               fontSize: 16,
               fontWeight: '600',
-            }}>
+            }}
+          >
             수정
           </Text>
         ),
@@ -87,7 +89,7 @@ function InquiryDetailScreen() {
   if (!inquiry) {
     return (
       <AppScreenLayout disableTopInset>
-        <Text style={{textAlign: 'center'}}>
+        <Text style={{ textAlign: 'center' }}>
           문의 데이터를 불러올 수 없어요
         </Text>
       </AppScreenLayout>
@@ -108,7 +110,8 @@ function InquiryDetailScreen() {
                     ? colors.GRAY_100
                     : colors.BLUE_100,
               },
-            ]}>
+            ]}
+          >
             <Text
               style={[
                 styles.statusText,
@@ -118,7 +121,8 @@ function InquiryDetailScreen() {
                       ? colors.GRAY_500
                       : colors.BLUE_700,
                 },
-              ]}>
+              ]}
+            >
               {inquiry.status === 'PROCESSING' ? '답변대기' : '답변완료'}
             </Text>
           </View>
@@ -165,7 +169,8 @@ function InquiryDetailScreen() {
         animationType="fade"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
+        onRequestClose={() => setModalVisible(false)}
+      >
         <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
@@ -199,8 +204,8 @@ function InquiryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.WHITE},
-  scrollContent: {padding: 20},
+  container: { flex: 1, backgroundColor: colors.WHITE },
+  scrollContent: { padding: 20 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -266,7 +271,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonContainer: {
-    paddingBottom: 20,
+    padding: Platform.OS === 'ios' ? 45 : 20,
     alignItems: 'center',
   },
   modalBackground: {
