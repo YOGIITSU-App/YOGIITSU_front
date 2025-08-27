@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    lineHeight: 22,
+    lineHeight: 20,
     paddingVertical: 0, // 안드로이드 높이 보정
     color: colors.BLACK_500,
     textAlignVertical: 'center',
