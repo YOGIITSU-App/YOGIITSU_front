@@ -530,7 +530,7 @@ function MapHomeScreen() {
             originWhitelist={['*']}
             javaScriptEnabled
             domStorageEnabled
-            style={{ flex: 1, marginTop: -insets.top }}
+            style={{ flex: 1 }}
             cacheEnabled={true}
             cacheMode="LOAD_DEFAULT"
             onLoadEnd={handleWebViewLoad}
