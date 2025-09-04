@@ -1,29 +1,37 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet, ScrollView} from 'react-native';
-import {colors} from '../constants';
-import {defaultFacilityIcon, facilityIconMap} from '../constants/facilityIcons';
+import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { colors } from '../constants';
+import {
+  defaultFacilityIcon,
+  getFacilityIcon,
+} from '../constants/facilityIcons';
 
 type Facility = {
   name: string;
   floor: string;
+  type?: string;
 };
 
 type Props = {
   facilities: Facility[];
 };
 
-export const FacilityBadge = ({facilities}: Props) => {
+export const FacilityBadge = ({ facilities }: { facilities: Facility[] }) => {
   return (
     <View style={styles.wrapper}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.container}>
+        contentContainerStyle={styles.container}
+      >
         {facilities.map(fac => {
-          const icon = facilityIconMap[fac.name] || defaultFacilityIcon;
+          const icon = getFacilityIcon(fac);
           return (
-            <View key={fac.name} style={styles.badge}>
-              <Image source={icon} style={styles.icon} />
+            <View
+              key={`${fac.type ?? fac.name}-${fac.floor}`}
+              style={styles.badge}
+            >
+              <Image source={icon || defaultFacilityIcon} style={styles.icon} />
               <Text style={styles.label} numberOfLines={1}>
                 {fac.name}
               </Text>
