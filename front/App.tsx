@@ -12,13 +12,13 @@ function App() {
   return (
     <SafeAreaProvider>
       <AppInitProvider>
-        <VersionGate
+        {/* <VersionGate
           fallbackConfig={{
             latestVersion: '2.3.8', // 배포하는 버전명
           }}
           snoozeHours={24}
           aggressive={true}
-        />
+        /> */}
         <NavigationContainer>
           <Rootnavigator />
         </NavigationContainer>
