@@ -1,12 +1,29 @@
 import axiosInstance from './axiosInstance';
 
-export type ShuttleSchedule = {
-  nextShuttleTime: string[];
-  timeTable: string[];
-  route: string[];
+export type RemainingStop = {
+  stopId: string;
+  stopName: string;
+  estimatedArrivalTime: string;
 };
 
-export const fetchShuttleSchedule = async (): Promise<ShuttleSchedule> => {
-  const res = await axiosInstance.get('/shuttles/schedule');
+export type UpcomingShuttle = {
+  arrivalTimeAtSelectedStop: string;
+  remainingRoute: RemainingStop[];
+};
+
+export type ShuttleSchedule = {
+  selectedStopId: string;
+  selectedStopName: string;
+  upcomingShuttles: UpcomingShuttle[];
+  fullTimeTable: string[];
+  fullRoute: { stopId: string; stopName: string }[];
+};
+
+export const fetchShuttleSchedule = async (
+  stopId: string,
+): Promise<ShuttleSchedule> => {
+  const url = `/shuttles/schedule/${encodeURIComponent(stopId)}`;
+  console.log('[fetchShuttleSchedule] GET', url);
+  const res = await axiosInstance.get(url);
   return res.data;
 };

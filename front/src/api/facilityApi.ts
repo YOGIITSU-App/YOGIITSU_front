@@ -7,11 +7,12 @@ export type Facility = {
   buildingId: number;
   type: string;
   id: number;
+  stopId?: string;
 };
 
 export const fetchFacilities = async (type: string): Promise<Facility[]> => {
   const res = await axiosInstance.get('/facilities', {
-    params: {type},
+    params: { type },
   });
   return res.data;
 };
