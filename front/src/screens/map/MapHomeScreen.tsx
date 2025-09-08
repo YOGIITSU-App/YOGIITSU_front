@@ -58,6 +58,37 @@ type NavigationProp = StackNavigationProp<
 >;
 type RoutePropType = RouteProp<MapStackParamList, typeof mapNavigation.MAPHOME>;
 
+const FACILITY_ID_TO_STOPID: Record<number, string> = {
+  30: 'STOP_01', // 인문대 승차
+  31: 'STOP_02', // 학생회관 사거리
+  32: 'STOP_03', // ICT 융합대학
+  33: 'STOP_04', // 음악대학
+  34: 'STOP_05', // 제1공학관
+  35: 'STOP_06', // 후문(제4공학관)
+  36: 'STOP_07', // 미술대학(조형관)
+  37: 'STOP_08', // 인문대 하차
+};
+
+const STOP_NAME_TO_STOPID: Record<string, string> = {
+  '인문대 승차': 'STOP_01',
+  '학생회관 사거리': 'STOP_02',
+  'ICT 융합대학': 'STOP_03',
+  음악대학: 'STOP_04',
+  제1공학관: 'STOP_05',
+  '후문(제4공학관)': 'STOP_06',
+  '미술대학(조형관)': 'STOP_07',
+  '인문대 하차': 'STOP_08',
+};
+
+const withStopId = (list: any[]) =>
+  list.map(f => ({
+    ...f,
+    category: f.type,
+    // 1순위: API가 준 stopId, 2순위: 시설 id 매핑, 3순위: 이름 매핑
+    stopId:
+      f.stopId ?? FACILITY_ID_TO_STOPID[f.id] ?? STOP_NAME_TO_STOPID[f.name],
+  }));
+
 function MapHomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
@@ -200,13 +231,15 @@ function MapHomeScreen() {
     if (!mapWebViewRef.current) return;
 
     const filteredFacilities =
-      selectedCategory && facilities.length > 0
-        ? facilities.filter(f => f.type === selectedCategory)
+      facilities.length > 0
+        ? selectedCategory
+          ? facilities.filter(f => f.type === selectedCategory)
+          : facilities
         : [];
 
     const msgFacilities = JSON.stringify({
       type: 'setFacilities',
-      data: filteredFacilities.map(f => ({ ...f, category: f.type })),
+      data: withStopId(filteredFacilities),
     });
 
     mapWebViewRef.current.postMessage(msgFacilities);
@@ -226,7 +259,7 @@ function MapHomeScreen() {
     try {
       const data = JSON.parse(e.nativeEvent.data);
 
-      if (data.type === 'currentLocationSet') {
+      if (data.type === 'currentLocationSet' || data.type === 'mapMoved') {
         if (!announcedRef.current) {
           announcedRef.current = true;
           markMapReady();
@@ -247,9 +280,17 @@ function MapHomeScreen() {
       } else if (data.type === 'shuttleClicked') {
         setLoadingSchedule(true);
         try {
-          const res = await fetchShuttleSchedule();
+          if (!data.stopId) {
+            console.log('[shuttle] stopId missing for', data.name);
+            Alert.alert(
+              '오류',
+              '정류장 정보가 올바르지 않습니다. 잠시 후 다시 시도해주세요.',
+            );
+            return;
+          }
+          const res = await fetchShuttleSchedule(data.stopId);
           setShuttleSchedule(res);
-          setSelectedStopName(data.name);
+          setSelectedStopName(res.selectedStopName ?? data.name);
           setOpenSheet('SHUTTLE');
         } catch (err) {
           Alert.alert('오류', '셔틀버스 스케줄을 불러올 수 없습니다.');
@@ -269,7 +310,7 @@ function MapHomeScreen() {
       mapWebViewRef.current.postMessage(
         JSON.stringify({
           type: 'setFacilities',
-          data: facilities.map(f => ({ ...f, category: f.type })),
+          data: withStopId(facilities),
         }),
       );
     }
@@ -445,7 +486,8 @@ function MapHomeScreen() {
 
     navigation.navigate(mapNavigation.SHUTTLE_DETAIL, {
       shuttleSchedule,
-      selectedTime: shuttleSchedule?.nextShuttleTime?.[0],
+      selectedTime:
+        shuttleSchedule?.upcomingShuttles?.[0]?.arrivalTimeAtSelectedStop,
       currentStopName: selectedStopName,
     });
   };
