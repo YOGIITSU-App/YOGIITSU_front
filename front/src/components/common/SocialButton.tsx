@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 
-type Provider = 'kakao' | 'google';
+type Provider = 'kakao' | 'google' | 'apple';
 
 const META: Record<
   Provider,
@@ -24,17 +24,26 @@ const META: Record<
 > = {
   kakao: {
     label: '카카오 로그인',
-    bg: '#FEE500', // Kakao Yellow (가이드)
-    fg: '#181600', // 다크 텍스트
+    bg: '#FEE500', // Kakao Yellow
+    fg: '#181600',
     border: '#E0C700',
     icon: require('../../assets/brand/kakao.png'),
   },
   google: {
     label: '구글 로그인',
-    bg: '#FFFFFF', // 라이트 버튼 (가이드)
+    bg: '#FFFFFF',
     fg: '#1F1F1F',
     border: '#E5E7EB',
-    icon: require('../../assets/brand/google.png'), // 공식 G 아이콘
+    icon: require('../../assets/brand/google.png'),
+  },
+  apple: {
+    // Apple HIG 권장 문구
+    label: 'Sign in with Apple',
+    bg: '#000000',
+    fg: '#FFFFFF',
+    // 검은 버튼은 보더 없음(투명 보더 처리)
+    // border: undefined,
+    icon: require('../../assets/brand/apple.png'), // 하얀 로고 PNG 준비
   },
 };
 
@@ -98,7 +107,7 @@ export default function SocialButton({
 
 const styles = StyleSheet.create({
   btn: {
-    height: 56,
+    height: 54,
     borderRadius: 12,
     borderWidth: 1,
     paddingLeft: 30,
@@ -108,9 +117,9 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'android' ? { elevation: 0 } : { shadowOpacity: 0 }),
   },
   labelWrap: {
-    height: 24, // 아이콘과 동일 높이
-    justifyContent: 'center', // 수직 중앙
-    alignItems: 'center', // 수평 중앙(버튼이 중앙 정렬이라 깔끔)
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   text: {
     fontSize: 16,
