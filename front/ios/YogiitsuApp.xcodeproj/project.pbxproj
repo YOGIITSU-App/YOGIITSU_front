@@ -24,6 +24,7 @@
 		58763616296E4976B8728880 /* Colors.xcassets */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = folder.assetcatalog; name = Colors.xcassets; path = YogiitsuApp/Colors.xcassets; sourceTree = "<group>"; };
 		58B8D5B610D2A3A0B59BFDC5 /* Pods-YogiitsuApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-YogiitsuApp.release.xcconfig"; path = "Target Support Files/Pods-YogiitsuApp/Pods-YogiitsuApp.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = YogiitsuApp/AppDelegate.swift; sourceTree = "<group>"; };
+		7F2B51682E6ED36A00BE33F2 /* YogiitsuApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = YogiitsuApp.entitlements; path = YogiitsuApp/YogiitsuApp.entitlements; sourceTree = "<group>"; };
 		7FB95A6E2E4E0D4A009E61C7 /* Config.Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.Debug.xcconfig; sourceTree = "<group>"; };
 		7FB95A6F2E4E0D4A009E61C7 /* Config.Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.Release.xcconfig; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = YogiitsuApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -48,6 +49,7 @@
 		13B07FAE1A68108700A75B9A /* YogiitsuApp */ = {
 			isa = PBXGroup;
 			children = (
+				7F2B51682E6ED36A00BE33F2 /* YogiitsuApp.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -279,6 +281,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = YogiitsuApp/YogiitsuApp.entitlements;
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 6ZHJS62M36;
 				ENABLE_BITCODE = NO;
@@ -308,6 +311,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = YogiitsuApp/YogiitsuApp.entitlements;
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 6ZHJS62M36;
 				INFOPLIST_FILE = YogiitsuApp/Info.plist;
