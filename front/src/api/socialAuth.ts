@@ -11,9 +11,26 @@ import {
   getAccessToken as getKakaoAccessToken,
   logout as kakaoLogout,
 } from '@react-native-seoul/kakao-login';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
+import { sha256 } from 'js-sha256';
 
 type Role = 'USER' | 'ADMIN';
 export type LoginOk = { userId: number; role: Role };
+
+function __appleRand(len = 32) {
+  const s = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += s[(Math.random() * s.length) | 0];
+  return out;
+}
+
+type __AppleLoginOk = { userId: number; role: string };
+
+function __joinUrl(base: string, path: string) {
+  return `${base?.replace(/\/+$/, '')}${
+    path.startsWith('/') ? path : `/${path}`
+  }`;
+}
 
 const REQUIRED_ENV = [
   'API_BASE_URL',
@@ -111,6 +128,82 @@ export async function signInWithKakao(): Promise<LoginOk> {
   ]);
 
   return { userId, role } as LoginOk;
+}
+
+export async function signInWithApple(): Promise<__AppleLoginOk> {
+  if (!appleAuth.isSupported) {
+    throw new Error('APPLE_SIGNIN_IOS_ONLY');
+  }
+
+  const rawNonce = __appleRand(32);
+  const hashedNonce = sha256(rawNonce);
+  const state = __appleRand(16);
+
+  const result = await appleAuth.performRequest({
+    requestedOperation: appleAuth.Operation.LOGIN,
+    requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+    nonce: hashedNonce,
+    state,
+  });
+
+  const {
+    user: appleUserId,
+    email,
+    fullName,
+    identityToken,
+    authorizationCode,
+  } = result;
+
+  if (!identityToken) throw new Error('APPLE_NO_IDENTITY_TOKEN');
+
+  const url = __joinUrl(Config.API_BASE_URL as string, '/auth/login/apple');
+  const payload = {
+    identityToken,
+    authorizationCode,
+    rawNonce,
+    state,
+    email: email ?? null,
+    name: fullName
+      ? `${fullName.givenName ?? ''} ${fullName.familyName ?? ''}`.trim()
+      : null,
+    appleUserId,
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`APPLE_LOGIN_HTTP_${resp.status}: ${errText}`);
+  }
+
+  try {
+    const accessToken = resp.headers.get('x-access-token');
+    const refreshToken = resp.headers.get('x-refresh-token');
+
+    if (accessToken) await EncryptedStorage.setItem('accessToken', accessToken);
+    if (refreshToken)
+      await EncryptedStorage.setItem('refreshToken', refreshToken);
+
+    const data = await resp
+      .clone()
+      .json()
+      .catch(() => ({}));
+    if (!accessToken && data?.accessToken) {
+      await EncryptedStorage.setItem('accessToken', data.accessToken);
+    }
+    if (!refreshToken && data?.refreshToken) {
+      await EncryptedStorage.setItem('refreshToken', data.refreshToken);
+    }
+
+    return data as __AppleLoginOk;
+  } catch {
+    const data = (await resp.json().catch(() => ({}))) as any;
+    return data as __AppleLoginOk;
+  }
 }
 
 export async function signOutAll() {
