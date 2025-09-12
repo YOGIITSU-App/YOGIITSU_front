@@ -106,51 +106,40 @@ export default function VersionGate({
 
   useEffect(() => {
     (async () => {
-      // 0) 스누즈 체크 (SOFT에서만 적용)
-      const until = await EncryptedStorage.getItem(SNOOZE_KEY);
-      if (until && Number(until) > Date.now()) return;
-
       let type: 'NONE' | 'SOFT' | 'HARD' = 'NONE';
+      let latestCandidate: string | undefined = fallbackConfig.latestVersion;
 
-      // 1) 서버 정책 우선
       try {
         const policy = await fetchVersionPolicy();
         type = policy.updateType;
-
-        // latest/storeUrl 업데이트 (message는 서버가 절대 안 주므로 프론트 고정 유지)
-        setLatest(policy.latestVersion ?? fallbackConfig.latestVersion);
+        latestCandidate = policy.latestVersion ?? fallbackConfig.latestVersion;
+        setLatest(latestCandidate);
         setStoreUrl(policy.storeUrl);
       } catch {
-        // 2) 실패 시 fallback 비교
         const current = DeviceInfo.getVersion();
         const min = fallbackConfig.minSupportedVersion;
         if (min && cmp(current, min) < 0) type = 'HARD';
         else if (cmp(current, fallbackConfig.latestVersion) < 0) type = 'SOFT';
+        latestCandidate = fallbackConfig.latestVersion;
       }
 
-      // 3) aggressive=false면 동일 latest에 대해 "닫기" 기억
-      if (!aggressive && (type === 'SOFT' || type === 'NONE')) {
-        if (latest) {
-          const dismissed = await EncryptedStorage.getItem(
-            `${DISMISS_KEY_PREFIX}${latest}`,
-          );
-          if (dismissed === '1') return;
-        }
+      if (
+        !aggressive &&
+        (type === 'SOFT' || type === 'NONE') &&
+        latestCandidate
+      ) {
+        const dismissed = await EncryptedStorage.getItem(
+          `${DISMISS_KEY_PREFIX}${latestCandidate}`,
+        );
+        if (dismissed === '1') return;
       }
 
       if (type === 'SOFT' || type === 'HARD') {
         setHard(type === 'HARD');
-        setMessage(defaultMessage ?? DEFAULT_MESSAGE); // 항상 프론트 고정 문구
         setShow(true);
       }
     })();
-  }, [
-    aggressive,
-    fallbackConfig,
-    defaultMessage,
-    iosAppStoreId,
-    androidPackageName,
-  ]);
+  }, [aggressive, fallbackConfig]);
 
   // 강제(HARD)일 때 안드로이드 하드웨어 뒤로가기 차단
   useEffect(() => {
