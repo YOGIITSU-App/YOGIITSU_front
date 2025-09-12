@@ -26,6 +26,8 @@ const hiddenScreens = [
   mapNavigation.ROUTE_SELECTION,
   mapNavigation.ROUTE_RESULT,
   mapNavigation.SHUTTLE_DETAIL,
+  mapNavigation.ACE_MEAL,
+  mapNavigation.AMARANTH_MEAL,
   mapNavigation.SHORTCUT_LIST,
   mapNavigation.SHORTCUT_DETAIL,
 ];
