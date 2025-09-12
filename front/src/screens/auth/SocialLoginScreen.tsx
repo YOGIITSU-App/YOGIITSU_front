@@ -98,13 +98,13 @@ export default function SocialLoginScreen() {
         />
 
         {/* 말풍선 */}
-        <View style={styles.bubbleWrap}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
-          </View>
-          <View style={styles.bubbleTail} />
-        </View>
         <View style={styles.main}>
+          <View style={styles.bubbleWrap}>
+            <View style={styles.bubble}>
+              <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
+            </View>
+            <View style={styles.bubbleTail} />
+          </View>
           {Platform.OS === 'ios' && (
             <SocialButton
               provider="apple"
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandLogo: {
-    flex: 1,
+    flex: 7,
     marginBottom: '5%',
   },
   main: {
@@ -184,8 +184,7 @@ const styles = StyleSheet.create({
   bubbleTail: {
     width: 0,
     height: 0,
-    marginTop: -1,
-    marginBottom: 3,
+    marginBottom: 1,
     borderLeftWidth: 8,
     borderRightWidth: 8,
     borderTopWidth: 10,
@@ -211,6 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   link: {
+    marginTop: 12,
     alignSelf: 'center',
     color: 'white',
     textDecorationLine: 'underline',

@@ -37,8 +37,7 @@ const META: Record<
     icon: require('../../assets/brand/google.png'),
   },
   apple: {
-    // Apple HIG 권장 문구
-    label: 'Sign in with Apple',
+    label: 'Apple로 로그인',
     bg: '#000000',
     fg: '#FFFFFF',
     // 검은 버튼은 보더 없음(투명 보더 처리)
