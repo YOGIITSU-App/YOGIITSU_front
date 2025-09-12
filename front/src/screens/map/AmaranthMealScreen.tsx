@@ -1,5 +1,4 @@
-// screens/map/AmaranthMealScreen.tsx
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -7,27 +6,135 @@ import {
   StyleSheet,
   Pressable,
   Image,
+  ActivityIndicator,
 } from 'react-native';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 import { colors } from '../../constants';
+import { getCafeteriaWeekly, CafeteriaMenuItem } from '../../api/cafeteriaApi';
+
+dayjs.locale('ko');
+
+const BUILDING_ID = 12;
 
 export default function AmaranthMealScreen() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
+    {},
+  );
+  const [available, setAvailable] = useState<number[]>([]);
+  const [ptr, setPtr] = useState(0);
+  const [indexToDate, setIndexToDate] = useState<Record<number, string>>({});
+  const [buildingTitle, setBuildingTitle] = useState('아마란스홀');
+
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getCafeteriaWeekly(BUILDING_ID, ac.signal);
+
+        const grouped: Record<number, CafeteriaMenuItem[]> = {};
+        res.menus.forEach(m => {
+          (grouped[m.dayIndex] ||= []).push(m);
+        });
+
+        const av = (
+          res.availableIndices || Object.keys(grouped).map(Number)
+        ).sort((a, b) => a - b);
+
+        const todayPos = av.indexOf(res.todayIndex);
+        setPtr(todayPos >= 0 ? todayPos : 0);
+
+        const map: Record<number, string> = {};
+        if (res.indexToDate) {
+          Object.entries(res.indexToDate).forEach(
+            ([k, v]) => (map[Number(k)] = v),
+          );
+        } else {
+          const base = new Date(res.weekStart + 'T00:00:00');
+          av.forEach(idx => {
+            const d = new Date(base.getTime() + idx * 86400000);
+            map[idx] = d.toISOString().slice(0, 10);
+          });
+        }
+
+        setByIndex(grouped);
+        setAvailable(av);
+        setIndexToDate(map);
+        const name =
+          res.menus.find(m => !!m.buildingName)?.buildingName || buildingTitle;
+        setBuildingTitle(name);
+      } catch (e) {
+        setError('학식 정보를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => ac.abort();
+  }, []);
+
+  const selectedIndex = useMemo(
+    () => (available.length ? available[ptr] : 0),
+    [available, ptr],
+  );
+  const selectedDateISO = indexToDate[selectedIndex];
+  const dateLabel = selectedDateISO
+    ? dayjs(selectedDateISO).format('M월 D일 dddd')
+    : '';
+  const mealsForSelected = byIndex[selectedIndex] || [];
+
+  // 아마란스: 점심(선택메뉴/공통찬) + 저녁
+  const lunch = mealsForSelected.filter(m => m.mealType?.includes('중식'));
+  const dinner = mealsForSelected.filter(m => m.mealType?.includes('석식'));
+
+  // 선택/공통 분리(점심)
+  const choiceList = lunch.flatMap(m => m.itemsChoice || []);
+  const commonList = lunch.flatMap(m => m.itemsCommon || []);
+  const lunchBody =
+    lunch.length && (choiceList.length || commonList.length)
+      ? null
+      : lunch.flatMap(m => m.items).join(', '); // 선택/공통이 없으면 items로 대체
+
+  const onPrev = () => {
+    if (ptr > 0) setPtr(p => p - 1);
+  };
+  const onNext = () => {
+    if (ptr < available.length - 1) setPtr(p => p + 1);
+  };
+
+  const leftDisabled = ptr <= 0;
+  const rightDisabled = ptr >= available.length - 1;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* 상단 헤더 */}
+      {/* 헤더 */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.buildingTitle}>아마란스홀</Text>
-          <Text style={styles.dateLabel}>9월 8일 월요일</Text>
+          <Text style={styles.buildingTitle}>{buildingTitle}</Text>
+          <Text style={styles.dateLabel}>{dateLabel}</Text>
         </View>
         <View style={styles.dateNavBox}>
-          <Pressable style={styles.navBtn}>
+          <Pressable
+            style={[styles.navBtn, leftDisabled && { opacity: 0.4 }]}
+            onPress={onPrev}
+            disabled={leftDisabled}
+          >
             <Image
               source={require('../../assets/back-icon.png')}
               style={{ width: 7, height: 11 }}
             />
           </Pressable>
           <View style={styles.navDivider} />
-          <Pressable style={styles.navBtn}>
+          <Pressable
+            style={[styles.navBtn, rightDisabled && { opacity: 0.4 }]}
+            onPress={onNext}
+            disabled={rightDisabled}
+          >
             <Image
               source={require('../../assets/back-icon.png')}
               style={{ width: 7, height: 11, transform: [{ scaleX: -1 }] }}
@@ -38,42 +145,59 @@ export default function AmaranthMealScreen() {
 
       {/* 점심 */}
       <Text style={styles.sectionTitle}>점심</Text>
-      <Text style={styles.timeText}>11:30 - 14:00</Text>
+      <Text style={styles.timeText}>11:00 - 14:00</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.subTitle}>선택메뉴</Text>
-        <Text style={styles.menu}>
-          수제돈까스, 햄김치볶음밥, 마제덮밥, 지코바치킨덮밥, 왕새우튀김우동
-        </Text>
+      {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
+      {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
 
-        <View style={styles.divider} />
+      {!loading && !error && (
+        <>
+          <View style={styles.card}>
+            {choiceList.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>선택메뉴</Text>
+                <Text style={styles.menu}>{choiceList.join(', ')}</Text>
+                <View style={styles.divider} />
+              </>
+            )}
+            {commonList.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>공통찬</Text>
+                <Text style={styles.menu}>{commonList.join(', ')}</Text>
+              </>
+            )}
+            {lunchBody && (
+              <>
+                <Text style={styles.menu}>{lunchBody}</Text>
+              </>
+            )}
+            {!choiceList.length && !commonList.length && !lunchBody && (
+              <Text style={styles.menu}>메뉴 준비 중</Text>
+            )}
+          </View>
 
-        <Text style={styles.subTitle}>공통찬</Text>
-        <Text style={styles.menu}>
-          불어묵강정, 숙주오이무침, 배추김치, 가쓰오장국
-        </Text>
-      </View>
+          {/* 저녁 */}
+          <View style={{ height: 32 }} />
+          <View style={styles.cardBox}>
+            <Text style={styles.sectionTitle}>저녁</Text>
+            <Text style={styles.timeText}>18:00 - 19:00</Text>
 
-      <View style={{ height: 32 }} />
+            <View style={styles.card}>
+              <Text style={styles.menu}>
+                {dinner.length
+                  ? dinner.flatMap(m => m.items).join(', ')
+                  : '메뉴 준비 중'}
+              </Text>
+            </View>
+          </View>
 
-      {/* 저녁 */}
-      <View style={styles.cardBox}>
-        <Text style={styles.sectionTitle}>저녁</Text>
-        <Text style={styles.timeText}>18:00 - 19:00</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.menu}>
-            햄모듬김치찌개, 백미밥, 너비아니파채무침, 불닭팽이버섯찜,
-            모듬콩조림, 배추김치
-          </Text>
-        </View>
-      </View>
-
-      {/* 이용 안내 */}
-      <Text style={styles.infoTitle}>이용안내</Text>
-      <Text style={styles.infoSubTitle}>학생식당</Text>
-      <Text style={styles.infoText}>Mom’s Cook : 6,500원</Text>
-      <Text style={styles.infoText}>돈까스코너 : 6,500원</Text>
+          {/* 이용 안내(고정) */}
+          <Text style={styles.infoTitle}>이용안내</Text>
+          <Text style={styles.infoSubTitle}>학생식당</Text>
+          <Text style={styles.infoText}>Mom’s Cook : 6,500원</Text>
+          <Text style={styles.infoText}>돈까스코너 : 6,500원</Text>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -86,7 +210,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24, // Ace와 동일
+    marginBottom: 24,
   },
   buildingTitle: {
     fontSize: 20,
@@ -112,7 +236,7 @@ const styles = StyleSheet.create({
   },
   navDivider: {
     width: 1,
-    alignSelf: 'stretch', // 부모 높이에 맞춤 (Ace와 동일)
+    alignSelf: 'stretch',
     backgroundColor: '#EBEDF0',
   },
   sectionTitle: {
@@ -125,10 +249,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.GRAY_500,
-    marginBottom: 18, // Ace와 동일
+    marginBottom: 18,
   },
   cardBox: {
-    marginBottom: 46, // Ace와 동일 섹션 간 간격
+    marginBottom: 46,
   },
   card: {
     backgroundColor: '#fff',
