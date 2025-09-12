@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MapStackParamList} from '../../navigations/stack/MapStackNavigator';
-import {colors} from '../../constants';
-import {fetchShortcuts, ShortcutSummary} from '../../api/shortcutApi';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MapStackParamList } from '../../navigations/stack/MapStackNavigator';
+import { colors } from '../../constants';
+import { fetchShortcuts, ShortcutSummary } from '../../api/shortcutApi';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 
 type NavigationProp = StackNavigationProp<MapStackParamList, 'ShortcutList'>;
@@ -58,13 +58,14 @@ export default function ShortcutListScreen() {
     }
   };
 
-  const renderItem = ({item}: {item: ShortcutSummary}) => (
+  const renderItem = ({ item }: { item: ShortcutSummary }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => {
-        navigation.navigate('ShortcutDetail', {shortcutId: item.shortcutId});
+        navigation.navigate('ShortcutDetail', { shortcutId: item.shortcutId });
         console.log(item.shortcutId);
-      }}>
+      }}
+    >
       <View style={styles.iconWrapper}>
         <Image source={getIcon(item.shortcutId)} style={styles.icon} />
       </View>
@@ -90,9 +91,9 @@ export default function ShortcutListScreen() {
           </View>
         ) : error ? (
           <View style={styles.loading}>
-            <Text style={{color: 'red', marginBottom: 10}}>{error}</Text>
+            <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>
             <TouchableOpacity onPress={handleRetry}>
-              <Text style={{color: colors.BLUE_700, fontWeight: 'bold'}}>
+              <Text style={{ color: colors.BLUE_700, fontWeight: 'bold' }}>
                 재시도
               </Text>
             </TouchableOpacity>
@@ -113,6 +114,7 @@ export default function ShortcutListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.GRAY_100,
   },
   loading: {
     flex: 1,
@@ -129,10 +131,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#EBEDF0',
   },
   iconWrapper: {
     width: 55,

@@ -7,9 +7,7 @@ import {
   Alert,
   Platform,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { authNavigations, colors } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
@@ -20,15 +18,13 @@ import {
   signInWithApple,
 } from '../../api/socialAuth';
 import SocialButton from '../../components/common/SocialButton';
+import AppScreenLayout from '../../components/common/AppScreenLayout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SocialLoginScreen() {
   const navigation = useNavigation<any>();
   const { login } = useUser();
   const insets = useSafeAreaInsets();
-  const { height: H } = useWindowDimensions();
-
-  // 화면이 아주 작아도 무너질 수치 방지 + 살짝 위로 당김
-  const safeMinHeight = Math.max(620, H - insets.top - insets.bottom - 16);
 
   const [loading, setLoading] = useState<null | 'kakao' | 'google' | 'apple'>(
     null,
@@ -84,33 +80,31 @@ export default function SocialLoginScreen() {
   };
 
   return (
-    <ScrollView
-      bounces={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[
-        styles.scroll,
-        { minHeight: safeMinHeight, paddingBottom: insets.bottom + 12 },
-      ]}
-    >
-      <View style={styles.container}>
-        <View style={styles.empty} />
-        <View style={styles.header}>
-          <Image
-            source={require('../../assets/bootsplash/logo.png')}
-            style={styles.brandLogo}
-            resizeMode="contain"
-            accessible
-            accessibilityLabel="요기있수"
-          />
+    <AppScreenLayout disableTopInset>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: 24 + insets.bottom },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 상단 카피 */}
+        <Image
+          source={require('../../assets/bootsplash/logo.png')}
+          style={styles.brandLogo}
+          resizeMode="contain"
+          accessible
+          accessibilityLabel="요기있수"
+        />
+
+        {/* 말풍선 */}
+        <View style={styles.bubbleWrap}>
+          <View style={styles.bubble}>
+            <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
+          </View>
+          <View style={styles.bubbleTail} />
         </View>
         <View style={styles.main}>
-          <View style={styles.bubbleWrap}>
-            <View style={styles.bubble}>
-              <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
-            </View>
-            <View style={styles.bubbleTail} />
-          </View>
-
           {Platform.OS === 'ios' && (
             <SocialButton
               provider="apple"
@@ -131,47 +125,38 @@ export default function SocialLoginScreen() {
             loading={loading === 'google'}
             disabled={loading !== null}
           />
-          <View style={styles.orWrap}>
-            <View style={styles.orLine} />
-            <Text style={styles.orText}>또는</Text>
-            <View style={styles.orLine} />
-          </View>
-          <Text
-            style={styles.link}
-            onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
-          >
-            ID 로그인/회원가입
-          </Text>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* 구분선 + 링크 */}
+        <View style={styles.orWrap}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>또는</Text>
+          <View style={styles.orLine} />
+        </View>
+
+        <Text
+          style={styles.link}
+          onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
+        >
+          ID 로그인/회원가입
+        </Text>
+      </ScrollView>
+    </AppScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  container: {
     flexGrow: 1,
     backgroundColor: colors.BLUE_700,
     paddingHorizontal: 20,
-    paddingTop: 18,
-  },
-  container: {
-    flexGrow: 1,
-  },
-  empty: {
-    flex: 2,
-  },
-  header: {
-    flex: 6,
+    paddingTop: 64,
+    paddingBottom: 24,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   brandLogo: {
-    width: '70%',
-    maxWidth: 360,
-    aspectRatio: 2.2,
-    maxHeight: 180,
-    alignSelf: 'center',
+    flex: 1,
+    marginBottom: '5%',
   },
   main: {
     flex: 1,
