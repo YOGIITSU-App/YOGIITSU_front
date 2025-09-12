@@ -10,16 +10,21 @@ import {
 } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { colors } from '../../constants';
 import { getCafeteriaWeekly, CafeteriaMenuItem } from '../../api/cafeteriaApi';
 
 dayjs.locale('ko');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const BUILDING_ID = 5;
 
 export default function AceMealScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tz, setTz] = useState('Asia/Seoul');
 
   // index → 메뉴목록
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
@@ -36,7 +41,10 @@ export default function AceMealScreen() {
 
   useEffect(() => {
     const ac = new AbortController();
+    let canceled = false;
+
     (async () => {
+      if (canceled) return;
       setLoading(true);
       setError(null);
       try {
@@ -53,39 +61,62 @@ export default function AceMealScreen() {
           res.availableIndices || Object.keys(grouped).map(Number)
         ).sort((a, b) => a - b);
 
-        // 포인터 초기화: available 안에서 todayIndex의 위치
-        const todayPos = av.indexOf(res.todayIndex);
-        setPtr(todayPos >= 0 ? todayPos : 0);
-
-        // date 매핑
+        // index → date 매핑 (tz 반영)
         const map: Record<number, string> = {};
         if (res.indexToDate) {
           Object.entries(res.indexToDate).forEach(
             ([k, v]) => (map[Number(k)] = v),
           );
         } else {
-          const base = new Date(res.weekStart + 'T00:00:00');
+          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul'); // ← 여기!
           av.forEach(idx => {
-            const d = new Date(base.getTime() + idx * 86400000);
-            map[idx] = d.toISOString().slice(0, 10);
+            map[idx] = base.add(idx, 'day').format('YYYY-MM-DD');
           });
         }
+
+        // 초기 포인터: todayIndex가 없거나 주말이면 가까운 평일로 클램프
+        const todayPos = av.indexOf((res.todayIndex as number) ?? -999);
+        const initialPtr = (() => {
+          if (todayPos >= 0) return todayPos;
+          const dates = av.map(i => map[i]).sort(); // ISO 문자열 정렬
+          if (dates.length === 0) return 0;
+          const todayISO = (res.serverTime || new Date().toISOString()).slice(
+            0,
+            10,
+          );
+          if (todayISO <= dates[0]) return 0;
+          if (todayISO >= dates[dates.length - 1]) return dates.length - 1;
+          const k = dates.findIndex(d => d >= todayISO);
+          return k === -1 ? dates.length - 1 : k;
+        })();
+
+        if (canceled || ac.signal.aborted) return;
 
         setByIndex(grouped);
         setAvailable(av);
         setIndexToDate(map);
+        setPtr(initialPtr);
+        setTz(res.tz || 'Asia/Seoul');
+
         // 빌딩명(첫 항목 기준)
         const name =
           res.menus.find(m => !!m.buildingName)?.buildingName || buildingTitle;
         setBuildingTitle(name);
       } catch (e) {
-        setError('학식 정보를 불러오지 못했습니다.');
+        if (!canceled && !ac.signal.aborted) {
+          setError('학식 정보를 불러오지 못했습니다.');
+        }
       } finally {
-        setLoading(false);
+        if (!canceled && !ac.signal.aborted) {
+          setLoading(false);
+        }
       }
     })();
 
-    return () => ac.abort();
+    return () => {
+      canceled = true;
+      ac.abort();
+    };
   }, []);
 
   const selectedIndex = useMemo(
@@ -95,7 +126,7 @@ export default function AceMealScreen() {
 
   const selectedDateISO = indexToDate[selectedIndex];
   const dateLabel = selectedDateISO
-    ? dayjs(selectedDateISO).format('M월 D일 dddd')
+    ? dayjs.tz(selectedDateISO, tz).format('M월 D일 dddd')
     : '';
 
   const mealsForSelected = byIndex[selectedIndex] || [];
@@ -168,7 +199,7 @@ export default function AceMealScreen() {
                       [...(m.items || []), ...(m.itemsCommon || [])].join(', '),
                     )
                     .join('\n')
-                : '매뉴 준비 중'}
+                : '메뉴 준비 중'}
             </Text>
           </View>
 

@@ -10,16 +10,21 @@ import {
 } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { colors } from '../../constants';
 import { getCafeteriaWeekly, CafeteriaMenuItem } from '../../api/cafeteriaApi';
 
 dayjs.locale('ko');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const BUILDING_ID = 12;
 
 export default function AmaranthMealScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tz, setTz] = useState('Asia/Seoul');
 
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
     {},
@@ -31,7 +36,10 @@ export default function AmaranthMealScreen() {
 
   useEffect(() => {
     const ac = new AbortController();
+    let canceled = false;
+
     (async () => {
+      if (canceled) return;
       setLoading(true);
       setError(null);
       try {
@@ -49,19 +57,20 @@ export default function AmaranthMealScreen() {
         const todayPos = av.indexOf(res.todayIndex);
         setPtr(todayPos >= 0 ? todayPos : 0);
 
+        setTz(res.tz || 'Asia/Seoul');
+
         const map: Record<number, string> = {};
         if (res.indexToDate) {
-          Object.entries(res.indexToDate).forEach(
-            ([k, v]) => (map[Number(k)] = v),
-          );
+          Object.entries(res.indexToDate).forEach(([k, v]) => (map[+k] = v));
         } else {
-          const base = new Date(res.weekStart + 'T00:00:00');
+          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul'); // ← 여기!
           av.forEach(idx => {
-            const d = new Date(base.getTime() + idx * 86400000);
-            map[idx] = d.toISOString().slice(0, 10);
+            map[idx] = base.add(idx, 'day').format('YYYY-MM-DD');
           });
         }
+        setIndexToDate(map);
 
+        if (canceled || ac.signal.aborted) return;
         setByIndex(grouped);
         setAvailable(av);
         setIndexToDate(map);
@@ -69,13 +78,20 @@ export default function AmaranthMealScreen() {
           res.menus.find(m => !!m.buildingName)?.buildingName || buildingTitle;
         setBuildingTitle(name);
       } catch (e) {
-        setError('학식 정보를 불러오지 못했습니다.');
+        if (!canceled && !ac.signal.aborted) {
+          setError('학식 정보를 불러오지 못했습니다.');
+        }
       } finally {
-        setLoading(false);
+        if (!canceled && !ac.signal.aborted) {
+          setLoading(false);
+        }
       }
     })();
 
-    return () => ac.abort();
+    return () => {
+      canceled = true;
+      ac.abort();
+    };
   }, []);
 
   const selectedIndex = useMemo(
@@ -84,7 +100,7 @@ export default function AmaranthMealScreen() {
   );
   const selectedDateISO = indexToDate[selectedIndex];
   const dateLabel = selectedDateISO
-    ? dayjs(selectedDateISO).format('M월 D일 dddd')
+    ? dayjs.tz(selectedDateISO, tz).format('M월 D일 dddd')
     : '';
   const mealsForSelected = byIndex[selectedIndex] || [];
 
