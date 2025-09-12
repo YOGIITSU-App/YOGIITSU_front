@@ -54,9 +54,6 @@ export default function AmaranthMealScreen() {
           res.availableIndices || Object.keys(grouped).map(Number)
         ).sort((a, b) => a - b);
 
-        const todayPos = av.indexOf(res.todayIndex);
-        setPtr(todayPos >= 0 ? todayPos : 0);
-
         setTz(res.tz || 'Asia/Seoul');
 
         const map: Record<number, string> = {};
@@ -69,6 +66,22 @@ export default function AmaranthMealScreen() {
           });
         }
         setIndexToDate(map);
+
+        const todayPos = av.indexOf((res.todayIndex as number) ?? -999);
+        const initialPtr = (() => {
+          if (todayPos >= 0) return todayPos;
+          const dates = av.map(i => map[i]).sort(); // ISO 문자열
+          if (dates.length === 0) return 0;
+          const todayISO = (res.serverTime || new Date().toISOString()).slice(
+            0,
+            10,
+          );
+          if (todayISO <= dates[0]) return 0;
+          if (todayISO >= dates[dates.length - 1]) return dates.length - 1;
+          const k = dates.findIndex(d => d >= todayISO);
+          return k === -1 ? dates.length - 1 : k;
+        })();
+        setPtr(initialPtr);
 
         if (canceled || ac.signal.aborted) return;
         setByIndex(grouped);
