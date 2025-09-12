@@ -7,10 +7,12 @@ import {
   BackHandler,
   Linking,
   Platform,
+  Image,
 } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { fetchVersionPolicy } from '../../api/versionApi';
+import { colors } from '../../constants';
 
 type RemoteConfig = {
   minSupportedVersion?: string; // fallback 강제 기준(미만이면 HARD)
@@ -112,7 +114,7 @@ export default function VersionGate({
 
       // 1) 서버 정책 우선
       try {
-        const policy = await fetchVersionPolicy(); // updateType: 'NONE' | 'SOFT' | 'HARD' 로 정규화되어 있다고 가정
+        const policy = await fetchVersionPolicy();
         type = policy.updateType;
 
         // latest/storeUrl 업데이트 (message는 서버가 절대 안 주므로 프론트 고정 유지)
@@ -142,8 +144,6 @@ export default function VersionGate({
         setShow(true);
       }
     })();
-    // latest를 의존성에서 제거하여 setLatest 후 반복 호출 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     aggressive,
     fallbackConfig,
@@ -184,55 +184,110 @@ export default function VersionGate({
           backgroundColor: 'rgba(0,0,0,0.6)',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20,
+          padding: 25,
         }}
       >
         <View
           style={{
             backgroundColor: '#fff',
-            borderRadius: 16,
-            padding: 20,
+            borderRadius: 6,
+            padding: 24,
             width: '100%',
             maxWidth: 420,
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 14 }}>
+          {hard ? (
+            <Image
+              source={require('../../assets/Warning-icon-blue.png')}
+              style={{ width: 28, height: 28, marginBottom: 18 }}
+            />
+          ) : (
+            <Image
+              source={require('../../assets/Warning-icon-gray.png')}
+              style={{ width: 28, height: 28, marginBottom: 18 }}
+            />
+          )}
+
+          {/* 제목 */}
+          <Text
+            style={{
+              color: colors.BLACK_700,
+              fontSize: 18,
+              fontWeight: '600',
+              marginBottom: 13,
+            }}
+          >
             {hard ? '업데이트 필요' : '업데이트 권장'}
           </Text>
+
+          {/* 메시지 */}
           <Text
             style={{
               fontSize: 14,
-              color: '#444',
-              marginBottom: 16,
+              color: '#999',
+              fontWeight: '600',
+              marginBottom: 30,
               textAlign: 'center',
+              lineHeight: 20,
             }}
           >
             {message}
           </Text>
 
-          <TouchableOpacity
-            onPress={onUpdate}
-            style={{ paddingVertical: 10, paddingHorizontal: 14 }}
-          >
-            <Text style={{ fontWeight: '700' }}>스토어로 이동</Text>
-          </TouchableOpacity>
-
-          {!hard && (
-            <>
+          {/* 버튼 영역 */}
+          {hard ? (
+            // HARD 모드
+            <TouchableOpacity
+              onPress={onUpdate}
+              style={{
+                backgroundColor: colors.BLUE_700,
+                borderRadius: 8,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                width: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600' }}>
+                스토어로 이동
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            // SOFT 모드
+            <View style={{ flexDirection: 'row', width: '100%' }}>
               <TouchableOpacity
                 onPress={onLater}
-                style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.GRAY_700,
+                  borderRadius: 6,
+                  paddingVertical: 16,
+                  marginRight: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <Text>나중에</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>나중에</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={onCloseThisVersion}
-                style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+                onPress={onUpdate}
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.BLUE_700,
+                  borderRadius: 8,
+                  paddingVertical: 12,
+                  marginLeft: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <Text>닫기</Text>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  스토어로 이동
+                </Text>
               </TouchableOpacity>
-            </>
+            </View>
           )}
         </View>
       </View>
