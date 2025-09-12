@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { authNavigations, colors } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
@@ -10,8 +10,10 @@ import {
 } from '../../api/socialAuth';
 import SocialButton from '../../components/common/SocialButton';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SocialLoginScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { login } = useUser();
   const [loading, setLoading] = useState<null | 'kakao' | 'google'>(null);
@@ -48,7 +50,13 @@ export default function SocialLoginScreen() {
 
   return (
     <AppScreenLayout disableTopInset>
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: 24 + insets.bottom },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* 상단 카피 */}
         <Image
           source={require('../../assets/bootsplash/logo.png')}
@@ -96,14 +104,14 @@ export default function SocialLoginScreen() {
         >
           ID 로그인/회원가입
         </Text>
-      </View>
+      </ScrollView>
     </AppScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: colors.BLUE_700,
     paddingHorizontal: 20,
     paddingTop: 64,
@@ -111,7 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandLogo: {
-    height: '55%',
+    flex: 1,
     marginBottom: '5%',
   },
   bubbleWrap: {
