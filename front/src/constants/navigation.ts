@@ -20,6 +20,7 @@ const mapNavigation = {
   AMARANTH_MEAL: 'AmaranthMealScreen',
   SHORTCUT_LIST: 'ShortcutList',
   SHORTCUT_DETAIL: 'ShortcutDetail',
+  COLLEGE_LIST: 'CollegeList',
 } as const;
 
 export { authNavigations, mapNavigation };
