@@ -25,6 +25,11 @@ export default function CollegeListScreen() {
       try {
         const res = await getAllBuildings();
         setData(res);
+      } catch (e) {
+        Alert.alert(
+          '에러',
+          '건물 목록을 불러오지 못했습니다. 다시 시도해 주세요.',
+        );
       } finally {
         setLoading(false);
       }
