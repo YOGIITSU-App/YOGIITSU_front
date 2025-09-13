@@ -2,17 +2,21 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image, Text, TouchableOpacity } from 'react-native';
 import {
   getFocusedRouteNameFromRoute,
+  NavigatorScreenParams,
   useNavigationState,
 } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import MapStackNavigator from '../stack/MapStackNavigator';
+import MapStackNavigator, {
+  MapStackParamList,
+} from '../stack/MapStackNavigator';
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import { useTabOptions } from '../../constants/tabOptions';
 import { colors, mapNavigation } from '../../constants';
 
 export type BottomTabParamList = {
-  홈: undefined;
+  홈: NavigatorScreenParams<MapStackParamList> | undefined;
   즐겨찾기: undefined;
+  단과대: undefined;
   MY: undefined;
 };
 
@@ -30,14 +34,19 @@ const hiddenScreens = [
   mapNavigation.AMARANTH_MEAL,
   mapNavigation.SHORTCUT_LIST,
   mapNavigation.SHORTCUT_DETAIL,
+  mapNavigation.COLLEGE_LIST,
 ];
 
 export default function BottomTabNavigator() {
-  const [selectedTab, setSelectedTab] = useState<'홈' | '즐겨찾기' | 'MY'>(
-    '홈',
-  );
+  const [selectedTab, setSelectedTab] = useState<
+    '홈' | '즐겨찾기' | '단과대' | 'MY'
+  >('홈');
   const navState = useNavigationState(state => state);
   const tabOptions = useTabOptions();
+
+  function Empty() {
+    return null;
+  }
 
   useEffect(() => {
     const currentRoute = navState.routes[navState.index]?.name;
@@ -56,7 +65,10 @@ export default function BottomTabNavigator() {
     };
   }, []);
 
-  const createTabButton = (props: any, label: '홈' | '즐겨찾기' | 'MY') => {
+  const createTabButton = (
+    props: any,
+    label: '홈' | '즐겨찾기' | '단과대' | 'MY',
+  ) => {
     const isFocused = selectedTab === label;
     const handlePress = () => {
       if (label === '즐겨찾기') {
@@ -65,6 +77,10 @@ export default function BottomTabNavigator() {
           setSelectedTab('즐겨찾기');
           globalThis.openFavoriteBottomSheet?.();
         });
+      } else if (label === '단과대') {
+        setSelectedTab('홈');
+        globalThis.closeFavoriteBottomSheet?.();
+        props.onPress?.();
       } else {
         setSelectedTab(label);
         globalThis.closeFavoriteBottomSheet?.();
@@ -77,6 +93,8 @@ export default function BottomTabNavigator() {
         ? require('../../assets/Home.png')
         : label === '즐겨찾기'
         ? require('../../assets/Favorite.png')
+        : label === '단과대'
+        ? require('../../assets/College.png')
         : require('../../assets/MyPage.png');
 
     return (
@@ -145,6 +163,17 @@ export default function BottomTabNavigator() {
           tabPress: e => {
             e.preventDefault();
             navigation.navigate('홈');
+          },
+        })}
+      />
+      <BottomTab.Screen
+        name="단과대"
+        component={Empty}
+        options={{ tabBarButton: props => createTabButton(props, '단과대') }}
+        listeners={({ navigation }) => ({
+          tabPress: e => {
+            e.preventDefault();
+            navigation.navigate('홈', { screen: mapNavigation.COLLEGE_LIST });
           },
         })}
       />
