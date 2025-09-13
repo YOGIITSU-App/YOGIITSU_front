@@ -99,6 +99,7 @@ export default function CollegeListScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: colors.GRAY_100,
   },
   card: {
