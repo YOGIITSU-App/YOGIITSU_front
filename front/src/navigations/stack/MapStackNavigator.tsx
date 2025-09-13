@@ -13,6 +13,7 @@ import ShuttleDetailScreen from '../../screens/map/ShuttleDetailScreen';
 import { ShuttleSchedule } from '../../api/shuttleApi';
 import AceMealScreen from '../../screens/map/AceMealScreen';
 import AmaranthMealScreen from '../../screens/map/AmaranthMealScreen';
+import CollegeListScreen from '../../screens/map/CollegeListScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -89,6 +90,7 @@ export type MapStackParamList = {
   };
   [mapNavigation.ACE_MEAL]: undefined;
   [mapNavigation.AMARANTH_MEAL]: undefined;
+  [mapNavigation.COLLEGE_LIST]: undefined;
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -176,6 +178,15 @@ function MapStackNavigator() {
         name={mapNavigation.SHORTCUT_DETAIL}
         component={ShortcutDetailScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={mapNavigation.COLLEGE_LIST}
+        component={CollegeListScreen}
+        options={{
+          title: '전체 단과대',
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerTitleAlign: 'center',
+        }}
       />
     </Stack.Navigator>
   );
