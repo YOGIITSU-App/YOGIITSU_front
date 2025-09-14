@@ -118,8 +118,14 @@
 
 ###  📱 Frontend
 
-- **프레임워크:** React Native
-- **API:** Kakao Map API, TMap 보행자 경로 탐색 API
+- **Framework**: React Native (TypeScript, v0.80.2)  
+- **Navigation**: `@react-navigation/*` (Stack/Bottom Tabs)  
+- **UI/UX**: `@gorhom/bottom-sheet`, `react-native-reanimated`, `react-native-gesture-handler`  
+- **Networking**: `axios` (인터셉터 기반 JWT 토큰 처리)  
+- **Env 관리**: `react-native-config`  
+- **Maps & Routing**: Kakao Map (WebView + JS Bridge), **TMap 보행자 경로 API**  
+- **Auth**: 자체 로그인 (이메일/비밀번호) + Google / Kakao / Apple 소셜 로그인 (JWT 연동) 
+- **State 관리**: React Context + 커스텀 훅 (예: `useSelectBuilding`, `useAuth`)
 
 ###  🖥️ Backend
 
