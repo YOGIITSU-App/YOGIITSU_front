@@ -11,6 +11,7 @@ import {
   getAccessToken as getKakaoAccessToken,
   logout as kakaoLogout,
 } from '@react-native-seoul/kakao-login';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
 
 type Role = 'USER' | 'ADMIN';
 export type LoginOk = { userId: number; role: Role };
@@ -39,15 +40,15 @@ export function configureSocial() {
   });
 }
 
-async function saveTokensFromHeaders(headers: any) {
-  const raw = headers?.authorization ?? headers?.Authorization;
-  const access =
-    raw && String(raw).startsWith('Bearer ') ? String(raw).slice(7) : undefined;
-  const refresh = headers?.['x-refresh-token'] ?? headers?.['X-Refresh-Token'];
-  if (!access || !refresh) throw new Error('TOKEN_MISSING');
+async function saveTokensFromHeaders(headers: Record<string, any>) {
+  const auth = headers['authorization'] ?? headers['Authorization'];
+  const access = parseBearer(auth) ?? headers['x-access-token'];
+  const refresh = headers['x-refresh-token'];
+  if (!access || !refresh) throw new Error('HEADER_TOKENS_MISSING');
+
   await Promise.all([
-    EncryptedStorage.setItem('accessToken', access),
-    EncryptedStorage.setItem('refreshToken', refresh),
+    EncryptedStorage.setItem('accessToken', String(access)),
+    EncryptedStorage.setItem('refreshToken', String(refresh)),
   ]);
 }
 
@@ -111,6 +112,63 @@ export async function signInWithKakao(): Promise<LoginOk> {
   ]);
 
   return { userId, role } as LoginOk;
+}
+
+function parseBearer(s?: string | null) {
+  if (!s) return null;
+  const parts = s.split(' ');
+  return parts.length === 2 ? parts[1] : s;
+}
+
+export async function signInWithApple(): Promise<LoginOk | null> {
+  // 1) Apple 로그인
+  const r = await appleAuth.performRequest({
+    requestedOperation: appleAuth.Operation.LOGIN,
+    requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+  });
+  const { authorizationCode } = r;
+  if (!authorizationCode) throw new Error('NO_AUTHORIZATION_CODE');
+
+  // 2) 서버 교환 (axios 일원화: 인터셉터/타임아웃 활용)
+  const res = await authApi.post('/auth/apple', { authorizationCode });
+
+  // 3) 토큰 저장: 헤더 우선, 실패 시 바디 폴백. 둘 다 없으면 에러
+  let saved = false;
+  try {
+    await saveTokensFromHeaders(res.headers as any);
+    saved = true;
+  } catch {
+    const data: any = res.data ?? {};
+    const bAccess = data.accessToken ?? data.token;
+    const bRefresh = data.refreshToken ?? data.refresh;
+    if (bAccess && bRefresh) {
+      await Promise.all([
+        EncryptedStorage.setItem('accessToken', String(bAccess)),
+        EncryptedStorage.setItem('refreshToken', String(bRefresh)),
+      ]);
+      saved = true;
+    }
+  }
+  if (!saved) throw new Error('TOKEN_MISSING');
+
+  // 4) 사용자/역할 추출 & 저장 (기본값 강제하지 않음)
+  const data: any = res.data ?? {};
+  const userId = data.userId ?? data.user?.userId ?? data.user?.id ?? data.id;
+  const roleRaw = data.role ?? data.user?.role ?? data.userRole;
+
+  if (userId != null) {
+    await EncryptedStorage.setItem('userId', String(userId));
+  }
+  if (roleRaw) {
+    const role = (
+      String(roleRaw).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER'
+    ) as Role;
+    await EncryptedStorage.setItem('role', role);
+    return { userId: Number(userId), role };
+  }
+
+  // role이 없으면 null 반환하여 상위에서 처리(서버 이슈 노출)
+  return null;
 }
 
 export async function signOutAll() {
