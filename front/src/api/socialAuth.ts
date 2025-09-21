@@ -40,15 +40,15 @@ export function configureSocial() {
   });
 }
 
-async function saveTokensFromHeaders(headers: any) {
-  const raw = headers?.authorization ?? headers?.Authorization;
-  const access =
-    raw && String(raw).startsWith('Bearer ') ? String(raw).slice(7) : undefined;
-  const refresh = headers?.['x-refresh-token'] ?? headers?.['X-Refresh-Token'];
-  if (!access || !refresh) throw new Error('TOKEN_MISSING');
+async function saveTokensFromHeaders(headers: Record<string, any>) {
+  const auth = headers['authorization'] ?? headers['Authorization'];
+  const access = parseBearer(auth) ?? headers['x-access-token'];
+  const refresh = headers['x-refresh-token'];
+  if (!access || !refresh) throw new Error('HEADER_TOKENS_MISSING');
+
   await Promise.all([
-    EncryptedStorage.setItem('accessToken', access),
-    EncryptedStorage.setItem('refreshToken', refresh),
+    EncryptedStorage.setItem('accessToken', String(access)),
+    EncryptedStorage.setItem('refreshToken', String(refresh)),
   ]);
 }
 
@@ -121,7 +121,7 @@ function parseBearer(s?: string | null) {
 }
 
 export async function signInWithApple(): Promise<LoginOk | null> {
-  // 1) 애플 로그인
+  // 1) Apple 로그인
   const r = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
@@ -129,50 +129,46 @@ export async function signInWithApple(): Promise<LoginOk | null> {
   const { authorizationCode } = r;
   if (!authorizationCode) throw new Error('NO_AUTHORIZATION_CODE');
 
-  // 2) 서버 교환
-  const resp = await fetch(`${Config.API_BASE_URL}/auth/apple`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ authorizationCode }),
-  });
-  const txt = await resp.text().catch(() => '');
-  if (!resp.ok)
-    throw new Error(`APPLE_LOGIN_HTTP_${resp.status}: ${txt || ''}`);
+  // 2) 서버 교환 (axios 일원화: 인터셉터/타임아웃 활용)
+  const res = await authApi.post('/auth/apple', { authorizationCode });
 
-  // 3) 헤더/바디에서 토큰/유저정보 모두 시도해서 추출
-  // 헤더(access)
-  const hAuth =
-    resp.headers.get('authorization') || resp.headers.get('Authorization');
-  const hAccess = parseBearer(hAuth) || resp.headers.get('x-access-token');
-  const hRefresh = resp.headers.get('x-refresh-token');
-
-  // 바디
-  let body: any = {};
+  // 3) 토큰 저장: 헤더 우선, 실패 시 바디 폴백. 둘 다 없으면 에러
+  let saved = false;
   try {
-    body = txt ? JSON.parse(txt) : {};
+    await saveTokensFromHeaders(res.headers as any);
+    saved = true;
   } catch {
-    body = {};
+    const data: any = res.data ?? {};
+    const bAccess = data.accessToken ?? data.token;
+    const bRefresh = data.refreshToken ?? data.refresh;
+    if (bAccess && bRefresh) {
+      await Promise.all([
+        EncryptedStorage.setItem('accessToken', String(bAccess)),
+        EncryptedStorage.setItem('refreshToken', String(bRefresh)),
+      ]);
+      saved = true;
+    }
   }
-  const bAccess = body?.accessToken || body?.token;
-  const bRefresh = body?.refreshToken || body?.refresh;
-  const bUserId =
-    body?.userId ?? body?.user?.userId ?? body?.user?.id ?? body?.id;
-  const bRole = body?.role ?? body?.user?.role ?? body?.userRole ?? 'USER';
+  if (!saved) throw new Error('TOKEN_MISSING');
 
-  const accessToken = hAccess || bAccess || '';
-  const refreshToken = hRefresh || bRefresh || '';
+  // 4) 사용자/역할 추출 & 저장 (기본값 강제하지 않음)
+  const data: any = res.data ?? {};
+  const userId = data.userId ?? data.user?.userId ?? data.user?.id ?? data.id;
+  const roleRaw = data.role ?? data.user?.role ?? data.userRole;
 
-  // 4) 저장 (RootNavigator가 이 키로 판별)
-  if (accessToken) await EncryptedStorage.setItem('accessToken', accessToken);
-  if (refreshToken)
-    await EncryptedStorage.setItem('refreshToken', refreshToken);
-  if (bUserId != null)
-    await EncryptedStorage.setItem('userId', String(bUserId));
-  if (bRole) await EncryptedStorage.setItem('role', String(bRole));
+  if (userId != null) {
+    await EncryptedStorage.setItem('userId', String(userId));
+  }
+  if (roleRaw) {
+    const role = (
+      String(roleRaw).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER'
+    ) as Role;
+    await EncryptedStorage.setItem('role', role);
+    return { userId: Number(userId), role };
+  }
 
-  return bUserId != null && bRole
-    ? { userId: Number(bUserId), role: bRole as Role }
-    : null;
+  // role이 없으면 null 반환하여 상위에서 처리(서버 이슈 노출)
+  return null;
 }
 
 export async function signOutAll() {
