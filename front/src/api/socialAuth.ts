@@ -12,25 +12,9 @@ import {
   logout as kakaoLogout,
 } from '@react-native-seoul/kakao-login';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
-import { sha256 } from 'js-sha256';
 
 type Role = 'USER' | 'ADMIN';
 export type LoginOk = { userId: number; role: Role };
-
-function __appleRand(len = 32) {
-  const s = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let out = '';
-  for (let i = 0; i < len; i++) out += s[(Math.random() * s.length) | 0];
-  return out;
-}
-
-type __AppleLoginOk = { userId: number; role: string };
-
-function __joinUrl(base: string, path: string) {
-  return `${base?.replace(/\/+$/, '')}${
-    path.startsWith('/') ? path : `/${path}`
-  }`;
-}
 
 const REQUIRED_ENV = [
   'API_BASE_URL',
@@ -130,80 +114,65 @@ export async function signInWithKakao(): Promise<LoginOk> {
   return { userId, role } as LoginOk;
 }
 
-export async function signInWithApple(): Promise<__AppleLoginOk> {
-  if (!appleAuth.isSupported) {
-    throw new Error('APPLE_SIGNIN_IOS_ONLY');
-  }
+function parseBearer(s?: string | null) {
+  if (!s) return null;
+  const parts = s.split(' ');
+  return parts.length === 2 ? parts[1] : s;
+}
 
-  const rawNonce = __appleRand(32);
-  const hashedNonce = sha256(rawNonce);
-  const state = __appleRand(16);
-
-  const result = await appleAuth.performRequest({
+export async function signInWithApple(): Promise<LoginOk | null> {
+  // 1) 애플 로그인
+  const r = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
-    nonce: hashedNonce,
-    state,
   });
+  const { authorizationCode } = r;
+  if (!authorizationCode) throw new Error('NO_AUTHORIZATION_CODE');
 
-  const {
-    user: appleUserId,
-    email,
-    fullName,
-    identityToken,
-    authorizationCode,
-  } = result;
-
-  if (!identityToken) throw new Error('APPLE_NO_IDENTITY_TOKEN');
-
-  const url = __joinUrl(Config.API_BASE_URL as string, '/auth/login/apple');
-  const payload = {
-    identityToken,
-    authorizationCode,
-    rawNonce,
-    state,
-    email: email ?? null,
-    name: fullName
-      ? `${fullName.givenName ?? ''} ${fullName.familyName ?? ''}`.trim()
-      : null,
-    appleUserId,
-  };
-
-  const resp = await fetch(url, {
+  // 2) 서버 교환
+  const resp = await fetch(`${Config.API_BASE_URL}/auth/apple`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ authorizationCode }),
   });
+  const txt = await resp.text().catch(() => '');
+  if (!resp.ok)
+    throw new Error(`APPLE_LOGIN_HTTP_${resp.status}: ${txt || ''}`);
 
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error(`APPLE_LOGIN_HTTP_${resp.status}: ${errText}`);
-  }
+  // 3) 헤더/바디에서 토큰/유저정보 모두 시도해서 추출
+  // 헤더(access)
+  const hAuth =
+    resp.headers.get('authorization') || resp.headers.get('Authorization');
+  const hAccess = parseBearer(hAuth) || resp.headers.get('x-access-token');
+  const hRefresh = resp.headers.get('x-refresh-token');
 
+  // 바디
+  let body: any = {};
   try {
-    const accessToken = resp.headers.get('x-access-token');
-    const refreshToken = resp.headers.get('x-refresh-token');
-
-    if (accessToken) await EncryptedStorage.setItem('accessToken', accessToken);
-    if (refreshToken)
-      await EncryptedStorage.setItem('refreshToken', refreshToken);
-
-    const data = await resp
-      .clone()
-      .json()
-      .catch(() => ({}));
-    if (!accessToken && data?.accessToken) {
-      await EncryptedStorage.setItem('accessToken', data.accessToken);
-    }
-    if (!refreshToken && data?.refreshToken) {
-      await EncryptedStorage.setItem('refreshToken', data.refreshToken);
-    }
-
-    return data as __AppleLoginOk;
+    body = txt ? JSON.parse(txt) : {};
   } catch {
-    const data = (await resp.json().catch(() => ({}))) as any;
-    return data as __AppleLoginOk;
+    body = {};
   }
+  const bAccess = body?.accessToken || body?.token;
+  const bRefresh = body?.refreshToken || body?.refresh;
+  const bUserId =
+    body?.userId ?? body?.user?.userId ?? body?.user?.id ?? body?.id;
+  const bRole = body?.role ?? body?.user?.role ?? body?.userRole ?? 'USER';
+
+  const accessToken = hAccess || bAccess || '';
+  const refreshToken = hRefresh || bRefresh || '';
+
+  // 4) 저장 (RootNavigator가 이 키로 판별)
+  if (accessToken) await EncryptedStorage.setItem('accessToken', accessToken);
+  if (refreshToken)
+    await EncryptedStorage.setItem('refreshToken', refreshToken);
+  if (bUserId != null)
+    await EncryptedStorage.setItem('userId', String(bUserId));
+  if (bRole) await EncryptedStorage.setItem('role', String(bRole));
+
+  return bUserId != null && bRole
+    ? { userId: Number(bUserId), role: bRole as Role }
+    : null;
 }
 
 export async function signOutAll() {

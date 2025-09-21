@@ -67,12 +67,11 @@ export default function SocialLoginScreen() {
     try {
       setLoading('apple');
       const r = await signInWithApple();
-      if (r.userId && r.role) {
+      if (r?.userId && r?.role) {
         const role = normalizeRole(r.role);
         login({ userId: r.userId, role });
       }
-    } catch (e) {
-      console.warn('[Apple SignIn] failed', e);
+    } catch (e: any) {
       Alert.alert('애플 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(null);
@@ -166,8 +165,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
-
-  // 말풍선
   bubbleWrap: { alignItems: 'center' },
   bubble: {
     backgroundColor: 'white',
