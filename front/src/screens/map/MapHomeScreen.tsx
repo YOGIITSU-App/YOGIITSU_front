@@ -267,6 +267,20 @@ function MapHomeScreen() {
         return;
       }
 
+      if (data.type === 'cafeteriaClicked' && data.buildingId) {
+        setOpenSheet(null);
+        // buildingId 매핑 → 학식 페이지 이동
+        if (data.buildingId === 5) {
+          navigation.navigate(mapNavigation.ACE_MEAL);
+          return;
+        }
+        if (data.buildingId === 12) {
+          navigation.navigate(mapNavigation.AMARANTH_MEAL);
+          return;
+        }
+        return;
+      }
+
       if (data.type === 'selectFacility' && data.buildingId) {
         setOpenSheet(null);
         requestAnimationFrame(() => {
@@ -277,7 +291,9 @@ function MapHomeScreen() {
           });
         });
         return;
-      } else if (data.type === 'shuttleClicked') {
+      }
+
+      if (data.type === 'shuttleClicked') {
         setLoadingSchedule(true);
         try {
           if (!data.stopId) {

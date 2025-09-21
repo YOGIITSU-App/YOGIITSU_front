@@ -16,8 +16,11 @@ const mapNavigation = {
   ROUTE_SELECTION: 'RouteSelection',
   ROUTE_RESULT: 'RouteResult',
   SHUTTLE_DETAIL: 'ShuttleDetail',
+  ACE_MEAL: 'AceMealScreen',
+  AMARANTH_MEAL: 'AmaranthMealScreen',
   SHORTCUT_LIST: 'ShortcutList',
   SHORTCUT_DETAIL: 'ShortcutDetail',
+  COLLEGE_LIST: 'CollegeList',
 } as const;
 
 export { authNavigations, mapNavigation };

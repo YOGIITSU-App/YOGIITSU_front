@@ -11,6 +11,9 @@ import ShortcutListScreen from '../../screens/map/ShortcutListScreen';
 import ShortcutDetailScreen from '../../screens/map/ShortcutDetailScreen';
 import ShuttleDetailScreen from '../../screens/map/ShuttleDetailScreen';
 import { ShuttleSchedule } from '../../api/shuttleApi';
+import AceMealScreen from '../../screens/map/AceMealScreen';
+import AmaranthMealScreen from '../../screens/map/AmaranthMealScreen';
+import CollegeListScreen from '../../screens/map/CollegeListScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -85,6 +88,9 @@ export type MapStackParamList = {
   [mapNavigation.SHORTCUT_DETAIL]: {
     shortcutId: number;
   };
+  [mapNavigation.ACE_MEAL]: undefined;
+  [mapNavigation.AMARANTH_MEAL]: undefined;
+  [mapNavigation.COLLEGE_LIST]: undefined;
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -94,6 +100,9 @@ function MapStackNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
+        cardStyle: {
+          backgroundColor: 'white',
+        },
       }}
     >
       <Stack.Screen
@@ -136,6 +145,25 @@ function MapStackNavigator() {
         }}
       />
       <Stack.Screen
+        name={mapNavigation.ACE_MEAL}
+        component={AceMealScreen}
+        options={{
+          title: '오늘의 학식',
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerTitleAlign: 'center',
+        }}
+      />
+      <Stack.Screen
+        name={mapNavigation.AMARANTH_MEAL}
+        component={AmaranthMealScreen}
+        options={{
+          title: '오늘의 학식',
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerTitleAlign: 'center',
+        }}
+      />
+
+      <Stack.Screen
         name={mapNavigation.SHORTCUT_LIST}
         component={ShortcutListScreen}
         options={{
@@ -150,6 +178,15 @@ function MapStackNavigator() {
         name={mapNavigation.SHORTCUT_DETAIL}
         component={ShortcutDetailScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={mapNavigation.COLLEGE_LIST}
+        component={CollegeListScreen}
+        options={{
+          title: '전체 단과대',
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerTitleAlign: 'center',
+        }}
       />
     </Stack.Navigator>
   );
