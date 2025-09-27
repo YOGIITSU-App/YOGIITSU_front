@@ -1,5 +1,6 @@
-import React, {useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Modal,
   StatusBar,
@@ -8,14 +9,22 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {colors} from '../../constants';
-import {CompositeNavigationProp, useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MypageStackParamList} from '../../navigations/stack/MypageStackNavigator';
+import { colors } from '../../constants';
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MypageStackParamList } from '../../navigations/stack/MypageStackNavigator';
 import CustomBotton from '../../components/CustomButton';
-import {RootStackParamList} from '../../navigations/root/Rootnavigator';
-import {logoutEmitter} from '../../utils/logoutEmitter';
+import { RootStackParamList } from '../../navigations/root/Rootnavigator';
+import { logoutEmitter } from '../../utils/logoutEmitter';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import MypageProfileCard, {
+  ProfileData,
+} from '../../components/MypageProfileCard';
+import { getMypageProfile, MypageProfileResponse } from '../../api/mypageApi';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -28,96 +37,135 @@ type MypageNavigationProp = CompositeNavigationProp<
 
 function MypageHomeScreen() {
   const navigation = useNavigation<MypageNavigationProp>();
-
   const [modalVisible, setModalVisible] = useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res: MypageProfileResponse = await getMypageProfile();
+        setProfile({
+          name: res.userName,
+          email: res.email,
+          provider: 'local',
+          providerId: res.memberId,
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <AppScreenLayout disableTopInset>
-      <View style={styles.subContainer}>
-        <Text style={styles.subTitleText}>계정</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('ChangePwCodeConfirm')}>
-          <Text style={styles.text}>비밀번호 변경</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
+      <ScrollView>
+        {loading ? (
+          <View
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <ActivityIndicator size="large" color={colors.BLUE_700} />
+          </View>
+        ) : (
+          profile && <MypageProfileCard data={profile} />
+        )}
+        <View style={styles.subContainer}>
+          <Text style={styles.subTitleText}>계정</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('ChangePwCodeConfirm')}
+          >
+            <Text style={styles.text}>비밀번호 변경</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('CurrentEmailCodeConfirm')}>
-          <Text style={styles.text}>이메일 설정</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('CurrentEmailCodeConfirm')}
+          >
+            <Text style={styles.text}>이메일 설정</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.subContainer}>
-        <Text style={styles.subTitleText}>이용안내</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Notice')}>
-          <Text style={styles.text}>공지사항</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
+        <View style={styles.subContainer}>
+          <Text style={styles.subTitleText}>이용안내</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Notice')}
+          >
+            <Text style={styles.text}>공지사항</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Inquiry')}>
-          <Text style={styles.text}>문의</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Inquiry')}
+          >
+            <Text style={styles.text}>문의</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.subContainer}>
-        <Text style={styles.subTitleText}>기타</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('DeleteAccountWarning')}>
-          <Text style={styles.text}>회원탈퇴</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
+        <View style={styles.subContainer}>
+          <Text style={styles.subTitleText}>기타</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('DeleteAccountWarning')}
+          >
+            <Text style={styles.text}>회원탈퇴</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            setModalVisible(true);
-          }}>
-          <Text style={styles.text}>로그아웃</Text>
-          <Text style={styles.arrow}>〉</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              setModalVisible(true);
+            }}
+          >
+            <Text style={styles.text}>로그아웃</Text>
+            <Text style={styles.arrow}>〉</Text>
+          </TouchableOpacity>
 
-        {/* 로그아웃 모달 */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <StatusBar
-            backgroundColor="rgba(0,0,0,0.5)"
-            barStyle="light-content"
-          />
-          <View style={styles.modalBackground}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>로그아웃 하시겠어요?</Text>
-              {/* 버튼 컨테이너 */}
-              <View style={styles.buttonContainer}>
-                {/* 취소 버튼 */}
-                <CustomBotton
-                  label="아니요"
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setModalVisible(false)}></CustomBotton>
-                {/* 탈퇴 버튼 */}
-                <CustomBotton
-                  label="네"
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={() => {
-                    setModalVisible(false);
-                    logoutEmitter.emit('force-logout');
-                  }}></CustomBotton>
+          {/* 로그아웃 모달 */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <StatusBar
+              backgroundColor="rgba(0,0,0,0.5)"
+              barStyle="light-content"
+            />
+            <View style={styles.modalBackground}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalText}>로그아웃 하시겠어요?</Text>
+                {/* 버튼 컨테이너 */}
+                <View style={styles.buttonContainer}>
+                  {/* 취소 버튼 */}
+                  <CustomBotton
+                    label="아니요"
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setModalVisible(false)}
+                  ></CustomBotton>
+                  {/* 탈퇴 버튼 */}
+                  <CustomBotton
+                    label="네"
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      logoutEmitter.emit('force-logout');
+                    }}
+                  ></CustomBotton>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
-      </View>
+          </Modal>
+        </View>
+      </ScrollView>
     </AppScreenLayout>
   );
 }
