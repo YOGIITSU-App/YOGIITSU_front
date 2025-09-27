@@ -72,7 +72,9 @@ export default function CollegeListScreen() {
             }
           >
             {/* 상단 이미지 */}
-            <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+            </View>
 
             {/* 하단 정보 영역 */}
             <View style={styles.cardFooter}>
@@ -115,11 +117,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.GRAY_200,
   },
+  imageWrapper: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
+  },
   cardImage: {
     width: '100%',
     aspectRatio: 3 / 1.3,
-    borderTopRightRadius: 12,
-    borderTopLeftRadius: 12,
   },
   cardFooter: {
     flexDirection: 'row',
