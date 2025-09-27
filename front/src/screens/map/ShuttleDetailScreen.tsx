@@ -149,7 +149,6 @@ const ShuttleDetailScreen = () => {
                       ]}
                     >
                       {item.stopName}
-                      {isLast && <Text style={styles.arrival}> 회차</Text>}
                     </Text>
 
                     {/* 현재/이후 구간에만 예측 시간 표기 */}
@@ -294,7 +293,7 @@ const styles = StyleSheet.create({
   },
   stopTextRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
   },
   stopName: {
     fontSize: 14,
@@ -324,7 +323,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.GRAY_500,
     fontWeight: '500',
-    lineHeight: 14,
+    marginBottom: 6,
   },
 });
 

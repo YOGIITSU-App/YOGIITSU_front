@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   stopTextWrapper: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
   },
   stopName: {
     paddingBottom: 6,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.GRAY_500,
     fontWeight: '500',
-    lineHeight: 14,
+    marginBottom: 6,
   },
 });
 
