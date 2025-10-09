@@ -12,6 +12,8 @@ import MapStackNavigator, {
 import MypageStackNavigator from '../stack/MypageStackNavigator';
 import { useTabOptions } from '../../constants/tabOptions';
 import { colors, mapNavigation } from '../../constants';
+import { useRequireLogin } from '../../hooks/useRequireLogin';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 export type BottomTabParamList = {
   홈: NavigatorScreenParams<MapStackParamList> | undefined;
@@ -44,6 +46,8 @@ export default function BottomTabNavigator() {
   const navState = useNavigationState(state => state);
   const tabOptions = useTabOptions();
 
+  const { visible, setVisible, requireLogin } = useRequireLogin();
+
   function Empty() {
     return null;
   }
@@ -72,11 +76,14 @@ export default function BottomTabNavigator() {
     const isFocused = selectedTab === label;
     const handlePress = () => {
       if (label === '즐겨찾기') {
-        props.onPress?.();
-        requestAnimationFrame(() => {
-          setSelectedTab('즐겨찾기');
-          globalThis.openFavoriteBottomSheet?.();
+        requireLogin(() => {
+          props.onPress?.();
+          requestAnimationFrame(() => {
+            setSelectedTab('즐겨찾기');
+            globalThis.openFavoriteBottomSheet?.();
+          });
         });
+        return;
       } else if (label === '단과대') {
         setSelectedTab('홈');
         globalThis.closeFavoriteBottomSheet?.();
@@ -133,58 +140,66 @@ export default function BottomTabNavigator() {
   };
 
   return (
-    <BottomTab.Navigator
-      initialRouteName="홈"
-      screenOptions={({ route }) => {
-        const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-        const isHidden = hiddenScreens.includes(routeName as any);
-        return {
-          ...tabOptions,
-          detachInactiveScreens: false,
-          tabBarStyle: isHidden ? { display: 'none' } : tabOptions.tabBarStyle,
-        };
-      }}
-    >
-      <BottomTab.Screen
-        name="홈"
-        component={MapStackNavigator}
-        options={{
-          tabBarButton: props => createTabButton(props, '홈'),
+    <>
+      <BottomTab.Navigator
+        initialRouteName="홈"
+        screenOptions={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+          const isHidden = hiddenScreens.includes(routeName as any);
+          return {
+            ...tabOptions,
+            detachInactiveScreens: false,
+            tabBarStyle: isHidden
+              ? { display: 'none' }
+              : tabOptions.tabBarStyle,
+          };
         }}
-      />
+      >
+        <BottomTab.Screen
+          name="홈"
+          component={MapStackNavigator}
+          options={{
+            tabBarButton: props => createTabButton(props, '홈'),
+          }}
+        />
 
-      <BottomTab.Screen
-        name="즐겨찾기"
-        component={MapStackNavigator}
-        options={{
-          tabBarButton: props => createTabButton(props, '즐겨찾기'),
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: e => {
-            e.preventDefault();
-            navigation.navigate('홈');
-          },
-        })}
-      />
-      <BottomTab.Screen
-        name="단과대"
-        component={Empty}
-        options={{ tabBarButton: props => createTabButton(props, '단과대') }}
-        listeners={({ navigation }) => ({
-          tabPress: e => {
-            e.preventDefault();
-            navigation.navigate('홈', { screen: mapNavigation.COLLEGE_LIST });
-          },
-        })}
-      />
+        <BottomTab.Screen
+          name="즐겨찾기"
+          component={MapStackNavigator}
+          options={{
+            tabBarButton: props => createTabButton(props, '즐겨찾기'),
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: e => {
+              e.preventDefault();
+              navigation.navigate('홈');
+            },
+          })}
+        />
 
-      <BottomTab.Screen
-        name="MY"
-        component={MypageStackNavigator}
-        options={{
-          tabBarButton: props => createTabButton(props, 'MY'),
-        }}
-      />
-    </BottomTab.Navigator>
+        <BottomTab.Screen
+          name="단과대"
+          component={Empty}
+          options={{
+            tabBarButton: props => createTabButton(props, '단과대'),
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: e => {
+              e.preventDefault();
+              navigation.navigate('홈', { screen: mapNavigation.COLLEGE_LIST });
+            },
+          })}
+        />
+
+        <BottomTab.Screen
+          name="MY"
+          component={MypageStackNavigator}
+          options={{
+            tabBarButton: props => createTabButton(props, 'MY'),
+          }}
+        />
+      </BottomTab.Navigator>
+      <LoginRequiredModal visible={visible} onClose={() => setVisible(false)} />
+    </>
   );
 }
