@@ -1,37 +1,85 @@
-import React, {createContext, useContext, useState, ReactNode} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from 'react';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
-// ✅ 1. 사용자 타입 정의
 export type User = {
   userId: number;
   role: 'USER' | 'ADMIN';
 };
 
-// ✅ 2. Context 타입 정의
 type UserContextType = {
   user: User | null;
+  isGuest: boolean;
+  guestLoaded: boolean;
   login: (userInfo: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  setGuest: (value: boolean) => Promise<void>;
 };
 
-// ✅ 3. Context 생성
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// ✅ 4. 커스텀 훅
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) throw new Error('UserContext 안에서 사용해주세요!');
   return context;
 };
 
-// ✅ 5. Provider
-export const UserProvider = ({children}: {children: ReactNode}) => {
+export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestLoaded, setGuestLoaded] = useState(false);
 
-  const login = (userInfo: User) => setUser(userInfo);
-  const logout = () => setUser(null);
+  /** 앱 실행 시 게스트 상태 복구 */
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await EncryptedStorage.getItem('isGuest');
+        if (saved === 'true') setIsGuest(true);
+      } catch (err) {
+        console.warn('게스트 상태 복구 실패', err);
+      } finally {
+        setGuestLoaded(true); // 복구 완료 표시
+      }
+    })();
+  }, []);
+
+  /** 게스트 로그인 시 호출 */
+  const setGuest = async (value: boolean) => {
+    try {
+      if (value) {
+        await EncryptedStorage.setItem('isGuest', 'true');
+      } else {
+        await EncryptedStorage.removeItem('isGuest');
+      }
+      setIsGuest(value);
+    } catch (err) {
+      console.warn('게스트 상태 저장 실패', err);
+    }
+  };
+
+  /** 회원 로그인 */
+  const login = (userInfo: User) => {
+    setUser(userInfo);
+    setIsGuest(false);
+    EncryptedStorage.removeItem('isGuest');
+  };
+
+  /** 로그아웃 */
+  const logout = async () => {
+    setUser(null);
+    setIsGuest(false);
+    await EncryptedStorage.removeItem('isGuest');
+  };
 
   return (
-    <UserContext.Provider value={{user, login, logout}}>
+    <UserContext.Provider
+      value={{ user, isGuest, guestLoaded, login, logout, setGuest }}
+    >
       {children}
     </UserContext.Provider>
   );

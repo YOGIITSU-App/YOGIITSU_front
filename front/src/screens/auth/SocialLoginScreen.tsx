@@ -7,9 +7,10 @@ import {
   Alert,
   Platform,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { authNavigations, colors } from '../../constants';
+import { authNavigations, colors, mapNavigation } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
 import {
   configureSocial,
@@ -23,12 +24,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SocialLoginScreen() {
   const navigation = useNavigation<any>();
-  const { login } = useUser();
+  const { login, setGuest } = useUser();
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState<null | 'kakao' | 'google' | 'apple'>(
     null,
   );
+
+  const handleGuest = () => {
+    setGuest(true);
+  };
 
   const normalizeRole = (role: unknown): 'USER' | 'ADMIN' =>
     String(role).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER';
@@ -139,6 +144,11 @@ export default function SocialLoginScreen() {
         >
           ID 로그인/회원가입
         </Text>
+        <Pressable onPress={handleGuest} style={{ marginTop: 16 }}>
+          <Text style={{ color: 'white', fontWeight: '600' }}>
+            비회원으로 이용하기
+          </Text>
+        </Pressable>
       </ScrollView>
     </AppScreenLayout>
   );
