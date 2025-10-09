@@ -32,6 +32,8 @@ import { useSelectBuilding } from '../../hooks/useSelectBuilding';
 import { colors } from '../../constants/colors';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import buildingApi from '../../api/buildingApi';
+import { useUser } from '../../contexts/UserContext';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 type SearchScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -52,10 +54,10 @@ function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [recentKeywords, setRecentKeywords] = useState<RecentKeyword[]>([]);
 
-  // 유틸 훅 가져오기
   const { onSelect } = useSelectBuilding();
 
-  // 1. route.params.keyword가 바뀔 때는 기존처럼 setSearchText 해주고
+  const { isGuest } = useUser(); // 게스트 여부 확인
+
   useEffect(() => {
     if (route.params?.keyword !== undefined) {
       setSearchText(route.params.keyword);
@@ -76,10 +78,24 @@ function SearchScreen() {
 
   async function loadRecent() {
     try {
+      if (isGuest) {
+        const local = await EncryptedStorage.getItem('guestRecentKeywords');
+        const parsed = local ? JSON.parse(local) : [];
+        setRecentKeywords(
+          parsed.map((k: { keyword: string; buildingId: number }) => ({
+            ...k,
+            searchedAt: new Date().toISOString(),
+          })),
+        );
+        return;
+      }
+
+      // 로그인 유저 → 서버에서 로드
       const res = await searchApi.getRecentKeywords();
       setRecentKeywords(res.data);
     } catch (err) {
       console.warn('최근 검색어 로드 실패', err);
+      if (isGuest) setRecentKeywords([]);
     }
   }
 
@@ -101,6 +117,39 @@ function SearchScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function saveRecentKeyword(keyword: string, buildingId: number) {
+    if (isGuest) {
+      // 게스트용
+      const local = await EncryptedStorage.getItem('guestRecentKeywords');
+      const arr: { keyword: string; buildingId: number }[] = local
+        ? JSON.parse(local)
+        : [];
+      const updated = [
+        { keyword, buildingId },
+        ...arr.filter(
+          (k: { keyword: string; buildingId: number }) =>
+            k.buildingId !== buildingId,
+        ),
+      ].slice(0, 10);
+
+      await EncryptedStorage.setItem(
+        'guestRecentKeywords',
+        JSON.stringify(updated),
+      );
+
+      setRecentKeywords(
+        updated.map(k => ({
+          ...k,
+          searchedAt: new Date().toISOString(),
+        })),
+      );
+      return;
+    }
+
+    // 로그인 유저
+    await searchApi.saveKeyword(keyword);
   }
 
   async function applySelectionDirect(buildingId: number) {
@@ -164,7 +213,7 @@ function SearchScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     if (source === 'selection') {
-                      navigation.dispatch(StackActions.pop(1)); // Search만 닫고 바로 RouteSelection 복귀
+                      navigation.dispatch(StackActions.pop(1));
                     } else {
                       navigation.goBack();
                     }
@@ -196,7 +245,6 @@ function SearchScreen() {
                   autoFocus
                   autoCorrect={false}
                 />
-                {/* X 버튼 추가! */}
                 {searchText.length > 0 && (
                   <TouchableOpacity
                     onPress={() => {
@@ -205,7 +253,6 @@ function SearchScreen() {
                     }}
                     style={styles.clearButton}
                   >
-                    {/* 아이콘 교체 가능 */}
                     <Text style={styles.closeIcon}>✕</Text>
                   </TouchableOpacity>
                 )}
@@ -228,8 +275,15 @@ function SearchScreen() {
                         <TouchableOpacity
                           onPress={async () => {
                             try {
-                              await searchApi.deleteAllRecentKeywords();
-                              setRecentKeywords([]);
+                              if (isGuest) {
+                                await EncryptedStorage.removeItem(
+                                  'guestRecentKeywords',
+                                );
+                                setRecentKeywords([]);
+                              } else {
+                                await searchApi.deleteAllRecentKeywords();
+                                setRecentKeywords([]);
+                              }
                             } catch (err) {
                               Alert.alert('전체 삭제 실패');
                             }
@@ -245,10 +299,15 @@ function SearchScreen() {
                           style={styles.recentKeyword}
                           onPress={async () => {
                             setSearchText(item.keyword);
+                            await saveRecentKeyword(
+                              item.keyword,
+                              item.buildingId,
+                            );
+
                             if (source === 'selection' && selectionType) {
                               await applySelectionDirect(item.buildingId);
                             } else {
-                              onSelect(item.buildingId); // 프리뷰/디테일로 가는 기존 흐름
+                              onSelect(item.buildingId);
                             }
                           }}
                         >
@@ -257,14 +316,35 @@ function SearchScreen() {
                         <TouchableOpacity
                           onPress={async () => {
                             try {
-                              await searchApi.deleteRecentKeywordByBuildingId(
-                                item.buildingId,
-                              );
-                              setRecentKeywords(prev =>
-                                prev.filter(
-                                  k => k.buildingId !== item.buildingId,
-                                ),
-                              );
+                              if (isGuest) {
+                                const local = await EncryptedStorage.getItem(
+                                  'guestRecentKeywords',
+                                );
+                                if (!local) return;
+                                const parsed = JSON.parse(local);
+                                const updated = parsed.filter(
+                                  (k: { buildingId: number }) =>
+                                    k.buildingId !== item.buildingId,
+                                );
+                                await EncryptedStorage.setItem(
+                                  'guestRecentKeywords',
+                                  JSON.stringify(updated),
+                                );
+                                setRecentKeywords(prev =>
+                                  prev.filter(
+                                    k => k.buildingId !== item.buildingId,
+                                  ),
+                                );
+                              } else {
+                                await searchApi.deleteRecentKeywordByBuildingId(
+                                  item.buildingId,
+                                );
+                                setRecentKeywords(prev =>
+                                  prev.filter(
+                                    k => k.buildingId !== item.buildingId,
+                                  ),
+                                );
+                              }
                             } catch (err) {
                               Alert.alert('삭제 실패');
                             }
@@ -292,11 +372,13 @@ function SearchScreen() {
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       style={styles.item}
-                      onPress={() => {
+                      onPress={async () => {
+                        // async 추가
+                        await saveRecentKeyword(item.keyword, item.buildingId);
                         if (source === 'selection' && selectionType) {
-                          applySelectionDirect(item.buildingId); // 선택모드면 바로 반영
+                          applySelectionDirect(item.buildingId);
                         } else {
-                          onSelect(item.buildingId); // 일반 흐름(프리뷰 경유)
+                          onSelect(item.buildingId);
                         }
                       }}
                     >
