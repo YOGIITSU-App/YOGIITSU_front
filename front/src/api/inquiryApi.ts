@@ -7,7 +7,7 @@ export type Inquiry = {
   date: string;
   status: 'PROCESSING' | 'COMPLETED';
   author: string;
-  authorId: number;
+  isMine: boolean;
   responseTitle?: string;
   response?: string;
   responseDate?: string;
@@ -20,7 +20,7 @@ export const mapToInquiry = (item: any): Inquiry => ({
   date: item.inquiryAt.split('T')[0].replace(/-/g, '.'),
   status: item.inquiryState,
   author: item.authorName,
-  authorId: item.authorId,
+  isMine: item.isMine,
   responseTitle: item.answerTitle ?? undefined,
   response: item.answerContent ?? undefined,
   responseDate: item.answerAt

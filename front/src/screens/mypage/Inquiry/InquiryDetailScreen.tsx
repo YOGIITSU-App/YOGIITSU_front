@@ -35,7 +35,7 @@ function InquiryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const isAuthor = user?.userId === inquiry?.authorId;
+  const isAuthor = inquiry?.isMine;
 
   const maskName = (name: string) => {
     return name[0] + '*'.repeat(name.length - 1);
@@ -130,9 +130,7 @@ function InquiryDetailScreen() {
 
         <Text style={styles.meta}>
           {inquiry.date.replace(/-/g, '.')} | 작성자:{' '}
-          {inquiry.authorId === user?.userId
-            ? inquiry.author
-            : maskName(inquiry.author)}
+          {inquiry.isMine ? inquiry.author : maskName(inquiry.author)}
         </Text>
 
         <View style={styles.contentBox}>
