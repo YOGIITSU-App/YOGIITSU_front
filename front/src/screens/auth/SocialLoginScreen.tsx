@@ -72,12 +72,21 @@ export default function SocialLoginScreen() {
     try {
       setLoading('apple');
       const r = await signInWithApple();
-      if (r?.userId && r?.role) {
-        const role = normalizeRole(r.role);
-        login({ userId: r.userId, role });
+
+      if (!r) {
+        Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+        return;
       }
-    } catch (e: any) {
-      Alert.alert('애플 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+
+      if (r.role) {
+        const role = normalizeRole(r.role);
+        login({ userId: r.userId ?? -1, role });
+        return;
+      }
+
+      Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+    } catch (e) {
+      Alert.alert('애플 로그인에 실패했습니다.');
     } finally {
       setLoading(null);
     }
