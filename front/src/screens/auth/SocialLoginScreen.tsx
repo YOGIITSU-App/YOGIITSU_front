@@ -132,23 +132,19 @@ export default function SocialLoginScreen() {
         </View>
 
         {/* 구분선 + 링크 */}
-        <View style={styles.orWrap}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>또는</Text>
-          <View style={styles.orLine} />
-        </View>
+        <View style={styles.linkWrap}>
+          <Pressable
+            onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
+          >
+            <Text style={styles.linkText}>ID 로그인/회원가입</Text>
+          </Pressable>
 
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
-        >
-          ID 로그인/회원가입
-        </Text>
-        <Pressable onPress={handleGuest} style={{ marginTop: 16 }}>
-          <Text style={{ color: 'white', fontWeight: '600' }}>
-            비회원으로 이용하기
-          </Text>
-        </Pressable>
+          <View style={styles.linkDivider} />
+
+          <Pressable onPress={handleGuest}>
+            <Text style={styles.linkText}>비회원 로그인</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </AppScreenLayout>
   );
@@ -199,28 +195,29 @@ const styles = StyleSheet.create({
     borderRightColor: 'transparent',
     borderTopColor: 'white',
   },
-  orWrap: {
-    width: '100%',
-    marginVertical: 12,
+  linkWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    marginTop: 16,
+    gap: 8,
+    ...Platform.select({
+      android: {
+        marginBottom: 20,
+      },
+      ios: {
+        marginBottom: 0,
+      },
+    }),
   },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+  linkDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#fff',
   },
-  orText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 13,
-  },
-  link: {
-    marginTop: 12,
-    alignSelf: 'center',
-    color: 'white',
-    textDecorationLine: 'underline',
+  linkText: {
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
   },
 });
