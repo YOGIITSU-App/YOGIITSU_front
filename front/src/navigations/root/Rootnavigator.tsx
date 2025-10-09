@@ -8,7 +8,6 @@ import BootSplash from 'react-native-bootsplash';
 import { logoutEmitter } from '../../utils/logoutEmitter';
 import { refreshToken } from '../../api/refreshApi';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
-import { useAppInit } from '../../contexts/AppInitContext';
 
 export type RootStackParamList = { AuthStack: undefined; BottomTab: undefined };
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -60,12 +59,17 @@ function RootNavigatorContent() {
   // 자동 로그인 복원
   useEffect(() => {
     if (!guestLoaded) {
-      console.log('[RootNavigator] guestLoaded false → waiting...');
+      return;
+    }
+
+    if (user && !isGuest) {
+      setAuthStatus('member');
+      setCheckingAuth(false);
+      safeHide();
       return;
     }
 
     if (isGuest) {
-      console.log('[RootNavigator] 게스트 모드 복원');
       setAuthStatus('guest');
       setCheckingAuth(false);
       safeHide();
@@ -127,6 +131,15 @@ function RootNavigatorContent() {
       safeHide();
     }
   }, [checkingAuth]);
+
+  useEffect(() => {
+    if (user && !isGuest) {
+      console.log('[RootNavigator] user detected → member 전환');
+      setAuthStatus('member');
+      setCheckingAuth(false);
+      safeHide();
+    }
+  }, [user, isGuest]);
 
   return (
     <>
