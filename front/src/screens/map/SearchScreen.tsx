@@ -124,36 +124,36 @@ function SearchScreen() {
   }
 
   async function saveRecentKeyword(keyword: string, buildingId: number) {
-    if (isGuest) {
-      // 게스트용
-      const local = await EncryptedStorage.getItem('guestRecentKeywords');
-      const arr: { keyword: string; buildingId: number }[] = local
-        ? JSON.parse(local)
-        : [];
-      const updated = [
-        { keyword, buildingId },
-        ...arr.filter(
-          (k: { keyword: string; buildingId: number }) =>
-            k.buildingId !== buildingId,
-        ),
-      ].slice(0, 10);
+    try {
+      if (isGuest) {
+        const local = await EncryptedStorage.getItem('guestRecentKeywords');
+        const arr: { keyword: string; buildingId: number }[] = local
+          ? JSON.parse(local)
+          : [];
+        const updated = [
+          { keyword, buildingId },
+          ...arr.filter(k => k.buildingId !== buildingId),
+        ].slice(0, 10);
 
-      await EncryptedStorage.setItem(
-        'guestRecentKeywords',
-        JSON.stringify(updated),
-      );
+        await EncryptedStorage.setItem(
+          'guestRecentKeywords',
+          JSON.stringify(updated),
+        );
 
-      setRecentKeywords(
-        updated.map(k => ({
-          ...k,
-          searchedAt: new Date().toISOString(),
-        })),
-      );
-      return;
+        setRecentKeywords(
+          updated.map(k => ({
+            ...k,
+            searchedAt: new Date().toISOString(),
+          })),
+        );
+        return;
+      }
+
+      // 로그인 유저
+      await searchApi.saveKeyword(keyword);
+    } catch (err) {
+      console.warn('검색어 저장 실패', err);
     }
-
-    // 로그인 유저
-    await searchApi.saveKeyword(keyword);
   }
 
   async function applySelectionDirect(buildingId: number) {
@@ -325,7 +325,22 @@ function SearchScreen() {
                                   'guestRecentKeywords',
                                 );
                                 if (!local) return;
-                                const parsed = JSON.parse(local);
+
+                                let parsed;
+                                try {
+                                  parsed = JSON.parse(local);
+                                } catch (parseErr) {
+                                  console.warn(
+                                    '검색어 데이터 파싱 실패',
+                                    parseErr,
+                                  );
+                                  await EncryptedStorage.removeItem(
+                                    'guestRecentKeywords',
+                                  );
+                                  setRecentKeywords([]);
+                                  return;
+                                }
+
                                 const updated = parsed.filter(
                                   (k: { buildingId: number }) =>
                                     k.buildingId !== item.buildingId,
@@ -350,7 +365,10 @@ function SearchScreen() {
                                 );
                               }
                             } catch (err) {
-                              Alert.alert('삭제 실패');
+                              Alert.alert(
+                                '삭제 실패',
+                                '검색어 삭제 중 문제가 발생했습니다.',
+                              );
                             }
                           }}
                         >
