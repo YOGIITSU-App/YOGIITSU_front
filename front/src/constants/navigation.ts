@@ -21,6 +21,7 @@ const mapNavigation = {
   SHORTCUT_LIST: 'ShortcutList',
   SHORTCUT_DETAIL: 'ShortcutDetail',
   COLLEGE_LIST: 'CollegeList',
+  MEAL_UNIFIED: 'MealUnified',
 } as const;
 
 export { authNavigations, mapNavigation };
