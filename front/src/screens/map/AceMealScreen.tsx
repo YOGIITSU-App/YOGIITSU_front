@@ -183,7 +183,7 @@ export default function AceMealScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>점심</Text>
-      <Text style={styles.timeText}>11:30 - 14:00</Text>
+      <Text style={styles.timeText}>11:00 - 14:00</Text>
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
       {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
