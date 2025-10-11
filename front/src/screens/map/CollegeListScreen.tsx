@@ -14,11 +14,15 @@ import { getAllBuildings, CollegeBuilding } from '../../api/collegeApi';
 import { useNavigation } from '@react-navigation/native';
 import { colors, mapNavigation } from '../../constants';
 import favoriteApi from '../../api/favoriteApi';
+import { useRequireLogin } from '../../hooks/useRequireLogin';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 export default function CollegeListScreen() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<CollegeBuilding[]>([]);
   const nav = useNavigation<any>();
+
+  const { visible, setVisible, requireLogin } = useRequireLogin();
 
   useEffect(() => {
     (async () => {
@@ -84,7 +88,11 @@ export default function CollegeListScreen() {
 
               {/* 즐겨찾기 버튼 */}
               <TouchableOpacity
-                onPress={() => toggleFavorite(item.buildingId, item.isFavorite)}
+                onPress={() =>
+                  requireLogin(() =>
+                    toggleFavorite(item.buildingId, item.isFavorite),
+                  )
+                }
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 style={styles.bookmarkBtn}
               >
@@ -100,6 +108,7 @@ export default function CollegeListScreen() {
           </Pressable>
         )}
       />
+      <LoginRequiredModal visible={visible} onClose={() => setVisible(false)} />
     </View>
   );
 }

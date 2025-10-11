@@ -18,6 +18,9 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useTabOptions } from '../../../constants/tabOptions';
 import inquiryApi, { mapToInquiry, Inquiry } from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+import { useUser } from '../../../contexts/UserContext';
+import { useRequireLogin } from '../../../hooks/useRequireLogin';
+import LoginRequiredModal from '../../../components/common/LoginRequiredModal';
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -27,6 +30,9 @@ function InquiryScreen() {
   const navigation = useNavigation<StackNavigationProp<MypageStackParamList>>();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const { isGuest } = useUser();
+  const { visible, setVisible, requireLogin } = useRequireLogin();
 
   useLayoutEffect(() => {
     const parent = navigation.getParent();
@@ -151,11 +157,14 @@ function InquiryScreen() {
           <View style={styles.buttonContainer}>
             <CustomButton
               label="문의 등록하기"
-              onPress={() => navigation.navigate('InquiryWrite')}
+              onPress={() =>
+                requireLogin(() => navigation.navigate('InquiryWrite'))
+              }
             />
           </View>
         </>
       )}
+      <LoginRequiredModal visible={visible} onClose={() => setVisible(false)} />
     </AppScreenLayout>
   );
 }

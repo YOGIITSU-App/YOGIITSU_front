@@ -7,9 +7,10 @@ import {
   Alert,
   Platform,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { authNavigations, colors } from '../../constants';
+import { authNavigations, colors, mapNavigation } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
 import {
   configureSocial,
@@ -23,12 +24,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SocialLoginScreen() {
   const navigation = useNavigation<any>();
-  const { login } = useUser();
+  const { login, setGuest } = useUser();
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState<null | 'kakao' | 'google' | 'apple'>(
     null,
   );
+
+  const handleGuest = () => {
+    setGuest(true);
+  };
 
   const normalizeRole = (role: unknown): 'USER' | 'ADMIN' =>
     String(role).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER';
@@ -67,12 +72,21 @@ export default function SocialLoginScreen() {
     try {
       setLoading('apple');
       const r = await signInWithApple();
-      if (r?.userId && r?.role) {
-        const role = normalizeRole(r.role);
-        login({ userId: r.userId, role });
+
+      if (!r) {
+        Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+        return;
       }
-    } catch (e: any) {
-      Alert.alert('애플 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+
+      if (r.role) {
+        const role = normalizeRole(r.role);
+        login({ userId: r.userId ?? -1, role });
+        return;
+      }
+
+      Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+    } catch (e) {
+      Alert.alert('애플 로그인에 실패했습니다.');
     } finally {
       setLoading(null);
     }
@@ -127,18 +141,19 @@ export default function SocialLoginScreen() {
         </View>
 
         {/* 구분선 + 링크 */}
-        <View style={styles.orWrap}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>또는</Text>
-          <View style={styles.orLine} />
-        </View>
+        <View style={styles.linkWrap}>
+          <Pressable
+            onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
+          >
+            <Text style={styles.linkText}>ID 로그인/회원가입</Text>
+          </Pressable>
 
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
-        >
-          ID 로그인/회원가입
-        </Text>
+          <View style={styles.linkDivider} />
+
+          <Pressable onPress={handleGuest}>
+            <Text style={styles.linkText}>비회원 로그인</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </AppScreenLayout>
   );
@@ -189,28 +204,29 @@ const styles = StyleSheet.create({
     borderRightColor: 'transparent',
     borderTopColor: 'white',
   },
-  orWrap: {
-    width: '100%',
-    marginVertical: 12,
+  linkWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    marginTop: 16,
+    gap: 8,
+    ...Platform.select({
+      android: {
+        marginBottom: 20,
+      },
+      ios: {
+        marginBottom: 0,
+      },
+    }),
   },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+  linkDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#fff',
   },
-  orText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 13,
-  },
-  link: {
-    marginTop: 12,
-    alignSelf: 'center',
-    color: 'white',
-    textDecorationLine: 'underline',
+  linkText: {
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
   },
 });

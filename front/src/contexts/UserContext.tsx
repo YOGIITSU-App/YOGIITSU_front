@@ -1,38 +1,68 @@
-import React, {createContext, useContext, useState, ReactNode} from 'react';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// ✅ 1. 사용자 타입 정의
-export type User = {
-  userId: number;
-  role: 'USER' | 'ADMIN';
-};
+const UserContext = createContext<any>(null);
 
-// ✅ 2. Context 타입 정의
-type UserContextType = {
-  user: User | null;
-  login: (userInfo: User) => void;
-  logout: () => void;
-};
+export const UserProvider = ({ children }: any) => {
+  const [user, setUser] = useState<{
+    userId: number;
+    role: 'USER' | 'ADMIN';
+  } | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestLoaded, setGuestLoaded] = useState(false);
 
-// ✅ 3. Context 생성
-const UserContext = createContext<UserContextType | undefined>(undefined);
+  const login = (userData: { userId: number; role: 'USER' | 'ADMIN' }) => {
+    console.log('[UserContext] login called');
+    setUser(userData);
+  };
 
-// ✅ 4. 커스텀 훅
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (!context) throw new Error('UserContext 안에서 사용해주세요!');
-  return context;
-};
+  const logout = () => {
+    setUser(null);
+    setIsGuest(false);
+    EncryptedStorage.clear();
+  };
 
-// ✅ 5. Provider
-export const UserProvider = ({children}: {children: ReactNode}) => {
-  const [user, setUser] = useState<User | null>(null);
+  const setGuest = async (value: boolean) => {
+    try {
+      if (value) {
+        await EncryptedStorage.setItem('guest_mode', 'true');
+        setIsGuest(true);
+      } else {
+        try {
+          await EncryptedStorage.removeItem('guest_mode');
+        } catch (err) {
+          console.warn('게스트 상태 저장 실패(무시)', err);
+        }
+        setIsGuest(false);
+      }
+    } catch (err) {
+      console.warn('게스트 상태 저장 실패', err);
+      setIsGuest(value);
+    } finally {
+      setGuestLoaded(true);
+    }
+  };
 
-  const login = (userInfo: User) => setUser(userInfo);
-  const logout = () => setUser(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const guest = await EncryptedStorage.getItem('guest_mode');
+        setIsGuest(guest === 'true');
+      } catch (e) {
+        console.warn('게스트 모드 로드 실패', e);
+      } finally {
+        setGuestLoaded(true);
+      }
+    })();
+  }, []);
 
   return (
-    <UserContext.Provider value={{user, login, logout}}>
+    <UserContext.Provider
+      value={{ user, login, logout, isGuest, guestLoaded, setGuest }}
+    >
       {children}
     </UserContext.Provider>
   );
 };
+
+export const useUser = () => useContext(UserContext);

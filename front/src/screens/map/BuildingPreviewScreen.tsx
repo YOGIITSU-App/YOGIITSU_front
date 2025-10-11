@@ -33,6 +33,8 @@ import {
   useAnimatedReaction,
   useSharedValue,
 } from 'react-native-reanimated';
+import { useRequireLogin } from '../../hooks/useRequireLogin';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -74,6 +76,8 @@ export default function BuildingPreviewScreen() {
     const expanded = deviceHeight - headerHeight;
     return [collapsed, expanded];
   }, [headerHeight]);
+
+  const { visible, setVisible, requireLogin } = useRequireLogin();
 
   useEffect(() => {
     const {
@@ -273,7 +277,9 @@ export default function BuildingPreviewScreen() {
               <View style={styles.cardTitleRow}>
                 <Text style={styles.cardTitle}>{buildingInfo.name}</Text>
                 <TouchableOpacity
-                  onPress={toggleFavorite}
+                  onPress={() => {
+                    requireLogin(() => toggleFavorite());
+                  }}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Image
@@ -310,6 +316,10 @@ export default function BuildingPreviewScreen() {
             </View>
           </BottomSheetView>
         </BottomSheet>
+        <LoginRequiredModal
+          visible={visible}
+          onClose={() => setVisible(false)}
+        />
       </View>
     </AppScreenLayout>
   );

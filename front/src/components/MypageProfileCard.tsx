@@ -64,7 +64,7 @@ const AVATAR = 52;
 const styles = StyleSheet.create({
   card: {
     alignSelf: 'center',
-    width: '89%',
+    width: '92%',
     maxWidth: 560,
     flexDirection: 'row',
     alignItems: 'flex-start',

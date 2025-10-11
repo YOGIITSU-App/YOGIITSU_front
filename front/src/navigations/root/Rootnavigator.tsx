@@ -7,24 +7,19 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import BootSplash from 'react-native-bootsplash';
 import { logoutEmitter } from '../../utils/logoutEmitter';
 import { refreshToken } from '../../api/refreshApi';
-import { StatusBar } from 'react-native';
-import { useAppInit } from '../../contexts/AppInitContext';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 
 export type RootStackParamList = { AuthStack: undefined; BottomTab: undefined };
 const RootStack = createStackNavigator<RootStackParamList>();
 
 function RootNavigatorContent() {
-  const { user, login, logout } = useUser();
-  const { mapReady, resetMapReady } = useAppInit();
+  const { user, login, logout, isGuest, guestLoaded } = useUser();
 
-  // 인증 상태
   const [authStatus, setAuthStatus] = useState<'unknown' | 'guest' | 'member'>(
     'unknown',
   );
-  // 인증 검사 중 플래그
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // 중복 hide 방지
   const splashHiddenRef = useRef(false);
   const safeHide = () => {
     if (splashHiddenRef.current) return;
@@ -32,26 +27,57 @@ function RootNavigatorContent() {
     BootSplash.hide({ fade: true });
   };
 
-  // 강제 로그아웃 리스너
+  // 강제 타임아웃 방지 (iOS 안전용)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (checkingAuth) {
+        console.warn('[RootNavigator] Auth check timeout → fallback to guest');
+        setAuthStatus('guest');
+        setCheckingAuth(false);
+        safeHide();
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [checkingAuth]);
+
+  // 강제 로그아웃
   useEffect(() => {
     const handleLogout = async () => {
       await EncryptedStorage.clear();
       logout();
       setAuthStatus('guest');
       setCheckingAuth(false);
+      safeHide();
     };
     logoutEmitter.addListener('force-logout', handleLogout);
     return () => {
-      // 등록했던 동일 콜백으로 해제
-      // @ts-ignore
       logoutEmitter.removeListener?.('force-logout', handleLogout);
-      // @ts-ignore
       logoutEmitter.off?.('force-logout', handleLogout);
     };
   }, [logout]);
 
-  // 자동 로그인 복원 + 토큰 리프레시 → authStatus 결정
+  // 자동 로그인 복원
   useEffect(() => {
+    if (!guestLoaded) {
+      return;
+    }
+
+    if (user && !isGuest) {
+      setAuthStatus('member');
+      setCheckingAuth(false);
+      safeHide();
+      return;
+    }
+
+    if (isGuest) {
+      setAuthStatus('guest');
+      setCheckingAuth(false);
+      safeHide();
+      return;
+    }
+
+    let isCancelled = false;
+
     (async () => {
       try {
         const [userId, role, accessToken, refreshTokenValue] =
@@ -62,12 +88,18 @@ function RootNavigatorContent() {
             EncryptedStorage.getItem('refreshToken'),
           ]);
 
+        if (isCancelled) return;
+
         if (userId && role && accessToken && refreshTokenValue) {
           const res = await refreshToken(accessToken, refreshTokenValue);
+
+          if (isCancelled) return;
+
           const rawAuth =
             res.headers.authorization || res.headers.Authorization;
           const newAccessToken = rawAuth?.split(' ')[1];
           const newRefreshToken = res.headers['x-refresh-token'];
+
           if (!newAccessToken || !newRefreshToken)
             throw new Error('토큰 재발급 실패');
 
@@ -76,42 +108,44 @@ function RootNavigatorContent() {
             EncryptedStorage.setItem('refreshToken', newRefreshToken),
           ]);
 
+          if (isCancelled) return;
+
           const parsedUserId = parseInt(userId, 10);
           if (!isNaN(parsedUserId) && parsedUserId > 0) {
             if (!user)
               login({ userId: parsedUserId, role: role as 'USER' | 'ADMIN' });
             setAuthStatus('member');
             setCheckingAuth(false);
+            safeHide();
             return;
           }
         }
 
-        // 비로그인 처리
-        await EncryptedStorage.clear();
+        if (isCancelled) return;
         logout();
         setAuthStatus('guest');
         setCheckingAuth(false);
-      } catch {
-        await EncryptedStorage.clear();
+        safeHide();
+      } catch (err) {
+        console.warn('[RootNavigator] refreshToken 실패', err);
+        if (isCancelled) return;
         logout();
         setAuthStatus('guest');
         setCheckingAuth(false);
+        safeHide();
       }
     })();
-  }, [login, logout, user]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [login, logout, user, isGuest, guestLoaded]);
 
   useEffect(() => {
-    if (checkingAuth) return;
-
-    if (authStatus === 'guest') {
-      // 로그인 안 된 상태: 즉시 hide → 로그인 화면 노출
+    if (!checkingAuth) {
       safeHide();
-    } else if (authStatus === 'member' && mapReady) {
-      // 로그인 된 상태: MapHome이 준비됐을 때 hide
-      safeHide();
-      resetMapReady();
     }
-  }, [checkingAuth, authStatus, mapReady, resetMapReady]);
+  }, [checkingAuth]);
 
   return (
     <>
@@ -121,9 +155,20 @@ function RootNavigatorContent() {
         barStyle="dark-content"
       />
 
-      {checkingAuth ? null : (
+      {checkingAuth ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#fff',
+          }}
+        >
+          <ActivityIndicator size="large" color="#3352F2" />
+        </View>
+      ) : (
         <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          {authStatus === 'member' ? (
+          {authStatus === 'member' || isGuest ? (
             <RootStack.Screen name="BottomTab" component={BottomTabNavigator} />
           ) : (
             <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
