@@ -73,7 +73,7 @@ export default function MealUnifiedScreen() {
                 selectedTab === 'amaranth' && styles.tabTextActive,
               ]}
             >
-              아마란스 홀
+              아마랜스 홀
             </Text>
           </Pressable>
         </View>
