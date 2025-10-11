@@ -14,6 +14,7 @@ import { ShuttleSchedule } from '../../api/shuttleApi';
 import AceMealScreen from '../../screens/map/AceMealScreen';
 import AmaranthMealScreen from '../../screens/map/AmaranthMealScreen';
 import CollegeListScreen from '../../screens/map/CollegeListScreen';
+import MealUnifiedScreen from '../../screens/map/MealUnifiedScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -91,6 +92,7 @@ export type MapStackParamList = {
   [mapNavigation.ACE_MEAL]: undefined;
   [mapNavigation.AMARANTH_MEAL]: undefined;
   [mapNavigation.COLLEGE_LIST]: undefined;
+  [mapNavigation.MEAL_UNIFIED]: undefined;
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -187,6 +189,11 @@ function MapStackNavigator() {
           headerTitleStyle: { fontSize: 16, fontWeight: '600' },
           headerTitleAlign: 'center',
         }}
+      />
+      <Stack.Screen
+        name={mapNavigation.MEAL_UNIFIED}
+        component={MealUnifiedScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

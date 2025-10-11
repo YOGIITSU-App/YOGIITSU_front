@@ -19,6 +19,7 @@ export type BottomTabParamList = {
   홈: NavigatorScreenParams<MapStackParamList> | undefined;
   즐겨찾기: undefined;
   단과대: undefined;
+  학식: undefined;
   MY: undefined;
 };
 
@@ -37,11 +38,12 @@ const hiddenScreens = [
   mapNavigation.SHORTCUT_LIST,
   mapNavigation.SHORTCUT_DETAIL,
   mapNavigation.COLLEGE_LIST,
+  mapNavigation.MEAL_UNIFIED,
 ];
 
 export default function BottomTabNavigator() {
   const [selectedTab, setSelectedTab] = useState<
-    '홈' | '즐겨찾기' | '단과대' | 'MY'
+    '홈' | '즐겨찾기' | '학식' | '단과대' | 'MY'
   >('홈');
   const navState = useNavigationState(state => state);
   const tabOptions = useTabOptions();
@@ -71,7 +73,7 @@ export default function BottomTabNavigator() {
 
   const createTabButton = (
     props: any,
-    label: '홈' | '즐겨찾기' | '단과대' | 'MY',
+    label: '홈' | '즐겨찾기' | '단과대' | '학식' | 'MY',
   ) => {
     const isFocused = selectedTab === label;
     const handlePress = () => {
@@ -85,6 +87,10 @@ export default function BottomTabNavigator() {
         });
         return;
       } else if (label === '단과대') {
+        setSelectedTab('홈');
+        globalThis.closeFavoriteBottomSheet?.();
+        props.onPress?.();
+      } else if (label === '학식') {
         setSelectedTab('홈');
         globalThis.closeFavoriteBottomSheet?.();
         props.onPress?.();
@@ -102,6 +108,8 @@ export default function BottomTabNavigator() {
         ? require('../../assets/Favorite.png')
         : label === '단과대'
         ? require('../../assets/College.png')
+        : label === '학식'
+        ? require('../../assets/Meal.png')
         : require('../../assets/MyPage.png');
 
     return (
@@ -187,6 +195,20 @@ export default function BottomTabNavigator() {
             tabPress: e => {
               e.preventDefault();
               navigation.navigate('홈', { screen: mapNavigation.COLLEGE_LIST });
+            },
+          })}
+        />
+
+        <BottomTab.Screen
+          name="학식"
+          component={Empty}
+          options={{
+            tabBarButton: props => createTabButton(props, '학식'),
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: e => {
+              e.preventDefault();
+              navigation.navigate('홈', { screen: mapNavigation.MEAL_UNIFIED });
             },
           })}
         />
