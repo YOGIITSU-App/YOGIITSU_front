@@ -184,7 +184,11 @@ function RouteSelectionScreen() {
       try {
         if (isGuest) {
           const local = await EncryptedStorage.getItem('guestRecentKeywords');
-          if (local) setRecentKeywords(JSON.parse(local));
+          if (local) {
+            setRecentKeywords(JSON.parse(local));
+          } else {
+            setRecentKeywords([]);
+          }
         } else {
           const res = await searchApi.getRecentKeywords();
           setRecentKeywords(res.data);

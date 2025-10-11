@@ -80,13 +80,17 @@ function SearchScreen() {
     try {
       if (isGuest) {
         const local = await EncryptedStorage.getItem('guestRecentKeywords');
-        const parsed = local ? JSON.parse(local) : [];
-        setRecentKeywords(
-          parsed.map((k: { keyword: string; buildingId: number }) => ({
-            ...k,
-            searchedAt: new Date().toISOString(),
-          })),
-        );
+        if (local) {
+          const parsed = JSON.parse(local);
+          setRecentKeywords(
+            parsed.map((k: { keyword: string; buildingId: number }) => ({
+              ...k,
+              searchedAt: new Date().toISOString(),
+            })),
+          );
+        } else {
+          setRecentKeywords([]);
+        }
         return;
       }
 
