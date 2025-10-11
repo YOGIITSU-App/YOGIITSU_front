@@ -76,6 +76,8 @@ function RootNavigatorContent() {
       return;
     }
 
+    let isCancelled = false;
+
     (async () => {
       try {
         const [userId, role, accessToken, refreshTokenValue] =
@@ -86,8 +88,13 @@ function RootNavigatorContent() {
             EncryptedStorage.getItem('refreshToken'),
           ]);
 
+        if (isCancelled) return;
+
         if (userId && role && accessToken && refreshTokenValue) {
           const res = await refreshToken(accessToken, refreshTokenValue);
+
+          if (isCancelled) return;
+
           const rawAuth =
             res.headers.authorization || res.headers.Authorization;
           const newAccessToken = rawAuth?.split(' ')[1];
@@ -101,6 +108,8 @@ function RootNavigatorContent() {
             EncryptedStorage.setItem('refreshToken', newRefreshToken),
           ]);
 
+          if (isCancelled) return;
+
           const parsedUserId = parseInt(userId, 10);
           if (!isNaN(parsedUserId) && parsedUserId > 0) {
             if (!user)
@@ -112,18 +121,24 @@ function RootNavigatorContent() {
           }
         }
 
+        if (isCancelled) return;
         logout();
         setAuthStatus('guest');
         setCheckingAuth(false);
         safeHide();
       } catch (err) {
         console.warn('[RootNavigator] refreshToken 실패', err);
+        if (isCancelled) return;
         logout();
         setAuthStatus('guest');
         setCheckingAuth(false);
         safeHide();
       }
     })();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [login, logout, user, isGuest, guestLoaded]);
 
   useEffect(() => {
