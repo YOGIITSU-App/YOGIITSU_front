@@ -7,10 +7,16 @@ import Rootnavigator from './src/navigations/root/Rootnavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppInitProvider } from './src/contexts/AppInitContext';
 import VersionGate from './src/components/common/VersionGate';
+import { StatusBar } from 'react-native';
 
 function App() {
   return (
     <SafeAreaProvider>
+      <StatusBar
+        translucent={true}
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
       <AppInitProvider>
         <VersionGate
           fallbackConfig={{
