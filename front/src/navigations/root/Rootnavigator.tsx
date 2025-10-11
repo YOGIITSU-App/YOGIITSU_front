@@ -147,15 +147,6 @@ function RootNavigatorContent() {
     }
   }, [checkingAuth]);
 
-  useEffect(() => {
-    if (user && !isGuest) {
-      console.log('[RootNavigator] user detected → member 전환');
-      setAuthStatus('member');
-      setCheckingAuth(false);
-      safeHide();
-    }
-  }, [user, isGuest]);
-
   return (
     <>
       <StatusBar
