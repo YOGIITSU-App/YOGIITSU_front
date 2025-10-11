@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -22,6 +23,8 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
+import Modal from 'react-native-modal';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -38,6 +41,8 @@ export default function ShortcutDetailScreen() {
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { shortcutId } = route.params;
+  const [isImageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // 1) map 로딩 상태
   // const [mapLoaded, setMapLoaded] = useState(false);
@@ -359,11 +364,18 @@ export default function ShortcutDetailScreen() {
                       </Text>
                     )}
                     {item.imageUrl?.trim() !== '' && (
-                      <Image
-                        source={{ uri: item.imageUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                      />
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedImageIndex(index);
+                          setImageModalVisible(true);
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={styles.image}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
                     )}
                   </View>
                 </View>
@@ -371,6 +383,56 @@ export default function ShortcutDetailScreen() {
             }}
           />
         </BottomSheet>
+        <Modal
+          isVisible={isImageModalVisible}
+          onBackdropPress={() => setImageModalVisible(false)}
+          onBackButtonPress={() => setImageModalVisible(false)}
+          style={{ margin: 0 }}
+        >
+          <StatusBar
+            backgroundColor={isImageModalVisible ? 'black' : 'transparent'}
+            barStyle={isImageModalVisible ? 'light-content' : 'dark-content'}
+            animated
+          />
+          <View style={{ flex: 1, backgroundColor: 'black' }}>
+            <TouchableOpacity
+              onPress={() => setImageModalVisible(false)}
+              style={{
+                position: 'absolute',
+                top: insets.top,
+                right: 20,
+                zIndex: 10,
+              }}
+            >
+              <Text style={{ fontSize: 20, color: 'white', lineHeight: 24 }}>
+                ✕
+              </Text>
+            </TouchableOpacity>
+
+            <ImageViewer
+              imageUrls={(detail?.coordinates ?? [])
+                .filter(i => i.imageUrl?.trim() !== '')
+                .map(i => ({ url: i.imageUrl! }))}
+              index={selectedImageIndex}
+              enableSwipeDown
+              onSwipeDown={() => setImageModalVisible(false)}
+              backgroundColor="black"
+              renderIndicator={(currentIndex, allSize) => (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: insets.top,
+                    alignSelf: 'center',
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 16 }}>
+                    {currentIndex}/{allSize}
+                  </Text>
+                </View>
+              )}
+            />
+          </View>
+        </Modal>
       </View>
     </AppScreenLayout>
   );
