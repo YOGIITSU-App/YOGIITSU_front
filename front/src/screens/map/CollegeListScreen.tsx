@@ -65,6 +65,7 @@ export default function CollegeListScreen() {
       <View style={{ height: 12 }} />
       <FlatList
         data={data}
+        showsVerticalScrollIndicator={false}
         keyExtractor={i => String(i.buildingId)}
         renderItem={({ item }) => (
           <Pressable
