@@ -20,12 +20,11 @@ function App() {
       <AppInitProvider>
         <VersionGate
           fallbackConfig={{
-            latestVersion: '2.3.8',
+            latestVersion: '2.5.1',
             minSupportedVersion: '2.3.6',
           }}
           defaultMessage={`안정적인 서비스 이용을 위해\n최신 버전으로 업데이트 해주세요.`}
-          iosAppStoreId={undefined}
-          // iosAppStoreId="1234567890" // ios배포시 등록하기
+          iosAppStoreId="6751530444"
           aggressive={true}
           snoozeHours={24}
         />
