@@ -52,6 +52,37 @@ async function saveTokensFromHeaders(headers: Record<string, any>) {
   ]);
 }
 
+function parseBearer(s?: string | null) {
+  if (!s) return null;
+  const parts = s.split(' ');
+  return parts.length === 2 ? parts[1] : s;
+}
+
+async function fetchUserIdFromProfile(): Promise<number> {
+  try {
+    const token = await EncryptedStorage.getItem('accessToken');
+    if (!token) throw new Error('NO_ACCESS_TOKEN');
+
+    console.log('[fetchUserIdFromProfile] Fetching from /mypage/profile...');
+
+    const res = await authApi.get('/mypage/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const userId = res.data?.memberId ?? res.data?.userId ?? res.data?.id;
+
+    if (userId != null) {
+      console.log('[fetchUserIdFromProfile] userId found:', userId);
+      return Number(userId);
+    }
+
+    throw new Error('USER_ID_NOT_FOUND_IN_PROFILE');
+  } catch (err) {
+    console.error('[fetchUserIdFromProfile] Failed:', err);
+    throw err;
+  }
+}
+
 function pickIdToken(result: unknown): string | null {
   const top = (result as any)?.idToken;
   if (top) return top as string;
@@ -79,15 +110,36 @@ export async function signInWithGoogle(): Promise<LoginOk> {
   const res = await authApi.post('/auth/google', { idToken });
   await saveTokensFromHeaders(res.headers);
 
-  const { userId, role } = (res.data ?? {}) as Partial<LoginOk>;
-  if (!userId || !role) throw new Error('INVALID_BACKEND_PAYLOAD');
+  console.log('[signInWithGoogle] Response data:', res.data);
+
+  // 응답에서 userId 시도
+  let userId =
+    res.data?.userId ??
+    res.data?.user?.id ??
+    res.data?.memberId ??
+    res.data?.id;
+  const roleRaw = res.data?.role ?? res.data?.user?.role;
+
+  // userId 없으면 프로필에서 가져오기
+  if (userId == null) {
+    console.log(
+      '[signInWithGoogle] No userId in response, fetching from profile...',
+    );
+    userId = await fetchUserIdFromProfile();
+  }
+
+  const role: Role =
+    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
+      ? 'ADMIN'
+      : 'USER';
 
   await Promise.all([
     EncryptedStorage.setItem('userId', String(userId)),
     EncryptedStorage.setItem('role', role),
   ]);
 
-  return { userId, role } as LoginOk;
+  console.log('[signInWithGoogle] Login complete:', { userId, role });
+  return { userId: Number(userId), role };
 }
 
 export async function signInWithKakao(): Promise<LoginOk> {
@@ -103,36 +155,46 @@ export async function signInWithKakao(): Promise<LoginOk> {
   const res = await authApi.post('/auth/kakao', { accessToken });
   await saveTokensFromHeaders(res.headers);
 
-  const { userId, role } = (res.data ?? {}) as Partial<LoginOk>;
-  if (!userId || !role) throw new Error('INVALID_BACKEND_PAYLOAD');
+  console.log('[signInWithKakao] Response data:', res.data);
+
+  let userId =
+    res.data?.userId ??
+    res.data?.user?.id ??
+    res.data?.memberId ??
+    res.data?.id;
+  const roleRaw = res.data?.role ?? res.data?.user?.role;
+
+  if (userId == null) {
+    console.log(
+      '[signInWithKakao] No userId in response, fetching from profile...',
+    );
+    userId = await fetchUserIdFromProfile();
+  }
+
+  const role: Role =
+    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
+      ? 'ADMIN'
+      : 'USER';
 
   await Promise.all([
     EncryptedStorage.setItem('userId', String(userId)),
     EncryptedStorage.setItem('role', role),
   ]);
 
-  return { userId, role } as LoginOk;
+  console.log('[signInWithKakao] Login complete:', { userId, role });
+  return { userId: Number(userId), role };
 }
 
-function parseBearer(s?: string | null) {
-  if (!s) return null;
-  const parts = s.split(' ');
-  return parts.length === 2 ? parts[1] : s;
-}
-
-export async function signInWithApple(): Promise<LoginOk | null> {
-  // 1) Apple 로그인
+export async function signInWithApple(): Promise<LoginOk> {
   const r = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
   });
-  const { authorizationCode } = r;
+  const { authorizationCode, user } = r;
   if (!authorizationCode) throw new Error('NO_AUTHORIZATION_CODE');
 
-  // 2) 서버 교환 (axios 일원화: 인터셉터/타임아웃 활용)
   const res = await authApi.post('/auth/apple', { authorizationCode });
 
-  // 3) 토큰 저장: 헤더 우선, 실패 시 바디 폴백. 둘 다 없으면 에러
   let saved = false;
   try {
     await saveTokensFromHeaders(res.headers as any);
@@ -151,24 +213,38 @@ export async function signInWithApple(): Promise<LoginOk | null> {
   }
   if (!saved) throw new Error('TOKEN_MISSING');
 
-  // 4) 사용자/역할 추출 & 저장 (기본값 강제하지 않음)
-  const data: any = res.data ?? {};
-  const userId = data.userId ?? data.user?.userId ?? data.user?.id ?? data.id;
-  const roleRaw = data.role ?? data.user?.role ?? data.userRole;
-
-  if (userId != null) {
-    await EncryptedStorage.setItem('userId', String(userId));
-  }
-  if (roleRaw) {
-    const role = (
-      String(roleRaw).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER'
-    ) as Role;
-    await EncryptedStorage.setItem('role', role);
-    return { userId: Number(userId), role };
+  if (user) {
+    await EncryptedStorage.setItem('appleUserId', user);
   }
 
-  // role이 없으면 null 반환하여 상위에서 처리(서버 이슈 노출)
-  return null;
+  console.log('[signInWithApple] Response data:', res.data);
+
+  let userId =
+    res.data?.userId ??
+    res.data?.user?.id ??
+    res.data?.memberId ??
+    res.data?.id;
+  const roleRaw = res.data?.role ?? res.data?.user?.role;
+
+  if (userId == null) {
+    console.log(
+      '[signInWithApple] No userId in response, fetching from profile...',
+    );
+    userId = await fetchUserIdFromProfile();
+  }
+
+  const role: Role =
+    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
+      ? 'ADMIN'
+      : 'USER';
+
+  await Promise.all([
+    EncryptedStorage.setItem('userId', String(userId)),
+    EncryptedStorage.setItem('role', role),
+  ]);
+
+  console.log('[signInWithApple] Login complete:', { userId, role });
+  return { userId: Number(userId), role };
 }
 
 export async function signOutAll() {
