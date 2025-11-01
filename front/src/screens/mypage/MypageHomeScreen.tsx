@@ -27,6 +27,7 @@ import { getMypageProfile, MypageProfileResponse } from '../../api/mypageApi';
 import CustomButton from '../../components/CustomButton';
 import { logoutEmitter } from '../../utils/logoutEmitter';
 import { useUser } from '../../contexts/UserContext';
+import { signOutAll } from '../../api/socialAuth';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -77,6 +78,16 @@ function MypageHomeScreen() {
     })();
   }, [isGuest, user]);
 
+  const handleLogout = async () => {
+    try {
+      setModalVisible(false);
+      await signOutAll();
+      logoutEmitter.emit('force-logout');
+    } catch (err) {
+      logoutEmitter.emit('force-logout');
+    }
+  };
+
   /** 게스트 모드 화면 */
   if (isGuest) {
     return (
@@ -85,6 +96,7 @@ function MypageHomeScreen() {
           <TouchableOpacity
             style={styles.loginPrompt}
             onPress={async () => {
+              await signOutAll();
               await logout();
             }}
           >
@@ -214,10 +226,7 @@ function MypageHomeScreen() {
                 <CustomButton
                   label="네"
                   style={[styles.modalButton, styles.confirmButton]}
-                  onPress={() => {
-                    setModalVisible(false);
-                    logoutEmitter.emit('force-logout');
-                  }}
+                  onPress={handleLogout}
                 />
               </View>
             </View>
