@@ -13,42 +13,27 @@ export type RootStackParamList = { AuthStack: undefined; BottomTab: undefined };
 const RootStack = createStackNavigator<RootStackParamList>();
 
 function RootNavigatorContent() {
-  const { user, login, logout, isGuest, guestLoaded } = useUser();
-
-  const [authStatus, setAuthStatus] = useState<'unknown' | 'guest' | 'member'>(
-    'unknown',
-  );
+  const { isAuthenticated, logout, isGuest, initialized } = useUser();
   const [checkingAuth, setCheckingAuth] = useState(true);
-
   const splashHiddenRef = useRef(false);
+
   const safeHide = () => {
     if (splashHiddenRef.current) return;
     splashHiddenRef.current = true;
+    console.log('[RootNavigator] Hiding splash screen');
     BootSplash.hide({ fade: true });
   };
-
-  // 강제 타임아웃 방지 (iOS 안전용)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (checkingAuth) {
-        console.warn('[RootNavigator] Auth check timeout → fallback to guest');
-        setAuthStatus('guest');
-        setCheckingAuth(false);
-        safeHide();
-      }
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [checkingAuth]);
 
   // 강제 로그아웃
   useEffect(() => {
     const handleLogout = async () => {
+      console.log('[RootNavigator] Force logout triggered');
       await EncryptedStorage.clear();
-      logout();
-      setAuthStatus('guest');
+      await logout();
       setCheckingAuth(false);
-      safeHide();
+      console.log('[RootNavigator] Logout completed');
     };
+
     logoutEmitter.addListener('force-logout', handleLogout);
     return () => {
       logoutEmitter.removeListener?.('force-logout', handleLogout);
@@ -56,96 +41,88 @@ function RootNavigatorContent() {
     };
   }, [logout]);
 
-  // 자동 로그인 복원
+  // 자동 로그인 - 토큰 갱신
   useEffect(() => {
-    if (!guestLoaded) {
+    if (!initialized) {
+      console.log('[RootNavigator] Waiting for initialization...');
       return;
     }
-
-    if (user && !isGuest) {
-      setAuthStatus('member');
-      setCheckingAuth(false);
-      safeHide();
-      return;
-    }
-
-    if (isGuest) {
-      setAuthStatus('guest');
-      setCheckingAuth(false);
-      safeHide();
-      return;
-    }
-
-    let isCancelled = false;
 
     (async () => {
       try {
-        const [userId, role, accessToken, refreshTokenValue] =
-          await Promise.all([
-            EncryptedStorage.getItem('userId'),
-            EncryptedStorage.getItem('role'),
-            EncryptedStorage.getItem('accessToken'),
-            EncryptedStorage.getItem('refreshToken'),
-          ]);
+        console.log('[RootNavigator] Starting auth check...', {
+          isAuthenticated,
+          isGuest,
+        });
 
-        if (isCancelled) return;
-
-        if (userId && role && accessToken && refreshTokenValue) {
-          const res = await refreshToken(accessToken, refreshTokenValue);
-
-          if (isCancelled) return;
-
-          const rawAuth =
-            res.headers.authorization || res.headers.Authorization;
-          const newAccessToken = rawAuth?.split(' ')[1];
-          const newRefreshToken = res.headers['x-refresh-token'];
-
-          if (!newAccessToken || !newRefreshToken)
-            throw new Error('토큰 재발급 실패');
-
-          await Promise.all([
-            EncryptedStorage.setItem('accessToken', newAccessToken),
-            EncryptedStorage.setItem('refreshToken', newRefreshToken),
-          ]);
-
-          if (isCancelled) return;
-
-          const parsedUserId = parseInt(userId, 10);
-          if (!isNaN(parsedUserId) && parsedUserId > 0) {
-            if (!user)
-              login({ userId: parsedUserId, role: role as 'USER' | 'ADMIN' });
-            setAuthStatus('member');
-            setCheckingAuth(false);
-            safeHide();
-            return;
-          }
+        if (isGuest) {
+          console.log('[RootNavigator] Guest mode');
+          setCheckingAuth(false);
+          safeHide();
+          return;
         }
 
-        if (isCancelled) return;
-        logout();
-        setAuthStatus('guest');
-        setCheckingAuth(false);
-        safeHide();
+        if (!isAuthenticated) {
+          console.log('[RootNavigator] Not authenticated');
+          setCheckingAuth(false);
+          safeHide();
+          return;
+        }
+
+        // 인증된 사용자 - 토큰 갱신 시도
+        console.log(
+          '[RootNavigator] User authenticated, attempting token refresh...',
+        );
+
+        const [accessToken, refreshTokenValue] = await Promise.all([
+          EncryptedStorage.getItem('accessToken'),
+          EncryptedStorage.getItem('refreshToken'),
+        ]);
+
+        if (accessToken && refreshTokenValue) {
+          try {
+            const res = await refreshToken(accessToken, refreshTokenValue);
+            const rawAuth =
+              res.headers.authorization || res.headers.Authorization;
+            const newAccessToken = rawAuth?.split(' ')[1];
+            const newRefreshToken = res.headers['x-refresh-token'];
+
+            if (newAccessToken && newRefreshToken) {
+              await Promise.all([
+                EncryptedStorage.setItem('accessToken', newAccessToken),
+                EncryptedStorage.setItem('refreshToken', newRefreshToken),
+              ]);
+              console.log('[RootNavigator] Token refresh successful');
+            } else {
+              console.warn(
+                '[RootNavigator] Token refresh failed - invalid tokens',
+              );
+              await logout();
+            }
+          } catch (refreshErr) {
+            console.warn('[RootNavigator] Token refresh failed:', refreshErr);
+            await logout();
+          }
+        } else {
+          console.warn('[RootNavigator] No tokens found');
+          await logout();
+        }
       } catch (err) {
-        console.warn('[RootNavigator] refreshToken 실패', err);
-        if (isCancelled) return;
-        logout();
-        setAuthStatus('guest');
+        console.error('[RootNavigator] Auth check error:', err);
+        await logout();
+      } finally {
         setCheckingAuth(false);
         safeHide();
       }
     })();
+  }, [initialized, isAuthenticated, isGuest, logout]);
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [login, logout, user, isGuest, guestLoaded]);
-
-  useEffect(() => {
-    if (!checkingAuth) {
-      safeHide();
-    }
-  }, [checkingAuth]);
+  console.log('[RootNavigator] Render state:', {
+    checkingAuth,
+    isAuthenticated,
+    isGuest,
+    initialized,
+  });
 
   return (
     <>
@@ -168,7 +145,7 @@ function RootNavigatorContent() {
         </View>
       ) : (
         <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          {authStatus === 'member' || isGuest ? (
+          {isAuthenticated || isGuest ? (
             <RootStack.Screen name="BottomTab" component={BottomTabNavigator} />
           ) : (
             <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
