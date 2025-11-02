@@ -83,6 +83,14 @@ export default function ShortcutDetailScreen() {
     }
   };
 
+  const imageItems = useMemo(
+    () =>
+      (detail?.coordinates ?? [])
+        .filter(i => i.imageUrl?.trim() !== '')
+        .map(i => ({ url: i.imageUrl! })),
+    [detail],
+  );
+
   // 1) 상세 API 호출
   useEffect(() => {
     fetchShortcutDetail(shortcutId)
@@ -366,7 +374,10 @@ export default function ShortcutDetailScreen() {
                     {item.imageUrl?.trim() !== '' && (
                       <TouchableOpacity
                         onPress={() => {
-                          setSelectedImageIndex(index);
+                          const imgIndex = imageItems.findIndex(
+                            i => i.url === item.imageUrl?.trim(),
+                          );
+                          setSelectedImageIndex(imgIndex >= 0 ? imgIndex : 0);
                           setImageModalVisible(true);
                         }}
                       >
@@ -410,9 +421,7 @@ export default function ShortcutDetailScreen() {
             </TouchableOpacity>
 
             <ImageViewer
-              imageUrls={(detail?.coordinates ?? [])
-                .filter(i => i.imageUrl?.trim() !== '')
-                .map(i => ({ url: i.imageUrl! }))}
+              imageUrls={imageItems}
               index={selectedImageIndex}
               enableSwipeDown
               onSwipeDown={() => setImageModalVisible(false)}
