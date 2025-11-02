@@ -110,8 +110,8 @@ android {
         applicationId "com.yogiitsuapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 18
-        versionName "2.5.2"
+        versionCode 19
+        versionName "2.5.4"
         manifestPlaceholders = [
             KAKAO_NATIVE_APP_KEY: project.env.get("KAKAO_NATIVE_APP_KEY")
         ]
