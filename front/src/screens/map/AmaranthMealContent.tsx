@@ -19,13 +19,14 @@ dayjs.locale('ko');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const BUILDING_ID = 12;
+
 export default function AmaranthMealContent({
   onDateChange,
 }: {
   onDateChange: (d: string) => void;
 }) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [tz, setTz] = useState('Asia/Seoul');
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
     {},
@@ -33,25 +34,30 @@ export default function AmaranthMealContent({
   const [available, setAvailable] = useState<number[]>([]);
   const [ptr, setPtr] = useState(0);
   const [indexToDate, setIndexToDate] = useState<Record<number, string>>({});
-  const BUILDING_ID = 12;
 
   useEffect(() => {
     const ac = new AbortController();
+
     (async () => {
       try {
         const res = await getCafeteriaWeekly(BUILDING_ID, ac.signal);
 
         const grouped: Record<number, CafeteriaMenuItem[]> = {};
-        res.menus.forEach(m => (grouped[m.dayIndex] ||= []).push(m));
+        res.menus?.forEach(m => {
+          (grouped[m.dayIndex] ||= []).push(m);
+        });
 
         const av = (
           res.availableIndices || Object.keys(grouped).map(Number)
         ).sort((a, b) => a - b);
-        const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul');
+
         const map: Record<number, string> = {};
-        av.forEach(
-          idx => (map[idx] = base.add(idx, 'day').format('YYYY-MM-DD')),
-        );
+        if (av.length > 0) {
+          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul');
+          av.forEach(
+            idx => (map[idx] = base.add(idx, 'day').format('YYYY-MM-DD')),
+          );
+        }
 
         setByIndex(grouped);
         setAvailable(av);
@@ -59,23 +65,21 @@ export default function AmaranthMealContent({
         setTz(res.tz || 'Asia/Seoul');
 
         const todayIdx = res.todayIndex ?? 0;
-        let initialPtr = 0;
-
-        if (av.includes(todayIdx)) {
-          initialPtr = av.indexOf(todayIdx);
-        } else {
-          const prev = av.filter(i => i < todayIdx).sort((a, b) => b - a)?.[0];
-          if (prev !== undefined) initialPtr = av.indexOf(prev);
-          else initialPtr = av.length - 1;
-        }
+        const initialPtr = av.includes(todayIdx)
+          ? av.indexOf(todayIdx)
+          : Math.max(av.length - 1, 0);
 
         setPtr(initialPtr);
       } catch {
-        setError('학식 정보를 불러오지 못했습니다.');
+        setByIndex({});
+        setAvailable([]);
+        setIndexToDate({});
+        setPtr(0);
       } finally {
         setLoading(false);
       }
     })();
+
     return () => ac.abort();
   }, []);
 
@@ -83,6 +87,7 @@ export default function AmaranthMealContent({
     () => (available.length ? available[ptr] : 0),
     [available, ptr],
   );
+
   const selectedDateISO = indexToDate[selectedIndex];
   const dateLabel = selectedDateISO
     ? dayjs.tz(selectedDateISO, tz).format('M/D (ddd)')
@@ -90,7 +95,7 @@ export default function AmaranthMealContent({
 
   useEffect(() => {
     if (dateLabel) onDateChange(dateLabel);
-  }, [dateLabel]);
+  }, [dateLabel, onDateChange]);
 
   const meals = byIndex[selectedIndex] || [];
   const lunch = meals.filter(m => m.mealType?.includes('중식'));
@@ -108,12 +113,9 @@ export default function AmaranthMealContent({
       )
       ?.items?.join(', ') || '';
 
-  const onPrev = () => {
-    if (ptr > 0) setPtr(p => p - 1);
-  };
-  const onNext = () => {
-    if (ptr < available.length - 1) setPtr(p => p + 1);
-  };
+  const onPrev = () => ptr > 0 && setPtr(p => p - 1);
+  const onNext = () => ptr < available.length - 1 && setPtr(p => p + 1);
+
   const leftDisabled = ptr <= 0;
   const rightDisabled = ptr >= available.length - 1;
 
@@ -155,9 +157,8 @@ export default function AmaranthMealContent({
       </View>
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
 
-      {!loading && !error && (
+      {!loading && (
         <>
           <View style={styles.card}>
             {choiceList.length > 0 && (

@@ -23,7 +23,6 @@ const BUILDING_ID = 12;
 
 export default function AmaranthMealScreen() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [tz, setTz] = useState('Asia/Seoul');
 
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
@@ -41,12 +40,12 @@ export default function AmaranthMealScreen() {
     (async () => {
       if (canceled) return;
       setLoading(true);
-      setError(null);
+
       try {
         const res = await getCafeteriaWeekly(BUILDING_ID, ac.signal);
 
         const grouped: Record<number, CafeteriaMenuItem[]> = {};
-        res.menus.forEach(m => {
+        res.menus?.forEach(m => {
           (grouped[m.dayIndex] ||= []).push(m);
         });
 
@@ -59,40 +58,32 @@ export default function AmaranthMealScreen() {
         const map: Record<number, string> = {};
         if (res.indexToDate) {
           Object.entries(res.indexToDate).forEach(([k, v]) => (map[+k] = v));
-        } else {
-          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul'); // ← 여기!
+        } else if (av.length > 0) {
+          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul');
           av.forEach(idx => {
             map[idx] = base.add(idx, 'day').format('YYYY-MM-DD');
           });
         }
-        setIndexToDate(map);
 
         const todayPos = av.indexOf((res.todayIndex as number) ?? -999);
-        const initialPtr = (() => {
-          if (todayPos >= 0) return todayPos;
-          const dates = av.map(i => map[i]).sort(); // ISO 문자열
-          if (dates.length === 0) return 0;
-          const todayISO = (res.serverTime || new Date().toISOString()).slice(
-            0,
-            10,
-          );
-          if (todayISO <= dates[0]) return 0;
-          if (todayISO >= dates[dates.length - 1]) return dates.length - 1;
-          const k = dates.findIndex(d => d >= todayISO);
-          return k === -1 ? dates.length - 1 : k;
-        })();
-        setPtr(initialPtr);
+        const initialPtr = todayPos >= 0 ? todayPos : 0;
 
         if (canceled || ac.signal.aborted) return;
+
         setByIndex(grouped);
         setAvailable(av);
         setIndexToDate(map);
+        setPtr(initialPtr);
+
         const name =
-          res.menus.find(m => !!m.buildingName)?.buildingName || buildingTitle;
+          res.menus?.find(m => !!m.buildingName)?.buildingName || buildingTitle;
         setBuildingTitle(name);
       } catch (e) {
         if (!canceled && !ac.signal.aborted) {
-          setError('학식 정보를 불러오지 못했습니다.');
+          setByIndex({});
+          setAvailable([]);
+          setIndexToDate({});
+          setPtr(0);
         }
       } finally {
         if (!canceled && !ac.signal.aborted) {
@@ -111,33 +102,27 @@ export default function AmaranthMealScreen() {
     () => (available.length ? available[ptr] : 0),
     [available, ptr],
   );
+
   const selectedDateISO = indexToDate[selectedIndex];
   const dateLabel = selectedDateISO
     ? dayjs.tz(selectedDateISO, tz).format('M월 D일 dddd')
     : '';
+
   const mealsForSelected = byIndex[selectedIndex] || [];
 
-  // 아마란스: 점심(선택메뉴/공통찬) + 저녁
+  // 점심 / 저녁
   const lunch = mealsForSelected.filter(m => m.mealType?.includes('중식'));
   const dinner = mealsForSelected.filter(m => m.mealType?.includes('석식'));
 
-  // 선택/공통 분리(점심)
   const choiceList = lunch.flatMap(m => m.itemsChoice || []);
   const commonList = lunch.flatMap(m => m.itemsCommon || []);
   const lunchBody =
     lunch.length && (choiceList.length || commonList.length)
       ? null
-      : lunch.flatMap(m => m.items).join(', '); // 선택/공통이 없으면 items로 대체
+      : lunch.flatMap(m => m.items).join(', ');
 
-  const onPrev = () => {
-    if (ptr > 0) setPtr(p => p - 1);
-  };
-  const onNext = () => {
-    if (ptr < available.length - 1) setPtr(p => p + 1);
-  };
-
-  const leftDisabled = ptr <= 0;
-  const rightDisabled = ptr >= available.length - 1;
+  const onPrev = () => ptr > 0 && setPtr(p => p - 1);
+  const onNext = () => ptr < available.length - 1 && setPtr(p => p + 1);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -148,25 +133,26 @@ export default function AmaranthMealScreen() {
           <Text style={styles.dateLabel}>{dateLabel}</Text>
         </View>
         <View style={styles.dateNavBox}>
-          <Pressable
-            style={[styles.navBtn, leftDisabled && { opacity: 0.4 }]}
-            onPress={onPrev}
-            disabled={leftDisabled}
-          >
+          <Pressable style={styles.navBtn} onPress={onPrev} disabled={ptr <= 0}>
             <Image
               source={require('../../assets/back-icon.png')}
-              style={{ width: 7, height: 11 }}
+              style={{ width: 7, height: 11, opacity: ptr <= 0 ? 0.4 : 1 }}
             />
           </Pressable>
           <View style={styles.navDivider} />
           <Pressable
-            style={[styles.navBtn, rightDisabled && { opacity: 0.4 }]}
+            style={styles.navBtn}
             onPress={onNext}
-            disabled={rightDisabled}
+            disabled={ptr >= available.length - 1}
           >
             <Image
               source={require('../../assets/back-icon.png')}
-              style={{ width: 7, height: 11, transform: [{ scaleX: -1 }] }}
+              style={{
+                width: 7,
+                height: 11,
+                transform: [{ scaleX: -1 }],
+                opacity: ptr >= available.length - 1 ? 0.4 : 1,
+              }}
             />
           </Pressable>
         </View>
@@ -177,9 +163,8 @@ export default function AmaranthMealScreen() {
       <Text style={styles.timeText}>11:00 - 14:00</Text>
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
 
-      {!loading && !error && (
+      {!loading && (
         <>
           <View style={styles.card}>
             {choiceList.length > 0 && (
@@ -195,11 +180,7 @@ export default function AmaranthMealScreen() {
                 <Text style={styles.menu}>{commonList.join(', ')}</Text>
               </>
             )}
-            {lunchBody && (
-              <>
-                <Text style={styles.menu}>{lunchBody}</Text>
-              </>
-            )}
+            {lunchBody && <Text style={styles.menu}>{lunchBody}</Text>}
             {!choiceList.length && !commonList.length && !lunchBody && (
               <Text style={styles.menu}>메뉴 준비 중</Text>
             )}
@@ -220,7 +201,7 @@ export default function AmaranthMealScreen() {
             </View>
           </View>
 
-          {/* 이용 안내(고정) */}
+          {/* 이용 안내 */}
           <Text style={styles.infoTitle}>이용안내</Text>
           <Text style={styles.infoSubTitle}>학생식당</Text>
           <Text style={styles.infoText}>Mom’s Cook : 6,500원</Text>
