@@ -11,6 +11,11 @@ import ShortcutListScreen from '../../screens/map/ShortcutListScreen';
 import ShortcutDetailScreen from '../../screens/map/ShortcutDetailScreen';
 import ShuttleDetailScreen from '../../screens/map/ShuttleDetailScreen';
 import { ShuttleSchedule } from '../../api/shuttleApi';
+import AceMealScreen from '../../screens/map/AceMealScreen';
+import AmaranthMealScreen from '../../screens/map/AmaranthMealScreen';
+import CollegeListScreen from '../../screens/map/CollegeListScreen';
+import MealUnifiedScreen from '../../screens/map/MealUnifiedScreen';
+import ChatbotScreen from '../../screens/map/ChatbotScreen';
 
 // 네비게이션 파라미터 타입 정의
 export type MapStackParamList = {
@@ -85,6 +90,11 @@ export type MapStackParamList = {
   [mapNavigation.SHORTCUT_DETAIL]: {
     shortcutId: number;
   };
+  [mapNavigation.CHATBOT]: undefined;
+  [mapNavigation.ACE_MEAL]: undefined;
+  [mapNavigation.AMARANTH_MEAL]: undefined;
+  [mapNavigation.COLLEGE_LIST]: undefined;
+  [mapNavigation.MEAL_UNIFIED]: undefined;
 };
 
 const Stack = createStackNavigator<MapStackParamList>();
@@ -171,6 +181,25 @@ function MapStackNavigator() {
       <Stack.Screen
         name={mapNavigation.SHORTCUT_DETAIL}
         component={ShortcutDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={mapNavigation.CHATBOT}
+        component={ChatbotScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={mapNavigation.COLLEGE_LIST}
+        component={CollegeListScreen}
+        options={{
+          title: '전체 단과대',
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerTitleAlign: 'center',
+        }}
+      />
+      <Stack.Screen
+        name={mapNavigation.MEAL_UNIFIED}
+        component={MealUnifiedScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
