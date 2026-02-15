@@ -25,7 +25,6 @@ export default function AceMealContent({
   onDateChange: (d: string) => void;
 }) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [tz, setTz] = useState('Asia/Seoul');
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
     {},
@@ -37,6 +36,7 @@ export default function AceMealContent({
 
   useEffect(() => {
     const ac = new AbortController();
+
     (async () => {
       try {
         const res = await getCafeteriaWeekly(BUILDING_ID, ac.signal);
@@ -47,6 +47,7 @@ export default function AceMealContent({
         const av = (
           res.availableIndices || Object.keys(grouped).map(Number)
         ).sort((a, b) => a - b);
+
         const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul');
         const map: Record<number, string> = {};
         av.forEach(
@@ -65,17 +66,20 @@ export default function AceMealContent({
           initialPtr = av.indexOf(todayIdx);
         } else {
           const prev = av.filter(i => i < todayIdx).sort((a, b) => b - a)?.[0];
-          if (prev !== undefined) initialPtr = av.indexOf(prev);
-          else initialPtr = av.length - 1;
+          initialPtr = prev !== undefined ? av.indexOf(prev) : av.length - 1;
         }
 
         setPtr(initialPtr);
       } catch {
-        setError('학식 정보를 불러오지 못했습니다.');
+        setByIndex({});
+        setAvailable([]);
+        setIndexToDate({});
+        setPtr(0);
       } finally {
         setLoading(false);
       }
     })();
+
     return () => ac.abort();
   }, []);
 
@@ -83,10 +87,16 @@ export default function AceMealContent({
     () => (available.length ? available[ptr] : 0),
     [available, ptr],
   );
+
   const selectedDateISO = indexToDate[selectedIndex];
   const dateLabel = selectedDateISO
     ? dayjs.tz(selectedDateISO, tz).format('M/D (ddd)')
     : '';
+
+  useEffect(() => {
+    if (dateLabel) onDateChange(dateLabel);
+  }, [dateLabel]);
+
   const meals = byIndex[selectedIndex] || [];
   const lunchStudent = meals.filter(
     m => m.mealType?.includes('중식') && m.place?.includes('학생'),
@@ -94,18 +104,10 @@ export default function AceMealContent({
   const lunchStaff = meals.filter(
     m => m.mealType?.includes('중식') && m.place?.includes('교직원'),
   );
-  const dinner = meals.filter(m => m.mealType?.includes('석식'));
 
-  useEffect(() => {
-    if (dateLabel) onDateChange(dateLabel);
-  }, [dateLabel]);
+  const onPrev = () => ptr > 0 && setPtr(p => p - 1);
+  const onNext = () => ptr < available.length - 1 && setPtr(p => p + 1);
 
-  const onPrev = () => {
-    if (ptr > 0) setPtr(p => p - 1);
-  };
-  const onNext = () => {
-    if (ptr < available.length - 1) setPtr(p => p + 1);
-  };
   const leftDisabled = ptr <= 0;
   const rightDisabled = ptr >= available.length - 1;
 
@@ -143,9 +145,8 @@ export default function AceMealContent({
       </View>
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
 
-      {!loading && !error && (
+      {!loading && (
         <>
           <View style={styles.card}>
             <Text style={styles.subTitle}>학생 식당</Text>

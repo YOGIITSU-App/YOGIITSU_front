@@ -23,20 +23,14 @@ const BUILDING_ID = 5;
 
 export default function AceMealScreen() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [tz, setTz] = useState('Asia/Seoul');
 
-  // index → 메뉴목록
   const [byIndex, setByIndex] = useState<Record<number, CafeteriaMenuItem[]>>(
     {},
   );
-  // 이동 가능한 인덱스들 [0,1,2,3,4]
   const [available, setAvailable] = useState<number[]>([]);
-  // available 배열에서의 포인터
   const [ptr, setPtr] = useState(0);
-  // index → ISO date
   const [indexToDate, setIndexToDate] = useState<Record<number, string>>({});
-  // 헤더 타이틀(응답 없을 때 대비)
   const [buildingTitle, setBuildingTitle] = useState('ACE교육관');
 
   useEffect(() => {
@@ -46,40 +40,36 @@ export default function AceMealScreen() {
     (async () => {
       if (canceled) return;
       setLoading(true);
-      setError(null);
+
       try {
         const res = await getCafeteriaWeekly(BUILDING_ID, ac.signal);
 
-        // 인덱스별 그룹핑
         const grouped: Record<number, CafeteriaMenuItem[]> = {};
         res.menus.forEach(m => {
           (grouped[m.dayIndex] ||= []).push(m);
         });
 
-        // 이동 가능한 요일
         const av = (
           res.availableIndices || Object.keys(grouped).map(Number)
         ).sort((a, b) => a - b);
 
-        // index → date 매핑 (tz 반영)
         const map: Record<number, string> = {};
         if (res.indexToDate) {
           Object.entries(res.indexToDate).forEach(
             ([k, v]) => (map[Number(k)] = v),
           );
         } else {
-          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul'); // ← 여기!
+          const base = dayjs.tz(res.weekStart, res.tz || 'Asia/Seoul');
           av.forEach(idx => {
             map[idx] = base.add(idx, 'day').format('YYYY-MM-DD');
           });
         }
 
-        // 초기 포인터: todayIndex가 없거나 주말이면 가까운 평일로 클램프
         const todayPos = av.indexOf((res.todayIndex as number) ?? -999);
         const initialPtr = (() => {
           if (todayPos >= 0) return todayPos;
-          const dates = av.map(i => map[i]).sort(); // ISO 문자열 정렬
-          if (dates.length === 0) return 0;
+          const dates = av.map(i => map[i]).sort();
+          if (!dates.length) return 0;
           const todayISO = (res.serverTime || new Date().toISOString()).slice(
             0,
             10,
@@ -98,13 +88,15 @@ export default function AceMealScreen() {
         setPtr(initialPtr);
         setTz(res.tz || 'Asia/Seoul');
 
-        // 빌딩명(첫 항목 기준)
         const name =
           res.menus.find(m => !!m.buildingName)?.buildingName || buildingTitle;
         setBuildingTitle(name);
       } catch (e) {
         if (!canceled && !ac.signal.aborted) {
-          setError('학식 정보를 불러오지 못했습니다.');
+          setByIndex({});
+          setAvailable([]);
+          setIndexToDate({});
+          setPtr(0);
         }
       } finally {
         if (!canceled && !ac.signal.aborted) {
@@ -131,7 +123,6 @@ export default function AceMealScreen() {
 
   const mealsForSelected = byIndex[selectedIndex] || [];
 
-  // ACE 화면: 점심(중식) × [학생식당, 교직원식당]
   const lunchStudent = mealsForSelected.filter(
     m => m.mealType?.includes('중식') && m.place?.includes('학생'),
   );
@@ -186,9 +177,8 @@ export default function AceMealScreen() {
       <Text style={styles.timeText}>11:00 - 14:00</Text>
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {error && <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>}
 
-      {!loading && !error && (
+      {!loading && (
         <>
           <View style={styles.card}>
             <Text style={styles.subTitle}>학생 식당</Text>
@@ -218,7 +208,6 @@ export default function AceMealScreen() {
 
           <View style={{ height: 46 }} />
 
-          {/* 이용 안내 (고정문구) */}
           <Text style={styles.infoTitle}>이용안내</Text>
           <Text style={styles.infoSubTitle}>학생식당</Text>
           <Text style={styles.infoText}>
