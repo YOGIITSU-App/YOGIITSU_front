@@ -24,9 +24,18 @@ target 'YogiitsuApp' do
     'LocationWhenInUse',
   ])
 
+  flags = {
+    :hermes_enabled => true,
+    :fabric_enabled => false,
+    :new_arch_enabled => false,
+  }
+
   use_react_native!(
     :path => config[:reactNativePath],
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :hermes_enabled => flags[:hermes_enabled],
+    :fabric_enabled => flags[:fabric_enabled],
+    :new_arch_enabled => flags[:new_arch_enabled]
   )
 
   post_install do |installer|

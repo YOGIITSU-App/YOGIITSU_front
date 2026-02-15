@@ -24,6 +24,8 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import FacilityBadge from '../../components/FacilityBadge';
 import FacilityBadgeWithFloor from '../../components/FacilityBadgeWithFloor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRequireLogin } from '../../hooks/useRequireLogin';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -53,6 +55,8 @@ export default function BuildingDetailScreen() {
   const [endLocation, setEndLocation] = useState('');
   const [endLocationName, setEndLocationName] = useState('');
   const [endBuildingId, setEndBuildingId] = useState<number | undefined>();
+
+  const { visible, setVisible, requireLogin } = useRequireLogin();
 
   // route.params 갱신되면 상태 업데이트
   useEffect(() => {
@@ -143,7 +147,9 @@ export default function BuildingDetailScreen() {
           <View style={styles.titleRow}>
             <Text style={styles.title}>{buildingInfo.name}</Text>
             <TouchableOpacity
-              onPress={toggleFavorite}
+              onPress={() => {
+                requireLogin(() => toggleFavorite());
+              }}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
               <Image
@@ -349,6 +355,10 @@ export default function BuildingDetailScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <LoginRequiredModal
+          visible={visible}
+          onClose={() => setVisible(false)}
+        />
       </ScrollView>
     </AppScreenLayout>
   );

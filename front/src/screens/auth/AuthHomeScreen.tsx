@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
+    marginTop: '30%',
     flex: 3,
     alignContent: 'center',
     justifyContent: 'center',

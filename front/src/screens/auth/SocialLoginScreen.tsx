@@ -1,20 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Alert,
+  Platform,
+  ScrollView,
+  Pressable,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { authNavigations, colors } from '../../constants';
+import { authNavigations, colors, mapNavigation } from '../../constants';
 import { useUser } from '../../contexts/UserContext';
 import {
   configureSocial,
   signInWithGoogle,
   signInWithKakao,
+  signInWithApple,
 } from '../../api/socialAuth';
 import SocialButton from '../../components/common/SocialButton';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SocialLoginScreen() {
   const navigation = useNavigation<any>();
-  const { login } = useUser();
-  const [loading, setLoading] = useState<null | 'kakao' | 'google'>(null);
+  const { login, setGuest } = useUser();
+  const insets = useSafeAreaInsets();
+
+  const [loading, setLoading] = useState<null | 'kakao' | 'google' | 'apple'>(
+    null,
+  );
+
+  const handleGuest = () => {
+    setGuest(true);
+  };
+
+  const normalizeRole = (role: unknown): 'USER' | 'ADMIN' =>
+    String(role).toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER';
 
   useEffect(() => {
     configureSocial();
@@ -46,9 +68,39 @@ export default function SocialLoginScreen() {
     }
   };
 
+  const onApple = async () => {
+    try {
+      setLoading('apple');
+      const r = await signInWithApple();
+
+      if (!r) {
+        Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
+
+      if (r.role) {
+        const role = normalizeRole(r.role);
+        login({ userId: r.userId ?? -1, role });
+        return;
+      }
+
+      Alert.alert('로그인에 실패했습니다. 다시 시도해주세요.');
+    } catch (e) {
+      Alert.alert('애플 로그인에 실패했습니다.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <AppScreenLayout disableTopInset>
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: 24 + insets.bottom },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* 상단 카피 */}
         <Image
           source={require('../../assets/bootsplash/logo.png')}
@@ -59,21 +111,26 @@ export default function SocialLoginScreen() {
         />
 
         {/* 말풍선 */}
-        <View style={styles.bubbleWrap}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
+        <View style={styles.main}>
+          <View style={styles.bubbleWrap}>
+            <View style={styles.bubble}>
+              <Text style={styles.bubbleText}>⚡ 10초만에 가입하기</Text>
+            </View>
+            <View style={styles.bubbleTail} />
           </View>
-          <View style={styles.bubbleTail} />
-        </View>
-
-        {/* 버튼들 */}
-        <View style={styles.buttons}>
+          {Platform.OS === 'ios' && (
+            <SocialButton
+              provider="apple"
+              onPress={onApple}
+              loading={loading === 'apple'}
+              disabled={loading !== null}
+            />
+          )}
           <SocialButton
             provider="kakao"
             onPress={onKakao}
             loading={loading === 'kakao'}
             disabled={loading !== null}
-            style={{ marginBottom: 12 }}
           />
           <SocialButton
             provider="google"
@@ -84,26 +141,27 @@ export default function SocialLoginScreen() {
         </View>
 
         {/* 구분선 + 링크 */}
-        <View style={styles.orWrap}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>또는</Text>
-          <View style={styles.orLine} />
-        </View>
+        <View style={styles.linkWrap}>
+          <Pressable
+            onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
+          >
+            <Text style={styles.linkText}>ID 로그인/회원가입</Text>
+          </Pressable>
 
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate(authNavigations.AUTH_HOME)}
-        >
-          ID 로그인/회원가입
-        </Text>
-      </View>
+          <View style={styles.linkDivider} />
+
+          <Pressable onPress={handleGuest}>
+            <Text style={styles.linkText}>비회원 로그인</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </AppScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: colors.BLUE_700,
     paddingHorizontal: 20,
     paddingTop: 64,
@@ -111,13 +169,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandLogo: {
-    height: '55%',
+    flex: 7,
     marginBottom: '5%',
   },
-  bubbleWrap: {
-    alignItems: 'center',
-    marginBottom: 20,
+  main: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
+  bubbleWrap: { alignItems: 'center' },
   bubble: {
     backgroundColor: 'white',
     paddingHorizontal: 14,
@@ -133,7 +196,7 @@ const styles = StyleSheet.create({
   bubbleTail: {
     width: 0,
     height: 0,
-    marginTop: -1,
+    marginBottom: 1,
     borderLeftWidth: 8,
     borderRightWidth: 8,
     borderTopWidth: 10,
@@ -141,32 +204,29 @@ const styles = StyleSheet.create({
     borderRightColor: 'transparent',
     borderTopColor: 'white',
   },
-  buttons: {
-    width: '100%',
-    marginTop: 8,
-  },
-  orWrap: {
-    width: '100%',
-    marginTop: 20,
-    marginBottom: 10,
+  linkWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingTop: 15,
-    paddingBottom: 20,
+    justifyContent: 'center',
+    marginTop: 16,
+    gap: 8,
+    ...Platform.select({
+      android: {
+        marginBottom: 20,
+      },
+      ios: {
+        marginBottom: 0,
+      },
+    }),
   },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.50)',
+  linkDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#fff',
   },
-  orText: {
-    color: 'rgba(255, 255, 255, 0.50)',
-    fontSize: 13,
-  },
-  link: {
-    color: 'white',
-    textDecorationLine: 'underline',
+  linkText: {
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -22,8 +22,6 @@ export async function selectBuilding(buildingId: number, ctx: SelectContext) {
   const { latitude, longitude, name } = data.buildingInfo;
   const location = `${latitude},${longitude}`;
 
-  await searchApi.saveKeyword(name);
-
   const {
     previousStartLocation = '',
     previousEndLocation = '',

@@ -24,6 +24,8 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import AlertModal from '../../components/AlertModal';
 import Geolocation from 'react-native-geolocation-service';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUser } from '../../contexts/UserContext';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 type RouteSelectionScreenNavigationProp = StackNavigationProp<
   MapStackParamList,
@@ -35,6 +37,8 @@ type RouteSelectionScreenRouteProp = RouteProp<
 >;
 
 function RouteSelectionScreen() {
+  const { isGuest } = useUser();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<RouteSelectionScreenNavigationProp>();
   const route = useRoute<RouteSelectionScreenRouteProp>();
@@ -178,14 +182,23 @@ function RouteSelectionScreen() {
   useEffect(() => {
     const loadRecent = async () => {
       try {
-        const res = await searchApi.getRecentKeywords();
-        setRecentKeywords(res.data);
+        if (isGuest) {
+          const local = await EncryptedStorage.getItem('guestRecentKeywords');
+          if (local) {
+            setRecentKeywords(JSON.parse(local));
+          } else {
+            setRecentKeywords([]);
+          }
+        } else {
+          const res = await searchApi.getRecentKeywords();
+          setRecentKeywords(res.data);
+        }
       } catch (err) {
         console.warn('최근 검색어 로드 실패', err);
       }
     };
     loadRecent();
-  }, []);
+  }, [isGuest]);
 
   // 검색화면 이동
   const handleSearchLocation = (type: 'start' | 'end') => {
@@ -377,15 +390,37 @@ function RouteSelectionScreen() {
 
                 <TouchableOpacity
                   onPress={async () => {
-                    try {
-                      await searchApi.deleteRecentKeywordByBuildingId(
-                        item.buildingId,
-                      );
-                      setRecentKeywords(prev =>
-                        prev.filter(k => k.buildingId !== item.buildingId),
-                      );
-                    } catch (err) {
-                      Alert.alert('삭제 실패');
+                    if (isGuest) {
+                      try {
+                        const local = await EncryptedStorage.getItem(
+                          'guestRecentKeywords',
+                        );
+                        if (local) {
+                          const parsed = JSON.parse(local);
+                          const updated = parsed.filter(
+                            (k: { buildingId: number }) =>
+                              k.buildingId !== item.buildingId,
+                          );
+                          await EncryptedStorage.setItem(
+                            'guestRecentKeywords',
+                            JSON.stringify(updated),
+                          );
+                          setRecentKeywords(updated);
+                        }
+                      } catch (err) {
+                        Alert.alert('삭제 실패');
+                      }
+                    } else {
+                      try {
+                        await searchApi.deleteRecentKeywordByBuildingId(
+                          item.buildingId,
+                        );
+                        setRecentKeywords(prev =>
+                          prev.filter(k => k.buildingId !== item.buildingId),
+                        );
+                      } catch (err) {
+                        Alert.alert('삭제 실패');
+                      }
                     }
                   }}
                 >

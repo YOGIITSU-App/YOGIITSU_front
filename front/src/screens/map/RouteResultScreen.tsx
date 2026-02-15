@@ -124,16 +124,6 @@ function RouteResultScreen() {
     }
   };
 
-  // useEffect(() => {
-  //   const unsubscribe = navigation.addListener('beforeRemove', e => {
-  //     // "뒤로가기"로 나갈 때만 막기, 그 외(push/replace 등)는 허용
-  //     if (e.data.action.type === 'POP') {
-  //       e.preventDefault();
-  //     }
-  //   });
-  //   return unsubscribe;
-  // }, [navigation]);
-
   const handleWebViewMessage = (e: any) => {
     try {
       const data = JSON.parse(e.nativeEvent.data);
@@ -277,13 +267,35 @@ function RouteResultScreen() {
 
   /** 3) mapLoaded && routePath 준비되면 지도에 그리기 */
   useEffect(() => {
-    if (!mapReady || routePath.length === 0) return;
+    const START_ICON_URL = Config.MARKER_START_URL;
+    const END_ICON_URL = Config.MARKER_END_URL;
+
     webRef.current?.postMessage(
-      JSON.stringify({ type: 'customMarker', lat: startLat, lng: startLon }),
+      JSON.stringify({ type: 'clearStartEndMarkers' }),
     );
+
     webRef.current?.postMessage(
-      JSON.stringify({ type: 'customMarker', lat: endLat, lng: endLon }),
+      JSON.stringify({
+        type: 'setStartMarker',
+        lat: startLat,
+        lng: startLon,
+        url: START_ICON_URL,
+        width: 23,
+        height: 32,
+      }),
     );
+
+    webRef.current?.postMessage(
+      JSON.stringify({
+        type: 'setEndMarker',
+        lat: endLat,
+        lng: endLon,
+        url: END_ICON_URL,
+        width: 23,
+        height: 32,
+      }),
+    );
+
     webRef.current?.postMessage(
       JSON.stringify({
         type: 'drawRoute',

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -22,6 +23,8 @@ import AppScreenLayout from '../../components/common/AppScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Config from 'react-native-config';
 import Geolocation from 'react-native-geolocation-service';
+import Modal from 'react-native-modal';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 type ShortcutDetailRouteProp = RouteProp<
   MapStackParamList,
@@ -38,6 +41,8 @@ export default function ShortcutDetailScreen() {
   const route = useRoute<ShortcutDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { shortcutId } = route.params;
+  const [isImageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // 1) map 로딩 상태
   // const [mapLoaded, setMapLoaded] = useState(false);
@@ -78,6 +83,14 @@ export default function ShortcutDetailScreen() {
     }
   };
 
+  const imageItems = useMemo(
+    () =>
+      (detail?.coordinates ?? [])
+        .filter(i => i.imageUrl?.trim() !== '')
+        .map(i => ({ url: i.imageUrl! })),
+    [detail],
+  );
+
   // 1) 상세 API 호출
   useEffect(() => {
     fetchShortcutDetail(shortcutId)
@@ -90,27 +103,53 @@ export default function ShortcutDetailScreen() {
   }, [shortcutId]);
 
   // 2) map 로드 완료 시
-  const onWebViewLoadEnd = () => {
-    setMapReady(true);
-  };
 
   // 3) detail & mapLoaded 가 모두 true 될 때만 그리기
   useEffect(() => {
     if (!detail || !mapReady) return;
-    // 1. 폴리라인
-    const path = detail.coordinates.map(c => ({
-      lat: c.latitude,
-      lng: c.longitude,
-    }));
-    webRef.current?.postMessage(JSON.stringify({ type: 'drawShortcut', path }));
-    // 2. 시작/끝 마커
-    const start = detail.coordinates[0];
-    const end = detail.coordinates[detail.coordinates.length - 1];
-    [start, end].forEach(p =>
-      webRef.current?.postMessage(
-        JSON.stringify({ type: 'marker', lat: p.latitude, lng: p.longitude }),
-      ),
+
+    // 좌표 정렬 (pointOrder)
+    const coords = [...detail.coordinates]
+      .filter(
+        c => typeof c.latitude === 'number' && typeof c.longitude === 'number',
+      )
+      .sort((a, b) => (a.pointOrder ?? 0) - (b.pointOrder ?? 0));
+    if (coords.length === 0) return;
+
+    const start = coords[0];
+    const end = coords[coords.length - 1];
+
+    const START_ICON_URL = Config.MARKER_START_URL;
+    const END_ICON_URL = Config.MARKER_END_URL;
+
+    webRef.current?.postMessage(
+      JSON.stringify({ type: 'clearStartEndMarkers' }),
     );
+    webRef.current?.postMessage(
+      JSON.stringify({
+        type: 'setStartMarker',
+        lat: start.latitude,
+        lng: start.longitude,
+        url: START_ICON_URL,
+        width: 23,
+        height: 32,
+      }),
+    );
+    if (coords.length > 1) {
+      webRef.current?.postMessage(
+        JSON.stringify({
+          type: 'setEndMarker',
+          lat: end.latitude,
+          lng: end.longitude,
+          url: END_ICON_URL,
+          width: 23,
+          height: 32,
+        }),
+      );
+    }
+
+    const path = coords.map(c => ({ lat: c.latitude, lng: c.longitude }));
+    webRef.current?.postMessage(JSON.stringify({ type: 'drawShortcut', path }));
   }, [detail, mapReady]);
 
   useEffect(() => {
@@ -274,7 +313,6 @@ export default function ShortcutDetailScreen() {
           true;
         `}
           onMessage={handleWebViewMessage}
-          onLoadEnd={onWebViewLoadEnd}
         />
 
         {/* 요약 박스 */}
@@ -334,11 +372,21 @@ export default function ShortcutDetailScreen() {
                       </Text>
                     )}
                     {item.imageUrl?.trim() !== '' && (
-                      <Image
-                        source={{ uri: item.imageUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                      />
+                      <TouchableOpacity
+                        onPress={() => {
+                          const imgIndex = imageItems.findIndex(
+                            i => i.url === item.imageUrl?.trim(),
+                          );
+                          setSelectedImageIndex(imgIndex >= 0 ? imgIndex : 0);
+                          setImageModalVisible(true);
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={styles.image}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
                     )}
                   </View>
                 </View>
@@ -346,6 +394,54 @@ export default function ShortcutDetailScreen() {
             }}
           />
         </BottomSheet>
+        <Modal
+          isVisible={isImageModalVisible}
+          onBackdropPress={() => setImageModalVisible(false)}
+          onBackButtonPress={() => setImageModalVisible(false)}
+          style={{ margin: 0 }}
+        >
+          <StatusBar
+            backgroundColor={isImageModalVisible ? 'black' : 'transparent'}
+            barStyle={isImageModalVisible ? 'light-content' : 'dark-content'}
+            animated
+          />
+          <View style={{ flex: 1, backgroundColor: 'black' }}>
+            <TouchableOpacity
+              onPress={() => setImageModalVisible(false)}
+              style={{
+                position: 'absolute',
+                top: insets.top,
+                right: 20,
+                zIndex: 10,
+              }}
+            >
+              <Text style={{ fontSize: 20, color: 'white', lineHeight: 24 }}>
+                ✕
+              </Text>
+            </TouchableOpacity>
+
+            <ImageViewer
+              imageUrls={imageItems}
+              index={selectedImageIndex}
+              enableSwipeDown
+              onSwipeDown={() => setImageModalVisible(false)}
+              backgroundColor="black"
+              renderIndicator={(currentIndex, allSize) => (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: insets.top,
+                    alignSelf: 'center',
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 16 }}>
+                    {currentIndex}/{allSize}
+                  </Text>
+                </View>
+              )}
+            />
+          </View>
+        </Modal>
       </View>
     </AppScreenLayout>
   );

@@ -1,25 +1,32 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet} from 'react-native';
-import {colors} from '../constants';
-import {defaultFacilityIcon, facilityIconMap} from '../constants/facilityIcons';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { colors } from '../constants';
+import {
+  defaultFacilityIcon,
+  getFacilityIcon,
+} from '../constants/facilityIcons';
 
 type Facility = {
   name: string;
   floor?: string;
+  type?: string;
 };
 
 type Props = {
   facilities: Facility[];
 };
 
-const FacilityBadgeWithFloor = ({facilities}: Props) => (
+const FacilityBadgeWithFloor = ({ facilities }: { facilities: Facility[] }) => (
   <View style={styles.wrapper}>
     <View style={styles.row}>
       {facilities.map(fac => {
-        const icon = facilityIconMap[fac.name] || defaultFacilityIcon;
+        const icon = getFacilityIcon(fac);
         return (
-          <View key={fac.name + (fac.floor || '')} style={styles.item}>
-            <Image source={icon} style={styles.icon} />
+          <View
+            key={`${fac.type ?? fac.name}-${fac.floor ?? ''}`}
+            style={styles.item}
+          >
+            <Image source={icon || defaultFacilityIcon} style={styles.icon} />
             <Text style={styles.label}>
               {fac.name}
               {fac.floor && fac.floor !== 'NULL' && (

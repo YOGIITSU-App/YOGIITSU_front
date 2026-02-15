@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,12 +10,13 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   StatusBar,
+  Platform,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import CustomBotton from '../../../components/CustomButton';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
-import {colors} from '../../../constants';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
+import { colors } from '../../../constants';
 import inquiryApi from '../../../api/inquiryApi';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
 
@@ -48,8 +49,8 @@ function InquiryWriteScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <AppScreenLayout disableTopInset>
+    <AppScreenLayout disableTopInset>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           <TextInput
             style={styles.titleInput}
@@ -78,7 +79,8 @@ function InquiryWriteScreen() {
             animationType="fade"
             transparent
             visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}>
+            onRequestClose={() => setModalVisible(false)}
+          >
             <StatusBar
               backgroundColor="rgba(0,0,0,0.5)"
               barStyle="light-content"
@@ -102,8 +104,8 @@ function InquiryWriteScreen() {
             </View>
           </Modal>
         </View>
-      </AppScreenLayout>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </AppScreenLayout>
   );
 }
 
@@ -136,7 +138,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   buttonContainer: {
-    padding: 15,
+    padding: Platform.OS === 'ios' ? 45 : 20,
     alignItems: 'center',
     position: 'absolute',
     bottom: 0,
