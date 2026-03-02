@@ -18,6 +18,12 @@ export const navigationRef = createNavigationContainerRef();
 function App() {
   const routeNameRef = useRef<string | null>(null);
 
+  const trackScreen = (screenName: string) => {
+    void logScreen(screenName).catch(() => {
+      // analytics 실패가 화면 전환 흐름에 영향을 주지 않도록 무시
+    });
+  };
+
   return (
     <SafeAreaProvider>
       <StatusBar
@@ -41,14 +47,14 @@ function App() {
           onReady={() => {
             const currentRoute = navigationRef.getCurrentRoute()?.name;
             if (currentRoute) {
-              logScreen(currentRoute);
+              trackScreen(currentRoute);
             }
             routeNameRef.current = currentRoute ?? null;
           }}
           onStateChange={() => {
             const currentRoute = navigationRef.getCurrentRoute()?.name;
             if (currentRoute && routeNameRef.current !== currentRoute) {
-              logScreen(currentRoute);
+              trackScreen(currentRoute);
             }
             routeNameRef.current = currentRoute ?? null;
           }}

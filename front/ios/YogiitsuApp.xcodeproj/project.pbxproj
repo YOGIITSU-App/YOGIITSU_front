@@ -13,7 +13,6 @@
 		4604BBBD4539436DB4D3911C /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 58763616296E4976B8728880 /* Colors.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7F94BBC52F55F6C300A14EEA /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F94BBC42F55F6C300A14EEA /* GoogleService-Info.plist */; };
-		7FDFB9072F55DFA60064ABE0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7FDFB9062F55DFA60064ABE0 /* GoogleService-Info.plist */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		D113B4868166495FA9EE003D /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E15EF02517DA45279B686156 /* BootSplash.storyboard */; };
 /* End PBXBuildFile section */
@@ -30,7 +29,6 @@
 		7F94BBC42F55F6C300A14EEA /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		7FB95A6E2E4E0D4A009E61C7 /* Config.Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.Debug.xcconfig; sourceTree = "<group>"; };
 		7FB95A6F2E4E0D4A009E61C7 /* Config.Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.Release.xcconfig; sourceTree = "<group>"; };
-		7FDFB9062F55DFA60064ABE0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = YogiitsuApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8601B0171CEC5D669588AB97 /* Pods-YogiitsuApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-YogiitsuApp.debug.xcconfig"; path = "Target Support Files/Pods-YogiitsuApp/Pods-YogiitsuApp.debug.xcconfig"; sourceTree = "<group>"; };
 		AC4690B83A648499018048A8 /* Pods-YogiitsuApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-YogiitsuApp.release.xcconfig"; path = "Target Support Files/Pods-YogiitsuApp/Pods-YogiitsuApp.release.xcconfig"; sourceTree = "<group>"; };
@@ -61,7 +59,6 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				E15EF02517DA45279B686156 /* BootSplash.storyboard */,
 				58763616296E4976B8728880 /* Colors.xcassets */,
-				7FDFB9062F55DFA60064ABE0 /* GoogleService-Info.plist */,
 				7F94BBC42F55F6C300A14EEA /* GoogleService-Info.plist */,
 			);
 			name = YogiitsuApp;
@@ -190,7 +187,6 @@
 				2C005D3215937EC61B651A5A /* PrivacyInfo.xcprivacy in Resources */,
 				D113B4868166495FA9EE003D /* BootSplash.storyboard in Resources */,
 				4604BBBD4539436DB4D3911C /* Colors.xcassets in Resources */,
-				7FDFB9072F55DFA60064ABE0 /* GoogleService-Info.plist in Resources */,
 				7F94BBC52F55F6C300A14EEA /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
