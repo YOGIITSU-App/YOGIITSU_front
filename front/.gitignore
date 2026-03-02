@@ -88,3 +88,7 @@ ios/Config/
 android/keystore.properties
 android/*.keystore
 android/*.jks
+
+# Firebase
+**/google-services.json
+**/GoogleService-Info.plist
