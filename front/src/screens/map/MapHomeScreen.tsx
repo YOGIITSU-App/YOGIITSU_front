@@ -48,6 +48,7 @@ import {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useAppInit } from '../../contexts/AppInitContext';
+import { logSelectFacilityCategory } from '../../analytics/home/category.events';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -88,6 +89,14 @@ const withStopId = (list: any[]) =>
     stopId:
       f.stopId ?? FACILITY_ID_TO_STOPID[f.id] ?? STOP_NAME_TO_STOPID[f.name],
   }));
+
+const CATEGORY_LABEL_MAP: Record<string, string> = {
+  SHUTTLE_BUS: '셔틀버스',
+  PARKING: '주차',
+  RESTAURANT: '식당',
+  CONVENIENCE_CAFE: '카페 및 편의점',
+  PRINTER: '프린터기',
+};
 
 function MapHomeScreen() {
   const insets = useSafeAreaInsets();
@@ -575,9 +584,18 @@ function MapHomeScreen() {
             selected={selectedCategory}
             onSelect={category => {
               if (globalThis.setTabToHome) globalThis.setTabToHome();
-              setSelectedCategory(
-                category === selectedCategory ? null : category,
-              );
+
+              const isDeselect = category === selectedCategory;
+
+              if (category) {
+                logSelectFacilityCategory({
+                  category,
+                  label: CATEGORY_LABEL_MAP[category],
+                  action: isDeselect ? 'deselect' : 'select',
+                });
+              }
+
+              setSelectedCategory(isDeselect ? null : category);
             }}
           />
 
