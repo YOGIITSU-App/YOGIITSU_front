@@ -1,15 +1,23 @@
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+} from '@react-navigation/native';
 import Rootnavigator from './src/navigations/root/Rootnavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppInitProvider } from './src/contexts/AppInitContext';
 import VersionGate from './src/components/common/VersionGate';
 import { StatusBar } from 'react-native';
+import { logScreen } from './src/analytics/screens';
+
+export const navigationRef = createNavigationContainerRef();
 
 function App() {
+  const routeNameRef = useRef<string | null>(null);
+
   return (
     <SafeAreaProvider>
       <StatusBar
@@ -28,7 +36,23 @@ function App() {
           aggressive={true}
           snoozeHours={24}
         />
-        <NavigationContainer>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => {
+            const currentRoute = navigationRef.getCurrentRoute()?.name;
+            if (currentRoute) {
+              logScreen(currentRoute);
+            }
+            routeNameRef.current = currentRoute ?? null;
+          }}
+          onStateChange={() => {
+            const currentRoute = navigationRef.getCurrentRoute()?.name;
+            if (currentRoute && routeNameRef.current !== currentRoute) {
+              logScreen(currentRoute);
+            }
+            routeNameRef.current = currentRoute ?? null;
+          }}
+        >
           <Rootnavigator />
         </NavigationContainer>
       </AppInitProvider>
