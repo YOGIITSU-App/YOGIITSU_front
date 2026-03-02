@@ -8,6 +8,8 @@ import KakaoSDKCommon
 import KakaoSDKAuth
 import GoogleSignIn
 
+import FirebaseCore
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
@@ -33,6 +35,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       in: window,
       launchOptions: launchOptions
     )
+
+    // 🔹 Firebase 초기화
+    FirebaseApp.configure()
 
     // Kakao SDK 초기화 (Info.plist -> KAKAO_APP_KEY)
     if let appKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String, !appKey.isEmpty {
