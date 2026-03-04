@@ -33,6 +33,12 @@ import WebView from 'react-native-webview';
 import AppScreenLayout from '../../components/common/AppScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Geolocation from 'react-native-geolocation-service';
+import {
+  canCallRouteApi,
+  increaseRouteCount,
+  getCachedRoute,
+  setCachedRoute,
+} from '../../utils/routeLimit';
 
 const { height: deviceHeight } = Dimensions.get('window');
 
@@ -79,6 +85,9 @@ function RouteResultScreen() {
     useState<BuildingDetail | null>(null);
   const [endBuildingDetail, setEndBuildingDetail] =
     useState<BuildingDetail | null>(null);
+
+  const isFetchingRef = useRef(false);
+  const lastRouteKeyRef = useRef<string | null>(null);
 
   // bottom sheet snap points 계산
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -209,11 +218,45 @@ function RouteResultScreen() {
   // 맵 페이지 URL
   const MAP_HTML_URL = Config.MAP_RESULT_HTML_URL ?? '';
 
-  // 1) 경로 API 호출
-  useEffect(() => {
+  const fetchRoute = async () => {
+    const routeKey = `${startLat},${startLon}-${endLat},${endLon}`;
+
+    // 같은 경로 재호출 방지
+    if (lastRouteKeyRef.current === routeKey) {
+      return;
+    }
+
+    // 동시 호출 방지
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+    lastRouteKeyRef.current = routeKey;
     setRouteLoading(true);
-    axios
-      .post(
+
+    try {
+      // 캐시 확인
+      const cached = await getCachedRoute(routeKey);
+      if (cached) {
+        setTravelTime(cached.travelTime);
+        setRouteFeatures(cached.routeFeatures);
+        setRoutePath(cached.routePath);
+        return;
+      }
+
+      // 일일 호출 제한
+      const canCall = await canCallRouteApi();
+      if (!canCall) {
+        Alert.alert(
+          '이용 제한',
+          '오늘의 길찾기 이용 횟수를 초과했어요. 내일 다시 이용해주세요',
+        );
+        return;
+      }
+
+      // 실제 API 호출
+      const res = await axios.post(
         `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json&appKey=${Config.TMAP_API_KEY}`,
         {
           startX: startLon,
@@ -227,24 +270,45 @@ function RouteResultScreen() {
           searchOption: '0',
           sort: 'index',
         },
-      )
-      .then(res => {
-        const features = res.data.features;
-        const totalTime = features[0].properties.totalTime;
-        setTravelTime(Math.ceil(totalTime / 60));
-        setRouteFeatures(features);
-        const coords: Coordinate[] = [];
-        features
-          .filter((f: any) => f.geometry.type === 'LineString')
-          .forEach((f: any) =>
-            f.geometry.coordinates.forEach((c: number[]) =>
-              coords.push({ latitude: c[1], longitude: c[0] }),
-            ),
-          );
-        setRoutePath(coords);
-      })
-      .catch(() => Alert.alert('오류', '경로 데이터를 가져올 수 없습니다.'))
-      .finally(() => setRouteLoading(false));
+        { timeout: 5000 },
+      );
+
+      const features = res.data.features;
+      const totalTime = features[0].properties.totalTime;
+
+      const coords: Coordinate[] = [];
+      features
+        .filter((f: any) => f.geometry.type === 'LineString')
+        .forEach((f: any) =>
+          f.geometry.coordinates.forEach((c: number[]) =>
+            coords.push({ latitude: c[1], longitude: c[0] }),
+          ),
+        );
+
+      const travelMin = Math.ceil(totalTime / 60);
+
+      setTravelTime(travelMin);
+      setRouteFeatures(features);
+      setRoutePath(coords);
+
+      // 성공 시에만 카운트 + 캐시
+      await increaseRouteCount();
+      await setCachedRoute(routeKey, {
+        travelTime: travelMin,
+        routeFeatures: features,
+        routePath: coords,
+      });
+    } catch (e) {
+      Alert.alert('오류', '경로 데이터를 가져올 수 없습니다.');
+    } finally {
+      isFetchingRef.current = false;
+      setRouteLoading(false);
+    }
+  };
+
+  // 1) 경로 API 호출
+  useEffect(() => {
+    fetchRoute();
   }, [startLocation, endLocation]);
 
   // 1-1) 출발/도착 건물 상세 정보 로드
