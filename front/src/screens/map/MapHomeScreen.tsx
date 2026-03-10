@@ -589,16 +589,15 @@ function MapHomeScreen() {
 
               const isDeselect = category === selectedCategory;
 
-              if (category) {
-                const label =
-                  CATEGORY_LABEL_MAP[category] ?? 'unknown_category';
+              if (!category) return;
 
-                logSelectFacilityCategory({
-                  category,
-                  label,
-                  action: isDeselect ? 'deselect' : 'select',
-                });
-              }
+              const label = CATEGORY_LABEL_MAP[category] || category;
+
+              logSelectFacilityCategory({
+                category,
+                label,
+                action: isDeselect ? 'deselect' : 'select',
+              });
 
               setSelectedCategory(isDeselect ? null : category);
             }}
