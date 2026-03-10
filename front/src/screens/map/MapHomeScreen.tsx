@@ -49,6 +49,7 @@ import {
 } from 'react-native-reanimated';
 import { useAppInit } from '../../contexts/AppInitContext';
 import { logSelectFacilityCategory } from '../../analytics/home/category.events';
+import PopupAd from '../../components/ad/PopupAd';
 
 const deviceWidth = Dimensions.get('screen').width;
 const deviceHeight = Dimensions.get('screen').height;
@@ -544,6 +545,7 @@ function MapHomeScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppScreenLayout disableTopInset>
+        <PopupAd />
         <View style={styles.container}>
           {loadingSchedule && (
             <View style={styles.loadingOverlay}>
