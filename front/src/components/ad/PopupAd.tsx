@@ -11,6 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import analytics from '@react-native-firebase/analytics';
 
 const { width } = Dimensions.get('window');
 const AD_WIDTH = width * 0.85;
@@ -75,16 +76,36 @@ export default function PopupAd() {
       console.log('today:', today);
 
       setAd(activeAd);
+
+      await analytics().logEvent('ad_impression', {
+        ad_id: activeAd.id,
+      });
+
       setVisible(true);
     } catch (err) {
       console.log('ad load fail', err);
     }
   };
 
-  const handlePress = () => {
-    if (ad?.link) {
-      Linking.openURL(ad.link);
+  const handlePress = async () => {
+    try {
+      if (!ad?.link) return;
+
+      const supported = await Linking.canOpenURL(ad.link);
+
+      if (supported) {
+        await analytics().logEvent('ad_click', {
+          ad_id: ad.id,
+        });
+
+        await Linking.openURL(ad.link);
+      } else {
+        console.log('Cannot open URL:', ad.link);
+      }
+    } catch (e) {
+      console.log('ad link open fail', e);
     }
+
     setVisible(false);
   };
 
