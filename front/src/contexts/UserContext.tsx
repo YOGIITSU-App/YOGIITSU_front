@@ -154,18 +154,6 @@ export const UserProvider = ({ children }: any) => {
       },
     );
 
-    messaging()
-      .getInitialNotification()
-      .then(remoteMessage => {
-        const noticeId = remoteMessage?.data?.noticeId;
-        if (noticeId) {
-          setTimeout(
-            () => NavigationService.resetToNotice(Number(noticeId)),
-            3000,
-          );
-        }
-      });
-
     return () => {
       unsubscribeOnMessage();
       unsubscribeOnOpened();
