@@ -1,6 +1,10 @@
 import EncryptedStorage from 'react-native-encrypted-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
+import messaging from '@react-native-firebase/messaging';
+import fcmApi from '../api/fcmApi';
+import { PermissionsAndroid, Platform } from 'react-native';
+import * as NavigationService from '../utils/NavigationService';
 
 const UserContext = createContext<any>(null);
 
@@ -14,22 +18,18 @@ export const UserProvider = ({ children }: any) => {
   const [initialized, setInitialized] = useState(false);
 
   const login = (userData: { userId: number; role: 'USER' | 'ADMIN' }) => {
-    console.log('[UserContext] login called', userData);
     setUser(userData);
     setIsAuthenticated(true);
   };
 
   const logout = async () => {
-    console.log('[UserContext] logout called');
     setUser(null);
     setIsGuest(false);
     setIsAuthenticated(false);
-
     try {
       await EncryptedStorage.clear();
-      console.log('[UserContext] Storage cleared successfully');
     } catch (err) {
-      console.error('[UserContext] Failed to clear storage:', err);
+      console.error('[UserContext] Logout Error:', err);
     }
   };
 
@@ -43,89 +43,133 @@ export const UserProvider = ({ children }: any) => {
         setIsGuest(false);
       }
     } catch (err) {
-      console.warn('[UserContext] Failed to set guest mode', err);
       setIsGuest(value);
     }
   };
 
+  // 초기화 로직
   useEffect(() => {
     (async () => {
       try {
-        console.log('[UserContext] Initializing...');
-
-        // 게스트 모드 체크
         const guest = await EncryptedStorage.getItem('guest_mode');
         if (guest === 'true') {
           setIsGuest(true);
-          setInitialized(true);
-          console.log('[UserContext] Guest mode detected');
           return;
         }
 
-        // 토큰 체크
         const [accessToken, refreshToken] = await Promise.all([
           EncryptedStorage.getItem('accessToken'),
           EncryptedStorage.getItem('refreshToken'),
         ]);
 
         if (accessToken && refreshToken) {
-          console.log('[UserContext] Tokens found, user is authenticated');
-
-          // Apple 사용자 체크 (credential 검증)
           const appleUserId = await EncryptedStorage.getItem('appleUserId');
           if (appleUserId) {
-            try {
-              const credentialState = await appleAuth.getCredentialStateForUser(
-                appleUserId,
-              );
-              console.log(
-                '[UserContext] Apple credentialState:',
-                credentialState,
-              );
-
-              if (credentialState === appleAuth.State.REVOKED) {
-                console.log(
-                  '[UserContext] Apple credential revoked, clearing storage',
-                );
-                await EncryptedStorage.clear();
-                setInitialized(true);
-                return;
-              }
-            } catch (err) {
-              console.warn('[UserContext] Apple credential check failed:', err);
+            const credentialState = await appleAuth.getCredentialStateForUser(
+              appleUserId,
+            );
+            if (credentialState === appleAuth.State.REVOKED) {
+              await EncryptedStorage.clear();
+              return;
             }
           }
 
-          // 인증됨으로 표시 (userId/role은 나중에 필요할 때 로드)
           setIsAuthenticated(true);
-
-          // userId와 role이 저장되어 있다면 복원
           const [userId, role] = await Promise.all([
             EncryptedStorage.getItem('userId'),
             EncryptedStorage.getItem('role'),
           ]);
 
           if (userId && role) {
-            setUser({
-              userId: Number(userId),
-              role: role as 'USER' | 'ADMIN',
-            });
-            console.log('[UserContext] User profile restored from storage');
-          } else {
-            console.log(
-              '[UserContext] User authenticated but profile will be loaded on demand',
-            );
+            setUser({ userId: Number(userId), role: role as 'USER' | 'ADMIN' });
           }
-        } else {
-          console.log('[UserContext] No tokens found');
         }
       } catch (err) {
-        console.warn('[UserContext] Initialization failed', err);
+        console.warn('[UserContext] Init Error:', err);
       } finally {
         setInitialized(true);
-        console.log('[UserContext] Initialization complete');
       }
     })();
+  }, []);
+
+  // FCM 설정 로직
+  useEffect(() => {
+    let isSubscribed = true;
+
+    if (isAuthenticated) {
+      const setupFCM = async () => {
+        try {
+          const accessToken = await EncryptedStorage.getItem('accessToken');
+          if (!accessToken) return;
+
+          // 권한 요청
+          if (Platform.OS === 'ios') {
+            const authStatus = await messaging().requestPermission();
+            if (
+              authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+              authStatus === messaging.AuthorizationStatus.PROVISIONAL
+            ) {
+              await messaging().registerDeviceForRemoteMessages();
+            }
+          } else if (
+            Platform.OS === 'android' &&
+            Number(Platform.Version) >= 33
+          ) {
+            await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            );
+          }
+
+          // 토큰 등록
+          const fcmToken = await messaging().getToken();
+          if (fcmToken && isSubscribed) {
+            await fcmApi.registerToken(fcmToken);
+          }
+        } catch (error) {
+          console.warn('[UserContext] FCM Setup Error:', error);
+        }
+      };
+
+      const timer = setTimeout(setupFCM, 500);
+      const unsubscribe = messaging().onTokenRefresh(token => {
+        if (isSubscribed) fcmApi.registerToken(token).catch(() => {});
+      });
+
+      return () => {
+        isSubscribed = false;
+        clearTimeout(timer);
+        unsubscribe();
+      };
+    }
+  }, [isAuthenticated]);
+
+  // 알림 수신/클릭 핸들링
+  useEffect(() => {
+    const unsubscribeOnMessage = messaging().onMessage(async _ => {});
+
+    const unsubscribeOnOpened = messaging().onNotificationOpenedApp(
+      remoteMessage => {
+        const noticeId = remoteMessage.data?.noticeId;
+        if (noticeId) NavigationService.resetToNotice(Number(noticeId));
+      },
+    );
+
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        const noticeId = remoteMessage?.data?.noticeId;
+        if (noticeId) {
+          setTimeout(
+            () => NavigationService.resetToNotice(Number(noticeId)),
+            3000,
+          );
+        }
+      });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnOpened();
+    };
   }, []);
 
   return (
