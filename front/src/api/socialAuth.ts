@@ -68,8 +68,10 @@ export async function signInWithGoogle(): Promise<LoginOk> {
   }
 
   const signInResult = await GoogleSignin.signIn();
-  const idToken =
-    (signInResult as any).idToken ?? (signInResult as any).data?.idToken;
+  if (signInResult.type !== 'success') {
+    throw new Error('GOOGLE_SIGN_IN_CANCELLED_OR_FAILED');
+  }
+  const idToken = signInResult.data.idToken;
   if (!idToken) throw new Error('NO_GOOGLE_ID_TOKEN');
 
   const res = await authApi.post('/auth/google', { idToken });
