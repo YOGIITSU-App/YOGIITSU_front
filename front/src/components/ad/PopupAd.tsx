@@ -27,14 +27,18 @@ type PopupAdType = {
   endDate: string;
 };
 
+declare global {
+  var popupAdShown: boolean | undefined;
+}
+
 export default function PopupAd() {
   const [visible, setVisible] = useState(false);
   const [ad, setAd] = useState<PopupAdType | null>(null);
-  const loadedRef = useRef(false);
 
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
+    if (globalThis.popupAdShown) return;
+
+    globalThis.popupAdShown = true;
 
     loadAd();
   }, []);

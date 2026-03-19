@@ -8,6 +8,7 @@ import BootSplash from 'react-native-bootsplash';
 import { logoutEmitter } from '../../utils/logoutEmitter';
 import { refreshToken } from '../../api/refreshApi';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
+import PopupAd from '../../components/ad/PopupAd';
 
 export type RootStackParamList = { AuthStack: undefined; BottomTab: undefined };
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -144,13 +145,22 @@ function RootNavigatorContent() {
           <ActivityIndicator size="large" color="#3352F2" />
         </View>
       ) : (
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          {isAuthenticated || isGuest ? (
-            <RootStack.Screen name="BottomTab" component={BottomTabNavigator} />
-          ) : (
-            <RootStack.Screen name="AuthStack" component={AuthStackNavigator} />
-          )}
-        </RootStack.Navigator>
+        <>
+          <RootStack.Navigator screenOptions={{ headerShown: false }}>
+            {isAuthenticated || isGuest ? (
+              <RootStack.Screen
+                name="BottomTab"
+                component={BottomTabNavigator}
+              />
+            ) : (
+              <RootStack.Screen
+                name="AuthStack"
+                component={AuthStackNavigator}
+              />
+            )}
+          </RootStack.Navigator>
+          {(isAuthenticated || isGuest) && <PopupAd />}
+        </>
       )}
     </>
   );
