@@ -1,19 +1,17 @@
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import React, { useRef } from 'react';
-import {
-  createNavigationContainerRef,
-  NavigationContainer,
-} from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import Rootnavigator from './src/navigations/root/Rootnavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppInitProvider } from './src/contexts/AppInitContext';
 import VersionGate from './src/components/common/VersionGate';
 import { StatusBar } from 'react-native';
 import { logScreen } from './src/analytics/screens';
-
-export const navigationRef = createNavigationContainerRef();
+import { navigationRef } from './src/utils/NavigationService';
+import messaging from '@react-native-firebase/messaging';
+import * as NavigationService from './src/utils/NavigationService';
 
 function App() {
   const routeNameRef = useRef<string | null>(null);
@@ -23,6 +21,22 @@ function App() {
       // analytics 실패가 화면 전환 흐름에 영향을 주지 않도록 무시
     });
   };
+
+  useEffect(() => {
+    // 앱이 완전히 꺼진 상태에서 알림으로 켜졌는지 확인
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('[App.tsx] 종료 상태에서 알림 수신:', remoteMessage.data);
+          const noticeId = remoteMessage.data?.noticeId;
+          if (noticeId) {
+            // 네비게이션이 준비될 때까지 알아서 기다렸다가 이동함
+            NavigationService.resetToNotice(Number(noticeId));
+          }
+        }
+      });
+  }, []);
 
   return (
     <SafeAreaProvider>

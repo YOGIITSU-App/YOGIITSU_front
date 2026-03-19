@@ -16,16 +16,6 @@ import { appleAuth } from '@invertase/react-native-apple-authentication';
 type Role = 'USER' | 'ADMIN';
 export type LoginOk = { userId: number; role: Role };
 
-const REQUIRED_ENV = [
-  'API_BASE_URL',
-  'KAKAO_NATIVE_APP_KEY',
-  'GOOGLE_WEB_CLIENT_ID',
-];
-const missing = REQUIRED_ENV.filter(k => !(Config as any)[k]);
-if (missing.length) {
-  console.warn('[env] Missing config:', missing.join(', '));
-}
-
 const authApi = axios.create({
   baseURL: Config.API_BASE_URL || undefined,
   timeout: 15000,
@@ -59,92 +49,59 @@ function parseBearer(s?: string | null) {
 }
 
 async function fetchUserIdFromProfile(): Promise<number> {
-  try {
-    const token = await EncryptedStorage.getItem('accessToken');
-    if (!token) throw new Error('NO_ACCESS_TOKEN');
+  const token = await EncryptedStorage.getItem('accessToken');
+  if (!token) throw new Error('NO_ACCESS_TOKEN');
 
-    console.log('[fetchUserIdFromProfile] Fetching from /mypage/profile...');
+  const res = await authApi.get('/mypage/profile', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    const res = await authApi.get('/mypage/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const userId = res.data?.memberId ?? res.data?.userId ?? res.data?.id;
-
-    if (userId != null) {
-      console.log('[fetchUserIdFromProfile] userId found:', userId);
-      return Number(userId);
-    }
-
-    throw new Error('USER_ID_NOT_FOUND_IN_PROFILE');
-  } catch (err) {
-    console.error('[fetchUserIdFromProfile] Failed:', err);
-    throw err;
-  }
+  const userId = res.data?.memberId ?? res.data?.userId ?? res.data?.id;
+  if (userId == null) throw new Error('USER_ID_NOT_FOUND_IN_PROFILE');
+  return Number(userId);
 }
 
-function pickIdToken(result: unknown): string | null {
-  const top = (result as any)?.idToken;
-  if (top) return top as string;
-  const nested = (result as any)?.data?.idToken;
-  if (nested) return nested as string;
-  return null;
-}
-
+// Google Login
 export async function signInWithGoogle(): Promise<LoginOk> {
   if (Platform.OS === 'android') {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
   }
 
-  let signInResult: unknown;
-  try {
-    signInResult = await GoogleSignin.signIn();
-  } catch (e: any) {
-    if (e?.code === statusCodes.SIGN_IN_CANCELLED) throw e;
-    throw e;
+  const signInResult = await GoogleSignin.signIn();
+  if (signInResult.type !== 'success') {
+    throw new Error('GOOGLE_SIGN_IN_CANCELLED_OR_FAILED');
   }
-
-  const idToken = pickIdToken(signInResult);
+  const idToken = signInResult.data.idToken;
   if (!idToken) throw new Error('NO_GOOGLE_ID_TOKEN');
 
   const res = await authApi.post('/auth/google', { idToken });
   await saveTokensFromHeaders(res.headers);
 
-  console.log('[signInWithGoogle] Response data:', res.data);
-
-  // 응답에서 userId 시도
   let userId =
     res.data?.userId ??
     res.data?.user?.id ??
     res.data?.memberId ??
     res.data?.id;
-  const roleRaw = res.data?.role ?? res.data?.user?.role;
+  if (userId == null) userId = await fetchUserIdFromProfile();
 
-  // userId 없으면 프로필에서 가져오기
-  if (userId == null) {
-    console.log(
-      '[signInWithGoogle] No userId in response, fetching from profile...',
-    );
-    userId = await fetchUserIdFromProfile();
-  }
-
-  const role: Role =
-    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
-      ? 'ADMIN'
-      : 'USER';
+  const role: Role = String(res.data?.role ?? res.data?.user?.role)
+    .toUpperCase()
+    .includes('ADMIN')
+    ? 'ADMIN'
+    : 'USER';
 
   await Promise.all([
     EncryptedStorage.setItem('userId', String(userId)),
     EncryptedStorage.setItem('role', role),
   ]);
 
-  console.log('[signInWithGoogle] Login complete:', { userId, role });
   return { userId: Number(userId), role };
 }
 
+// Kakao Login
 export async function signInWithKakao(): Promise<LoginOk> {
   const r = await kakaoLogin();
-  let accessToken = r?.accessToken as string | undefined;
+  let accessToken = r?.accessToken;
 
   if (!accessToken) {
     const t = await getKakaoAccessToken().catch(() => null);
@@ -155,50 +112,41 @@ export async function signInWithKakao(): Promise<LoginOk> {
   const res = await authApi.post('/auth/kakao', { accessToken });
   await saveTokensFromHeaders(res.headers);
 
-  console.log('[signInWithKakao] Response data:', res.data);
-
   let userId =
     res.data?.userId ??
     res.data?.user?.id ??
     res.data?.memberId ??
     res.data?.id;
-  const roleRaw = res.data?.role ?? res.data?.user?.role;
+  if (userId == null) userId = await fetchUserIdFromProfile();
 
-  if (userId == null) {
-    console.log(
-      '[signInWithKakao] No userId in response, fetching from profile...',
-    );
-    userId = await fetchUserIdFromProfile();
-  }
-
-  const role: Role =
-    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
-      ? 'ADMIN'
-      : 'USER';
+  const role: Role = String(res.data?.role ?? res.data?.user?.role)
+    .toUpperCase()
+    .includes('ADMIN')
+    ? 'ADMIN'
+    : 'USER';
 
   await Promise.all([
     EncryptedStorage.setItem('userId', String(userId)),
     EncryptedStorage.setItem('role', role),
   ]);
 
-  console.log('[signInWithKakao] Login complete:', { userId, role });
   return { userId: Number(userId), role };
 }
 
+// Apple Login
 export async function signInWithApple(): Promise<LoginOk> {
   const r = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
   });
+
   const { authorizationCode, user } = r;
   if (!authorizationCode) throw new Error('NO_AUTHORIZATION_CODE');
 
   const res = await authApi.post('/auth/apple', { authorizationCode });
 
-  let saved = false;
   try {
     await saveTokensFromHeaders(res.headers as any);
-    saved = true;
   } catch {
     const data: any = res.data ?? {};
     const bAccess = data.accessToken ?? data.token;
@@ -208,42 +156,31 @@ export async function signInWithApple(): Promise<LoginOk> {
         EncryptedStorage.setItem('accessToken', String(bAccess)),
         EncryptedStorage.setItem('refreshToken', String(bRefresh)),
       ]);
-      saved = true;
+    } else {
+      throw new Error('TOKEN_MISSING');
     }
   }
-  if (!saved) throw new Error('TOKEN_MISSING');
 
-  if (user) {
-    await EncryptedStorage.setItem('appleUserId', user);
-  }
-
-  console.log('[signInWithApple] Response data:', res.data);
+  if (user) await EncryptedStorage.setItem('appleUserId', user);
 
   let userId =
     res.data?.userId ??
     res.data?.user?.id ??
     res.data?.memberId ??
     res.data?.id;
-  const roleRaw = res.data?.role ?? res.data?.user?.role;
+  if (userId == null) userId = await fetchUserIdFromProfile();
 
-  if (userId == null) {
-    console.log(
-      '[signInWithApple] No userId in response, fetching from profile...',
-    );
-    userId = await fetchUserIdFromProfile();
-  }
-
-  const role: Role =
-    roleRaw && String(roleRaw).toUpperCase().includes('ADMIN')
-      ? 'ADMIN'
-      : 'USER';
+  const role: Role = String(res.data?.role ?? res.data?.user?.role)
+    .toUpperCase()
+    .includes('ADMIN')
+    ? 'ADMIN'
+    : 'USER';
 
   await Promise.all([
     EncryptedStorage.setItem('userId', String(userId)),
     EncryptedStorage.setItem('role', role),
   ]);
 
-  console.log('[signInWithApple] Login complete:', { userId, role });
   return { userId: Number(userId), role };
 }
 

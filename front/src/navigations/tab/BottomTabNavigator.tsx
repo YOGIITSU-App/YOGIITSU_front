@@ -55,12 +55,16 @@ export default function BottomTabNavigator() {
   }
 
   useEffect(() => {
-    const currentRoute = navState.routes[navState.index]?.name;
-    if (
-      (currentRoute === '홈' || currentRoute === 'MY') &&
-      selectedTab !== currentRoute
-    ) {
-      setSelectedTab(currentRoute);
+    const route = navState.routes[navState.index];
+    if (route && route.name === 'BottomTab' && route.state) {
+      const currentTabIndex = route.state.index ?? 0;
+      const currentTabName = route.state.routes[currentTabIndex].name;
+
+      if (currentTabName === '홈' || currentTabName === 'MY') {
+        if (selectedTab !== '즐겨찾기' && selectedTab !== currentTabName) {
+          setSelectedTab(currentTabName as any);
+        }
+      }
     }
   }, [navState]);
 
@@ -79,9 +83,11 @@ export default function BottomTabNavigator() {
     const handlePress = () => {
       if (label === '즐겨찾기') {
         requireLogin(() => {
+          setSelectedTab('즐겨찾기');
+
           props.onPress?.();
+
           requestAnimationFrame(() => {
-            setSelectedTab('즐겨찾기');
             globalThis.openFavoriteBottomSheet?.();
           });
         });

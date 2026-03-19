@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,43 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import {RouteProp, useRoute} from '@react-navigation/native';
-import {MypageStackParamList} from '../../../navigations/stack/MypageStackNavigator';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { MypageStackParamList } from '../../../navigations/stack/MypageStackNavigator';
 import noticeApi, {
   NoticeDetail,
   mapToNoticeDetail,
 } from '../../../api/noticeApi';
-import {colors} from '../../../constants';
+import { colors } from '../../../constants';
 import AppScreenLayout from '../../../components/common/AppScreenLayout';
+import { useTabOptions } from '../../../constants/tabOptions';
 
 type RouteType = RouteProp<MypageStackParamList, 'NoticeDetail'>;
 
 export default function NoticeDetailScreen() {
+  const navigation = useNavigation();
+  const tabOptions = useTabOptions();
+
+  // 탭바 숨기기 로직
+  useEffect(() => {
+    const parent = navigation.getParent();
+
+    // 진입 시 탭바 숨기기
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
+
+    return () => {
+      const navigationState = navigation.getState();
+
+      const isDirectEntry =
+        !navigationState || navigationState.routes.length <= 1;
+
+      if (isDirectEntry) {
+        parent?.setOptions({ tabBarStyle: tabOptions.tabBarStyle });
+      }
+    };
+  }, [navigation, tabOptions]);
+
   const route = useRoute<RouteType>();
-  const {noticeId} = route.params;
+  const { noticeId } = route.params;
 
   const [notice, setNotice] = useState<NoticeDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
