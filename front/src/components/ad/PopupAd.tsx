@@ -23,6 +23,7 @@ type PopupAdType = {
   id: string;
   image: string;
   link?: string;
+  linkType?: 'instagram_profile' | 'instagram_post' | 'web';
   startDate: string;
   endDate: string;
 };
@@ -93,24 +94,33 @@ export default function PopupAd() {
 
   const handlePress = async () => {
     try {
+      await analytics().logEvent('popup_ad_click', {
+        ad_id: ad?.id,
+      });
+
+      setVisible(false);
+
       if (!ad?.link) return;
 
-      const supported = await Linking.canOpenURL(ad.link);
+      if (ad.linkType === 'instagram_profile') {
+        const match = ad.link.match(/instagram\.com\/([^/?]+)/);
+        const username = match?.[1];
 
-      if (supported) {
-        await analytics().logEvent('ad_click', {
-          ad_id: ad.id,
-        });
+        if (username) {
+          const appUrl = `instagram://user?username=${username}`;
+          const canOpen = await Linking.canOpenURL(appUrl);
 
-        await Linking.openURL(ad.link);
-      } else {
-        console.log('Cannot open URL:', ad.link);
+          if (canOpen) {
+            await Linking.openURL(appUrl);
+            return;
+          }
+        }
       }
+
+      await Linking.openURL(ad.link);
     } catch (e) {
       console.log('ad link open fail', e);
     }
-
-    setVisible(false);
   };
 
   if (!ad) return null;
@@ -177,7 +187,8 @@ const styles = StyleSheet.create({
   },
 
   bottomText: {
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '600',
     color: '#fff',
     paddingVertical: 4,
   },
