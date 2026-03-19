@@ -23,7 +23,7 @@ function RootNavigatorContent() {
     if (!checkingAuth && (isAuthenticated || isGuest)) {
       const timer = setTimeout(() => {
         setShowAd(true);
-      }, 800);
+      }, 600);
 
       return () => clearTimeout(timer);
     }
