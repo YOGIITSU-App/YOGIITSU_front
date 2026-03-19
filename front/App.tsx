@@ -12,6 +12,7 @@ import { logScreen } from './src/analytics/screens';
 import { navigationRef } from './src/utils/NavigationService';
 import messaging from '@react-native-firebase/messaging';
 import * as NavigationService from './src/utils/NavigationService';
+import analytics from '@react-native-firebase/analytics';
 
 function App() {
   const routeNameRef = useRef<string | null>(null);
@@ -23,19 +24,41 @@ function App() {
   };
 
   useEffect(() => {
-    // 앱이 완전히 꺼진 상태에서 알림으로 켜졌는지 확인
+    // 앱 종료 상태 클릭
     messaging()
       .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
-          console.log('[App.tsx] 종료 상태에서 알림 수신:', remoteMessage.data);
+          console.log('[종료 상태 클릭]', remoteMessage.data);
+
           const noticeId = remoteMessage.data?.noticeId;
+
+          analytics().logEvent('push_open', {
+            notice_id: noticeId,
+          });
+
           if (noticeId) {
-            // 네비게이션이 준비될 때까지 알아서 기다렸다가 이동함
             NavigationService.resetToNotice(Number(noticeId));
           }
         }
       });
+
+    // 백그라운드 상태 클릭
+    const unsubscribe = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('[백그라운드 클릭]', remoteMessage.data);
+
+      const noticeId = remoteMessage.data?.noticeId;
+
+      analytics().logEvent('push_open', {
+        notice_id: noticeId,
+      });
+
+      if (noticeId) {
+        NavigationService.resetToNotice(Number(noticeId));
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
