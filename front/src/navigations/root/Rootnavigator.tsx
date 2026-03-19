@@ -17,6 +17,17 @@ function RootNavigatorContent() {
   const { isAuthenticated, logout, isGuest, initialized } = useUser();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const splashHiddenRef = useRef(false);
+  const [showAd, setShowAd] = useState(false);
+
+  useEffect(() => {
+    if (!checkingAuth && (isAuthenticated || isGuest)) {
+      const timer = setTimeout(() => {
+        setShowAd(true);
+      }, 800);
+
+      return () => clearTimeout(timer);
+    }
+  }, [checkingAuth, isAuthenticated, isGuest]);
 
   const safeHide = () => {
     if (splashHiddenRef.current) return;
@@ -159,7 +170,7 @@ function RootNavigatorContent() {
               />
             )}
           </RootStack.Navigator>
-          {(isAuthenticated || isGuest) && <PopupAd />}
+          {showAd && <PopupAd />}
         </>
       )}
     </>
