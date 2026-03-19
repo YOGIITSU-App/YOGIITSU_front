@@ -44,8 +44,20 @@ export default function PopupAd() {
     loadAd();
   }, []);
 
+  const handleClose = async () => {
+    await analytics().logEvent('popup_ad_close', {
+      ad_id: ad?.id,
+    });
+
+    setVisible(false);
+  };
+
   const hideForToday = async () => {
     const today = new Date().toISOString().slice(0, 10);
+
+    await analytics().logEvent('popup_ad_hide_today', {
+      ad_id: ad?.id,
+    });
 
     await EncryptedStorage.setItem(`HIDE_POPUP_AD_${ad?.id}`, today);
 
@@ -82,7 +94,7 @@ export default function PopupAd() {
 
       setAd(activeAd);
 
-      await analytics().logEvent('ad_impression', {
+      await analytics().logEvent('popup_ad_impression', {
         ad_id: activeAd.id,
       });
 
@@ -148,7 +160,7 @@ export default function PopupAd() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVisible(false)}
+              onPress={handleClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.bottomText}>닫기</Text>
