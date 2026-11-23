@@ -33,15 +33,6 @@ width="150"/>
 
 ---
 
-# 📊 Service Metrics
-
-- 현재 사용자 **약 1,100명**
-- 평균 **DAU 약 300**
-- **TMap 길찾기 API 하루 평균 약 500건 사용**
-- **iOS / Android 동시 배포 서비스**
-
----
-
 # 📖 Project Overview
 
 요기있수는 수원대학교 학생들의 캠퍼스 생활 정보를  
